@@ -51,7 +51,11 @@ def get_pc_fig(ax:Axes, samples:np.ndarray, truth:float, param_name:str=None) ->
     ax.set_title(param_name, fontsize=14)
     
 def run_chains(data, kernel, rng_key, n_vec=1, num_warmup=100, num_samples=1000):
-    """Run chains on subsets of data as iid samples and collect samples."""
+    """Run chains on subsets of data as iid samples and collect samples.
+    
+    This function is particularly useful when we want to run on multiple noise
+    realizations of the same galaxy image.
+    """
     n = len(data)
     all_samples = {}
     for ii in range(0, n, n_vec):
