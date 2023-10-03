@@ -1,0 +1,18 @@
+python>=3.10
+
+# conda 
+mambda
+stackvana
+lsstdesc.weaklensingdeblending
+numba
+galsim
+ipykernel
+ngmix
+
+# git
+git+https://github.com/LSSTDESC/descwl-shear-sims.git
+git+https://github.com/esheldon/metadetect.git
+git+https://github.com/GalSim-developers/JAX-GalSim
+
+# pip
+jax[cuda12_pip]
