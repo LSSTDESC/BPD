@@ -16,3 +16,8 @@ git+https://github.com/GalSim-developers/JAX-GalSim
 
 # pip
 jax[cuda12_pip]
+numpy
+jax
+jaxlib
+astropy
+tensorflow-probability>=0.21.0
