@@ -14,7 +14,7 @@ from scipy import stats
 def get_gauss_pc_fig(
     ax: Axes, samples: np.ndarray, truth: float, param_name: str = None
 ) -> None:
-    """Get a marginal probability calibration figure assuming Gaussian distribution of samples"""
+    """Get a marginal pc figure assuming Gaussian distribution of samples."""
     assert samples.ndim == 2  # (n_chains, n_samples)
     cis = np.linspace(0.05, 1, 20)
     cis[-1] = 0.99
