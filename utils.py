@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Optional, Tuple, Union
+from typing import Dict, List
 
 import h5py
 import jax
@@ -6,7 +6,7 @@ import jax.numpy as jnp
 import numpy as np
 from jax.random import PRNGKey
 from matplotlib.pyplot import Axes
-from numpyro.diagnostics import hpdi, print_summary, summary
+from numpyro.diagnostics import hpdi, summary
 from numpyro.infer.mcmc import MCMC, MCMCKernel
 from scipy import stats
 
@@ -39,7 +39,7 @@ def get_gauss_pc_fig(
 def get_pc_fig(
     ax: Axes, samples: np.ndarray, truth: float, param_name: str = None
 ) -> None:
-    """Get a marginal probability calibration figure using `hpdi`"""
+    """Get a marginal probability calibration figure using `hpdi` from `numpyro`."""
     assert samples.ndim == 2  # (n_chains, n_samples)
     ci_bins = np.linspace(0.05, 1, 20)  # confidence intervals
     ci_bins[-1] = 0.99  # prevent weird behavior at 1
@@ -63,15 +63,15 @@ def get_pc_fig(
 def run_chains(
     data: jax.Array | np.ndarray,
     kernel: MCMCKernel,
-    seed: int = 0,
     n_vec: int = 1,
     num_warmup: int = 100,
     num_samples: int = 1000,
+    seed: int = 0,
 ):
     """Run chains on subsets of data as iid samples and collect samples.
 
     This function is particularly useful when we want to run on multiple noise
-    realizations of the same galaxy image.
+    realizations of the same galaxy image. Or just generally or pre-processed data.
 
     Args:
         data: (n, ...) array of data
@@ -108,7 +108,7 @@ def run_chains(
 
 
 def save_samples(samples: Dict[str, np.ndarray], filename: str, group: str = None):
-    """Save samples to file using hdf5 format"""
+    """Save samples to file using hdf5 format."""
     with h5py.File(filename, "w") as f:
         for k, v in samples.items():
             if group is not None:
@@ -116,50 +116,46 @@ def save_samples(samples: Dict[str, np.ndarray], filename: str, group: str = Non
             f.create_dataset(k, data=v)
 
 
-def load_samples(filename: str, group: str = None) -> Dict[str, np.ndarray]:
-    """Load samples from file using hdf5 format"""
+def load_samples(filename: str, groups: List[str] = None) -> Dict[str, np.ndarray]:
+    """Load samples from file using hdf5 format."""
+    samples = {}
     with h5py.File(filename, "r") as f:
-        if group is not None:
-            f = f[group]
-        samples = {k: np.asarray(v) for k, v in f.items()}
+        if groups is not None:
+            for g in groups:
+                assert g in f
+                samples[g] = {k: np.asarray(v) for k, v in f[g].items()}
+        else:
+            samples = {k: np.asarray(v) for k, v in f.items()}
     return samples
 
 
-# TODO: Need to modify, the above are not actually `n_chains` as they are run on different data i.e. noise realizations.
-# could compute the summary statistics `per-chain` but combinbing them does not make sense.
 def get_summary_from_samples(samples: dict, prob=0.9):
     """Given output of `run_chains`, get summary stats for each chain.
+
+    Assumes each chain was run on a different noise realization of the same data.
+    So summaries are kept separate.
 
     Includes: 'mean', 'std', 'median', 'X - prob.0%', 'X + prob.0%', 'n_eff', 'r_hat'.
     """
     for _, v in samples.items():
         assert v.ndim == 2  # (n_chains, n_samples)
 
-    # compute summary per chain
+    # compute summary per chain, per parameter
     full_summary = {k: {} for k in samples}
     for k, v in samples.items():
         n_chains = v.shape[0]
         for ii in range(n_chains):
-            v_ii = v[ii, None]
+            v_ii = v[ii, None, :, None]
             summary_v_ii = summary({k: v_ii}, prob=prob, group_by_chain=True)
-        d = {k: v[..., None]}
-        summary_per_chain = summary(d, prob=prob, group_by_chain=True)
-        full_summary[k] = summary_per_chain
+            for k in summary_v_ii:
+                for kk in summary_v_ii[k]:
+                    if kk not in full_summary[k]:
+                        full_summary[k][kk] = []
+                    full_summary[k][kk].append(summary_v_ii[k][kk])
 
-    d = {k: v[..., None] for k, v in samples.items()}
-    return summary(
-        d, prob=prob, group_by_chain=True
-    )  # assumes (n_chains, n_samples, sample_shape)
+    # convert to numpy arrays
+    for k in full_summary:
+        for kk in full_summary[k]:
+            full_summary[k][kk] = np.array(full_summary[k][kk])
 
-
-def print_summary_from_samples(samples: dict, prob=0.9):
-    """Given output of `run_chains`, get summary stats for each chain.
-
-    Includes: 'mean', 'std', 'median', '5.0%', '95.0%', 'n_eff', 'r_hat'.
-
-    """
-    for k, v in samples.items():
-        assert v.ndim == 2  # (n_chains, n_samples)
-
-    d = {k: v[..., None] for k, v in samples.items()}
-    return print_summary(d, prob=prob, group_by_chain=True)
+    return full_summary
