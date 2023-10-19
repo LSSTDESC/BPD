@@ -15,6 +15,7 @@ mamba install -c conda-forge pip lsstdesc.weaklensingdeblending numba galsim ipy
 
 # pip install --upgrade "jax[cuda12_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 
+# NERSC specific
 # module load cudatoolkit/12.0
 # module load cudnn/8.9.3_cuda12
 # pip install --upgrade "jax[cuda12_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
