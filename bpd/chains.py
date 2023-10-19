@@ -31,7 +31,7 @@ def run_chains(
     rng_key = PRNGKey(seed)
     for ii in range(0, n, n_vec):
         data_ii = data[ii : ii + n_vec]
-        mcmc = MCMC(kernel, num_warmup=n_warmup, num_samples=n_warmup)
+        mcmc = MCMC(kernel, num_warmup=n_warmup, num_samples=n_samples)
         mcmc.run(rng_key, data=data_ii)  # reuse key is ok, different data
         samples = mcmc.get_samples()
         for k in samples:
