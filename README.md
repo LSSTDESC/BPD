@@ -18,6 +18,4 @@ pip install --upgrade "jax[cuda12_pip]" -f https://storage.googleapis.com/jax-re
 pip install git+https://github.com/LSSTDESC/descwl-shear-sims.git
 pip install git+https://github.com/esheldon/metadetect.git
 pip install git+https://github.com/GalSim-developers/JAX-GalSim.git
-
-
 ```
