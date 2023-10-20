@@ -25,12 +25,12 @@ galaxy:
   log_flux: 5
 
 chains:
-  n_chains: 100
-  n_vecs: 11
-  n_warmup: 100
+  n_chains: 1
+  n_vecs: 50
+  n_warmup: 500
   n_samples: 1000
 
 # global configurations
-gpu: 0
+gpu: 1
 seed: 0
 run_id: 0
