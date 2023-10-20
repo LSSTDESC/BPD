@@ -2,7 +2,7 @@
 image:
   pixel_scale: 0.2
   slen: 101
-  background: 1e4
+  background: 10_000
   noise_factor: 1
 
 psf:
@@ -10,14 +10,16 @@ psf:
 
 galaxy:
   hlr: 0.9
-  flux: 1e5
+  flux: 100_000
   log_flux: 5
 
 chains:
-  gpu: 0
   n_chains: 100
   n_vecs: 11
   n_warmup: 100
   n_samples: 1000
 
+# global configurations
+gpu: 0
 seed: 0
+run_id: 0
