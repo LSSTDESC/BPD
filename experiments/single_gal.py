@@ -2,7 +2,6 @@
 """Run inference on a single galaxy with 6 parameters"""
 import math
 import os
-import sys
 from pathlib import Path
 
 import galsim as _galsim
@@ -19,12 +18,8 @@ from bpd.save_load import save_samples
 
 GSPARAMS = galsim.GSParams(minimum_fft_size=512, maximum_fft_size=512)
 
-# read yaml config
-if len(sys.argv) > 1:
-    config_filename = sys.argv[1]
-else:
-    config_filename = "single_gal.yaml"
-
+# read config yaml
+config_filename = "singnle_gal.yaml"
 cwd = Path(os.path.dirname(os.path.abspath(__file__)))
 with open(cwd / "configs" / config_filename, "r") as f:
     config = yaml.load(f, Loader=yaml.FullLoader)
