@@ -1,0 +1,23 @@
+# observing conditions
+image:
+  pixel_scale: 0.2
+  slen: 101
+  background: 1e4
+  noise_factor: 1
+
+psf:
+  hlr: 0.7
+
+galaxy:
+  hlr: 0.9
+  flux: 1e5
+  log_flux: 5
+
+chains:
+  gpu: 0
+  n_chains: 100
+  n_vecs: 11
+  n_warmup: 100
+  n_samples: 1000
+
+seed: 0
