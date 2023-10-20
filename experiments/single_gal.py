@@ -34,7 +34,7 @@ SLEN = config["image"]["slen"]
 PIXEL_SCALE = config["image"]["pixel_scale"]
 BACKGROUND = config["image"]["background"]
 NOISE_FACTOR = config["image"]["noise_factor"]
-PSF_HLR = config["psf"]["psf_hlr"]
+PSF_HLR = config["psf"]["hlr"]
 
 # true galaxy parameters
 HLR = config["galaxy"]["hlr"]
@@ -45,8 +45,8 @@ G1 = config["galaxy"]["g1"]
 G2 = config["galaxy"]["g2"]
 
 # chains parameters
-N_CHAIN = config["chains"]["n_chain"]
-N_VEC = config["chains"]["n_vec"]
+N_CHAIN = config["chains"]["n_chains"]
+N_VEC = config["chains"]["n_vecs"]
 N_WARMUP = config["chains"]["n_warmup"]
 N_SAMPLES = config["chains"]["n_samples"]
 
