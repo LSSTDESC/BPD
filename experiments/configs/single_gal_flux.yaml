@@ -25,7 +25,7 @@ galaxy:
   log_flux: 5
 
 chains:
-  n_chains: 1
+  n_chains: 200
   n_vecs: 50
   n_warmup: 500
   n_samples: 1000

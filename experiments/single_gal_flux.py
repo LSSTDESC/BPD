@@ -106,7 +106,7 @@ def main():
         seed=SEED,
     )
 
-    save_samples(samples, "single_gal_flux.hdf5", group=f"run_{ID}")
+    save_samples(samples, cwd / "samples" / "single_gal_flux.hdf5", group=f"run_{ID}")
 
 
 if __name__ == "__main__":
