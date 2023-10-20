@@ -25,4 +25,8 @@ pip install git+https://github.com/esheldon/metadetect.git
 pip install git+https://github.com/GalSim-developers/JAX-GalSim.git
 
 pip install numpyro
+
+# BPD 
+cd BPD
+pip install -e .
 ```
