@@ -25,7 +25,7 @@ GSPARAMS = galsim.GSParams(minimum_fft_size=512, maximum_fft_size=512)
 if len(sys.argv) > 1:
     config_filename = sys.argv[1]
 else:
-    config_filename = "single_gal.yaml"
+    config_filename = "single_gal_flux.yaml"
 cwd = Path(os.path.dirname(os.path.abspath(__file__)))
 with open(cwd / "configs" / config_filename, "r") as f:
     config = yaml.load(f, Loader=yaml.FullLoader)
@@ -35,15 +35,15 @@ SLEN = config["image"]["slen"]
 PIXEL_SCALE = config["image"]["pixel_scale"]
 BACKGROUND = config["image"]["background"]
 NOISE_FACTOR = config["image"]["noise_factor"]
-PSF_HLR = config["psf"]["psf_hlr"]
+PSF_HLR = config["psf"]["hlr"]
 
 # true galaxy parameters
 HLR = config["galaxy"]["hlr"]
 FLUX = config["galaxy"]["flux"]
 
 # chains parameters
-N_CHAIN = config["chains"]["n_chain"]
-N_VEC = config["chains"]["n_vec"]
+N_CHAIN = config["chains"]["n_chains"]
+N_VEC = config["chains"]["n_vecs"]
 N_WARMUP = config["chains"]["n_warmup"]
 N_SAMPLES = config["chains"]["n_samples"]
 
@@ -61,6 +61,9 @@ def _draw_gal():
     gal_conv = gal_conv.drawImage(nx=SLEN, ny=SLEN, scale=PIXEL_SCALE, bandpass=None)
     im = gal_conv.array
     return im
+
+
+TRUE_IMAGE = _draw_gal()
 
 
 @jax.jit
@@ -89,9 +92,11 @@ def main():
 
     nuts_kernel = NUTS(prob_model)
 
-    true_image = _draw_gal()
-    data, _ = add_noise(true_image, n=N_VEC * N_CHAIN)
+    data, _ = add_noise(
+        TRUE_IMAGE, BACKGROUND, n=N_VEC * N_CHAIN, noise_factor=NOISE_FACTOR
+    )
 
+    print("Running chains...")
     samples = run_chains(
         data,
         nuts_kernel,
