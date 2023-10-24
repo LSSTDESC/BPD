@@ -19,7 +19,7 @@ from bpd.save_load import save_samples
 GSPARAMS = galsim.GSParams(minimum_fft_size=512, maximum_fft_size=512)
 
 # read config yaml
-config_filename = "singnle_gal.yaml"
+config_filename = "single_gal.yaml"
 cwd = Path(os.path.dirname(os.path.abspath(__file__)))
 with open(cwd / "configs" / config_filename, "r") as f:
     config = yaml.load(f, Loader=yaml.FullLoader)
@@ -106,7 +106,7 @@ def main():
     print(f"Using GPU {GPU}")
     jax.config.update("jax_default_device", jax.devices()[GPU])
 
-    data, _ = add_noise(TRUE_IMAGE, n=N_VEC * N_CHAIN)
+    data, _ = add_noise(TRUE_IMAGE, BACKGROUND, n=N_VEC * N_CHAIN)
 
     nuts_kernel = NUTS(prob_model)
     samples = run_chains(
@@ -118,7 +118,7 @@ def main():
         seed=SEED,
     )
 
-    save_samples(samples, "single_gal.hdf5", group=f"run_{ID}")
+    save_samples(samples, cwd / "samples" / "single_gal.hdf5", group=f"run_{ID}")
 
 
 if __name__ == "__main__":
