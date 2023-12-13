@@ -2,7 +2,6 @@
 """Run inference on a single galaxy with flux as a parameter."""
 import math
 import os
-import sys
 from pathlib import Path
 
 import galsim as _galsim
