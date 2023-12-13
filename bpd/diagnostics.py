@@ -4,6 +4,28 @@ from numpyro.diagnostics import hpdi, summary
 from scipy import stats
 
 
+def my_gelman_rubin(x):
+    # from https://bookdown.org/rdpeng/advstatcomp/monitoring-convergence.html
+    assert x.ndim == 2  # (n_chains, n_samples)
+    assert x.shape[0] >= 2
+    assert x.shape[1] >= 2
+
+    J = x.shape[0]  # noqa: N806
+    L = x.shape[1]  # noqa: N806
+
+    chain_mean = x.mean(axis=1)
+    grand_mean = chain_mean.mean()
+
+    # between chain variance
+    B = (L / (J - 1)) * np.sum((chain_mean - grand_mean) ** 2)  # noqa: N806
+
+    # within chain variance
+    sj_sq = (1 / (L - 1)) * np.sum((x - chain_mean.reshape(-1, 1)) ** 2, axis=1)
+    W = (1 / J) * np.sum(sj_sq, axis=0)  # noqa: N806
+
+    return ((L - 1) / L * W + B / L) / W
+
+
 def get_gauss_pc_fig(
     ax: Axes, samples: np.ndarray, truth: float, param_name: str = None
 ) -> None:
