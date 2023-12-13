@@ -16,7 +16,7 @@ def run_chains(
     """Run chains on subsets of data as iid samples and collect samples.
 
     This function is particularly useful when we want to run on multiple noise
-    realizations of the same galaxy image. Or just generally or pre-processed data.
+    realizations of the same galaxy image. Or just generally on pre-processed data.
 
     Args:
         data: (n, ...) array of data
