@@ -21,3 +21,4 @@ jax
 jaxlib
 astropy
 tensorflow-probability>=0.21.0
+flake8-pyprojecttoml
