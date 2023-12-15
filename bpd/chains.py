@@ -5,6 +5,26 @@ from jax.random import PRNGKey
 from numpyro.infer.mcmc import MCMC, MCMCKernel
 
 
+def _collect_samples(samples: dict, all_samples: dict, axis: int = 0):
+    """Collect samples from `samples` into `all_samples`."""
+    for k, v1 in samples.items():
+        if k not in all_samples:
+            all_samples[k] = v1
+        else:
+            v = all_samples[k]
+            for ii, s in enumerate(v.shape):
+                if ii != axis:
+                    assert s == v1.shape[ii]
+            all_samples[k] = jnp.concatenate([v, v1], axis=axis)
+    return all_samples
+
+
+def _check_dict_shapes(samples: dict, shape: tuple):
+    """Check that all samples have shape (n_samples, ...)"""
+    for _, v in samples.items():
+        assert v.shape == shape
+
+
 def run_chains(
     data: jax.Array | np.ndarray,
     kernel: MCMCKernel,
@@ -33,22 +53,14 @@ def run_chains(
         data_ii = data[ii : ii + n_vec]
         mcmc = MCMC(kernel, num_warmup=n_warmup, num_samples=n_samples)
         mcmc.run(rng_key, data=data_ii)  # reuse key is OK, different data
+
         samples = mcmc.get_samples()
-        for k in samples:
-            v2 = samples.get(k)
-            assert v2.shape == (n_samples, n_vec)
-            if k not in all_samples:
-                all_samples[k] = v2
-            else:
-                v1 = all_samples[k]
-                assert v1.shape[0] == n_samples
-                assert v1.ndim == 2
-                all_samples[k] = jnp.concatenate([v1, v2], axis=-1)
+        _check_dict_shapes(samples, (n_vec, n_samples))
+
+        all_samples = _collect_samples(samples, all_samples, axis=-1)
+
     all_samples = {k: v.T for k, v in all_samples.items()}
-
-    for k, v in all_samples.items():
-        assert v.shape == (n, n_samples)
-
+    _check_dict_shapes(all_samples, (n, n_samples))
     return all_samples
 
 
@@ -73,20 +85,21 @@ def run_pmap_not_vectorized(
     chunk_size = n // n_gpus
     data_chunks = [data[i : i + chunk_size] for i in range(0, n, chunk_size)]
 
-    # run chains in parallel
     def run_chain(data_chunk):
-        mcmc = MCMC(kernel, num_warmup=n_warmup, num_samples=n_samples)
-        mcmc.run(rng_key, data=data_chunk)
-        return mcmc.get_samples()
+        n_images = len(data_chunk)
+        samples = {}
+        for ii in range(n_images):
+            data = data_chunk[ii]
+            mcmc = MCMC(kernel, num_warmup=n_warmup, num_samples=n_samples)
+            mcmc.run(rng_key, data=data)
+            samples_ii = mcmc.get_samples()
+            samples_ii = {k: v.reshape(1, n_samples, -1) for k, v in samples_ii.items()}
+            samples = _collect_samples(samples_ii, samples, axis=0)
+        return samples
 
     samples_chunks = jax.pmap(run_chain)(data_chunks)
 
-    # collect samples
     for samples in samples_chunks:
-        for k, v in samples.items():
-            if k not in all_samples:
-                all_samples[k] = v
-            else:
-                all_samples[k] = jnp.concatenate([all_samples[k], v], axis=0)
+        all_samples = _collect_samples(samples, all_samples, axis=0)
 
     return all_samples
