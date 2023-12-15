@@ -72,8 +72,6 @@ def run_pmap_not_vectorized(
     seed: int = 0,
 ):
     """Run chains in parallel over gpus over each image in `data`, no vectorization."""
-    # TODO: change so that we run each chunk in a for loop
-    # TODO: consider refactoring logic of collecting samples into one dictionary in separate func.
     n = len(data)
     all_samples = {}
     rng_key = PRNGKey(seed)
