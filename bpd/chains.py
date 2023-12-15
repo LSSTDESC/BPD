@@ -13,7 +13,7 @@ def _collect_samples(samples: dict, all_samples: dict, axis: int = 0):
         else:
             v = all_samples[k]
             for ii, s in enumerate(v.shape):
-                if ii != axis:
+                if ii != axis and ii - v.ndim != axis:
                     assert s == v1.shape[ii]
             all_samples[k] = jnp.concatenate([v, v1], axis=axis)
     return all_samples
@@ -22,7 +22,10 @@ def _collect_samples(samples: dict, all_samples: dict, axis: int = 0):
 def _check_dict_shapes(samples: dict, shape: tuple):
     """Check that all samples have shape (n_samples, ...)"""
     for _, v in samples.items():
-        assert v.shape == shape
+        assert v.ndim == len(shape)
+        for ii, s in enumerate(shape):
+            if s != -1:
+                assert v.shape[ii] == s
 
 
 def run_chains(
@@ -50,17 +53,16 @@ def run_chains(
     all_samples = {}
     rng_key = PRNGKey(seed)
     for ii in range(0, n, n_vec):
-        data_ii = data[ii : ii + n_vec]
+        data_ii = data[ii : ii + n_vec] if n_vec > 1 else data[ii]
         mcmc = MCMC(kernel, num_warmup=n_warmup, num_samples=n_samples)
         mcmc.run(rng_key, data=data_ii)  # reuse key is OK, different data
 
         samples = mcmc.get_samples()
-        _check_dict_shapes(samples, (n_vec, n_samples))
-
+        samples = {k: v.reshape(n_samples, -1, n_vec) for k, v in samples.items()}
         all_samples = _collect_samples(samples, all_samples, axis=-1)
 
-    all_samples = {k: v.T for k, v in all_samples.items()}
-    _check_dict_shapes(all_samples, (n, n_samples))
+    all_samples = {k: v.transpose((2, 0, 1)) for k, v in all_samples.items()}
+    _check_dict_shapes(all_samples, (n, n_samples, -1))
     return all_samples
 
 
