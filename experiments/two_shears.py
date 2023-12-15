@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 import math
+import os
+from pathlib import Path
 
 import galsim as _galsim
 import jax
@@ -8,11 +10,19 @@ import jax_galsim as galsim
 import numpy as np
 import numpyro
 import numpyro.distributions as dist
-from jax import device_get, device_put, random
-from numpyro.infer import MCMC, NUTS
+from numpyro.infer import NUTS
+from numpyro.infer.initialization import init_to_median
 
 from bpd.chains import run_chains
 from bpd.draw import add_noise
+from bpd.save_load import save_samples
+
+cwd = Path(os.path.dirname(os.path.abspath(__file__)))
+
+GPU = 0
+ID = GPU
+
+np.random.seed(ID)
 
 PSF_HLR = 0.7
 PIXEL_SCALE = 0.2
@@ -46,13 +56,9 @@ assert len(jnp.unique(TOMO_BINS)) == G.shape[0] == N_TOMO
 
 # params
 TRUE_PARAMS = {"lfs": LF, "hlrs": HLR, "gs": G, "poss": POS, "tomo_bins": TOMO_BINS}
-TRUE_PARAMS = {k: v[None] for k, v in TRUE_PARAMS.items()}
-# TRUE_PARAMS_ARR = {k:jnp.array([v]) for k,v in TRUE_PARAMS.items()}
-
 GSPARAMS = galsim.GSParams(minimum_fft_size=512, maximum_fft_size=512)
 
 
-# get true image (no noise)
 def _draw_gals():
     fim = np.zeros((SLEN, SLEN))
     for ii in range(N_GAL):
@@ -99,14 +105,12 @@ def draw_gals(lfs, hlrs, gs, poss, tomo_bins):
 
 
 def prob_model(data):
-    batch_dim, _, _ = data.shape
-
     # global shears, one per tomo bin.
     g11 = numpyro.sample("g11", dist.Uniform(-0.1, 0.1))
     g12 = numpyro.sample("g12", dist.Uniform(-0.1, 0.1))
     g21 = numpyro.sample("g21", dist.Uniform(-0.1, 0.1))
     g22 = numpyro.sample("g22", dist.Uniform(-0.1, 0.1))
-    g = jnp.array([[g11, g12], [g21, g22]]).reshape(batch_dim, 2, 2)
+    g = jnp.array([[g11, g12], [g21, g22]]).reshape((2, 2))
 
     with numpyro.plate("n", N_GAL, dim=-1):
         lf = numpyro.sample("lf", dist.Uniform(3, 6))
@@ -117,24 +121,23 @@ def prob_model(data):
 
 
 def main():
-    # TODO: Write function to pmap on non vectorized version and use it here.
-    data, _ = add_noise(TRUE_IMAGE, BACKGROUND, n=4)
+    # setup gpu
+    assert GPU in [0, 1, 2, 3]
+    print(f"Using GPU {GPU}")
+    jax.config.update("jax_default_device", jax.devices()[GPU])
+
+    data, _ = add_noise(TRUE_IMAGE, BACKGROUND, n=25)
     nuts_kernel = NUTS(
         prob_model,
         max_tree_depth=10,
-        # init_strategy=init_to_median,  find_heuristic_step_size=True
+        init_strategy=init_to_median,
+        # find_heuristic_step_size=True
     )
-    mcmc = MCMC(
-        nuts_kernel,
-        num_warmup=1000,
-        num_samples=4000,
-        num_chains=1,
-        chain_method="sequential",
+    samples = run_chains(
+        data, nuts_kernel, n_vec=1, n_warmup=1000, n_samples=4000, seed=42
     )
-    rng_key = random.PRNGKey(6)
-    mcmc.run(rng_key, data=data)
 
-    # TODO: save samples
+    save_samples(samples, cwd / "samples" / f"two_shears_{ID}.hdf5", group=f"run_{ID}")
 
 
 if __name__ == "__main__":
