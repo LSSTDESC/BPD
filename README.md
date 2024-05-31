@@ -14,7 +14,7 @@ conda create -n bpd python=3.10
 conda activate bpd
 
 # Install JAX
-pip install --upgrade "jax[cuda12_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+pip install -U "jax[cuda12]"
 
 # descwl-shear-sims dependencies
 conda install -c conda-forge mamba
