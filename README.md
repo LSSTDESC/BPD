@@ -26,8 +26,8 @@ pip install git+https://github.com/esheldon/metadetect.git
 pip install git+https://github.com/GalSim-developers/JAX-GalSim.git
 
 pip install numpyro
-pip install h5py
-pip install ChainConsumer
+pip install blackjax
+pip install ChainConsumer arviz
 
 cd BPD
 pip install -e .

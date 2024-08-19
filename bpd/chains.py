@@ -1,105 +1,91 @@
+from functools import partial
+
+import blackjax
 import jax
 import jax.numpy as jnp
 import numpy as np
-from jax.random import PRNGKey
-from numpyro.infer.mcmc import MCMC, MCMCKernel
+from jax import jit as jjit
 
 
-def _collect_samples(samples: dict, all_samples: dict, axis: int = 0):
-    """Collect samples from `samples` into `all_samples`."""
-    for k, v1 in samples.items():
-        if k not in all_samples:
-            all_samples[k] = v1
-        else:
-            v = all_samples[k]
-            for ii, s in enumerate(v.shape):
-                if ii != axis and ii - v.ndim != axis:
-                    assert s == v1.shape[ii]
-            all_samples[k] = jnp.concatenate([v, v1], axis=axis)
-    return all_samples
+def run_warmup(seed, data, init_states, n_steps=300, logdensity_fn=None):
+    logdensity = jjit(partial(logdensity_fn, data=data))
+    warmup = blackjax.window_adaptation(
+        blackjax.nuts, logdensity, progress_bar=False, is_mass_matrix_diagonal=True
+    )
+    (initial_states, tuned_params), adapt_info = warmup.run(seed, init_states, n_steps)
+    return initial_states, tuned_params, adapt_info
 
 
-def _check_dict_shapes(samples: dict, shape: tuple):
-    """Check that all samples have shape (n_samples, ...)"""
-    for _, v in samples.items():
-        assert v.ndim == len(shape)
-        for ii, s in enumerate(shape):
-            if s != -1:
-                assert v.shape[ii] == s
+def inference_loop(rng_key, kernel, initial_state, n_samples):
+    """Should ensure kernel is jitted."""
+
+    def one_step(state, rng_key):
+        state, info = kernel(rng_key, state)
+        return state, (state, info)
+
+    keys = jax.random.split(rng_key, n_samples)
+    _, (states, infos) = jax.lax.scan(one_step, initial_state, keys)
+
+    return (states, infos)
 
 
-def run_chains(
-    data: jax.Array | np.ndarray,
-    kernel: MCMCKernel,
-    n_vec: int = 1,
-    n_warmup: int = 100,
-    n_samples: int = 1000,
-    seed: int = 0,
+def inference_loop_multiple_chains(rng_key, kernel, initial_state, n_samples, n_chains):
+
+    @jax.jit
+    def one_step(states, rng_key):
+        keys = jax.random.split(rng_key, n_chains)
+        states, infos = jax.vmap(kernel)(keys, states)
+        return states, (states, infos)
+
+    keys = jax.random.split(rng_key, n_samples)
+    _, (states, infos) = jax.lax.scan(one_step, initial_state, keys)
+
+    return states, infos
+
+
+def inference_loop_multiple_chains_with_data(
+    rng_key, initial_states, tuned_params, all_data, log_prob_fn, n_samples, n_chains
 ):
-    """Run chains on subsets of data as iid samples and collect samples.
+    """Source: https://blackjax-devs.github.io/sampling-book/models/change_of_variable_hmc.html"""
+    kernel = blackjax.nuts.build_kernel()
 
-    This function is particularly useful when we want to run on multiple noise
-    realizations of the same galaxy image. Or just generally on pre-processed data.
+    @jjit
+    def step_fn(key, state, data, **params):
+        logdensity = partial(log_prob_fn, data=data)
+        return kernel(key, state, logdensity, **params)
 
-    Args:
-        data: (n, ...) array of data
-        kernel: MCMC kernel
-        seed: random seed
-        n_vec: number of samples to vectorize over
-        n_warmup: number of warmup steps
-        n_samples: number of total samples (produced after warmup)
-    """
-    n = len(data)
-    all_samples = {}
-    rng_key = PRNGKey(seed)
-    for ii in range(0, n, n_vec):
-        data_ii = data[ii : ii + n_vec] if n_vec > 1 else data[ii]
-        mcmc = MCMC(kernel, num_warmup=n_warmup, num_samples=n_samples)
-        mcmc.run(rng_key, data=data_ii)  # reuse key is OK, different data
+    def one_step(states, rng_key):
+        keys = jax.random.split(rng_key, n_chains)
+        states, infos = jax.vmap(step_fn)(keys, states, all_data, **tuned_params)
+        return states, (states, infos)
 
-        samples = mcmc.get_samples()
-        samples = {k: v.reshape(n_samples, -1, n_vec) for k, v in samples.items()}
-        all_samples = _collect_samples(samples, all_samples, axis=-1)
+    keys = jax.random.split(rng_key, n_samples)
+    _, (states, infos) = jax.lax.scan(one_step, initial_states, keys)
 
-    all_samples = {k: v.transpose((2, 0, 1)) for k, v in all_samples.items()}
-    _check_dict_shapes(all_samples, (n, n_samples, -1))
-    return all_samples
+    return (states, infos)
 
 
-def run_pmap_not_vectorized(
-    data: jax.Array | np.ndarray,
-    kernel: MCMCKernel,
-    n_warmup: int = 100,
-    n_samples: int = 1000,
-    seed: int = 0,
+def run_one_chain(
+    rng_key, data, initial_position, logdensity_fn, n_warmup=300, n_samples=1000
 ):
-    """Run chains in parallel over gpus over each image in `data`, no vectorization."""
-    n = len(data)
-    all_samples = {}
-    rng_key = PRNGKey(seed)
+    """Do warmup followed by inference"""
 
-    # get number of gpus available
-    n_gpus = jax.local_device_count()
+    # keys
+    _, warmup_key, sample_key = jax.random.split(rng_key, 3)
 
-    # split data into chunks
-    chunk_size = n // n_gpus
-    data_chunks = [data[i : i + chunk_size] for i in range(0, n, chunk_size)]
+    # trick that allows for data to be vmapped later
+    logdensity = jjit(partial(logdensity_fn, data=data))
 
-    def run_chain(data_chunk):
-        n_images = len(data_chunk)
-        samples = {}
-        for ii in range(n_images):
-            data = data_chunk[ii]
-            mcmc = MCMC(kernel, num_warmup=n_warmup, num_samples=n_samples)
-            mcmc.run(rng_key, data=data)
-            samples_ii = mcmc.get_samples()
-            samples_ii = {k: v.reshape(1, n_samples, -1) for k, v in samples_ii.items()}
-            samples = _collect_samples(samples_ii, samples, axis=0)
-        return samples
+    # adaptation
+    warmup = blackjax.window_adaptation(
+        blackjax.nuts, logdensity, progress_bar=False, is_mass_matrix_diagonal=False
+    )
+    (state, parameters), adapt_info = warmup.run(
+        warmup_key, initial_position, num_steps=n_warmup
+    )
 
-    samples_chunks = jax.pmap(run_chain)(data_chunks)
+    # sampling
+    kernel = jjit(blackjax.nuts(logdensity, **parameters).step)  # not jitted by default
+    states, sample_info = inference_loop(sample_key, kernel, state, n_samples)
 
-    for samples in samples_chunks:
-        all_samples = _collect_samples(samples, all_samples, axis=0)
-
-    return all_samples
+    return states.position, sample_info, adapt_info

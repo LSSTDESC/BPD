@@ -1,6 +1,6 @@
 import numpy as np
 from matplotlib.pyplot import Axes
-from numpyro.diagnostics import hpdi, summary
+from numpyro.diagnostics import hpdi
 from scipy import stats
 
 
@@ -73,35 +73,3 @@ def get_pc_fig(
     ax.set_xticks(tick_labels)
     ax.set_yticks(tick_labels)
     ax.set_title(param_name, fontsize=14)
-
-
-def get_summary_from_samples(samples: dict, prob=0.9):
-    """Given output of `run_chains`, get summary stats for each chain.
-
-    Assumes each chain was run on a different noise realization of the same data.
-    So summaries are kept separate.
-
-    Includes: 'mean', 'std', 'median', 'X - prob.0%', 'X + prob.0%', 'n_eff', 'r_hat'.
-    """
-    for _, v in samples.items():
-        assert v.ndim == 2  # (n_chains, n_samples)
-
-    # compute summary per chain, per parameter
-    full_summary = {k: {} for k in samples}
-    for k, v in samples.items():
-        n_chains = v.shape[0]
-        for ii in range(n_chains):
-            v_ii = v[ii, None, :, None]
-            summary_v_ii = summary({k: v_ii}, prob=prob, group_by_chain=True)
-            for k in summary_v_ii:
-                for kk in summary_v_ii[k]:
-                    if kk not in full_summary[k]:
-                        full_summary[k][kk] = []
-                    full_summary[k][kk].append(summary_v_ii[k][kk])
-
-    # convert to numpy arrays
-    for k in full_summary:
-        for kk in full_summary[k]:
-            full_summary[k][kk] = np.array(full_summary[k][kk])
-
-    return full_summary
