@@ -2,8 +2,6 @@ from functools import partial
 
 import blackjax
 import jax
-import jax.numpy as jnp
-import numpy as np
 from jax import jit as jjit
 
 
