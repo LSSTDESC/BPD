@@ -18,7 +18,9 @@ def inference_loop(rng_key, kernel, initial_state, n_samples):
     return (states, infos)
 
 
-def inference_loop_multiple_chains(rng_key, kernel, initial_state, n_samples, n_chains):
+def inference_loop_multiple_chains(
+    rng_key, kernel, initial_states, n_samples, n_chains
+):
 
     @jjit
     def one_step(states, rng_key):
@@ -27,7 +29,7 @@ def inference_loop_multiple_chains(rng_key, kernel, initial_state, n_samples, n_
         return states, (states, infos)
 
     keys = jax.random.split(rng_key, n_samples)
-    _, (states, infos) = jax.lax.scan(one_step, initial_state, keys)
+    _, (states, infos) = jax.lax.scan(one_step, initial_states, keys)
 
     return states, infos
 
