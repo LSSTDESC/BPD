@@ -35,10 +35,17 @@ def inference_loop_multiple_chains(
 
 
 def inference_loop_multiple_chains_with_data(
-    rng_key, initial_states, tuned_params, all_data, log_prob_fn, n_samples, n_chains
+    rng_key,
+    initial_states,
+    tuned_params,
+    all_data,
+    kernel,
+    log_prob_fn,
+    n_samples,
+    n_chains,
 ):
     """Source: https://blackjax-devs.github.io/sampling-book/models/change_of_variable_hmc.html"""
-    kernel = blackjax.nuts.build_kernel()
+    # e.g.  kernel = blackjax.nuts.build_kernel()
 
     @jjit
     def step_fn(key, state, data, **params):
