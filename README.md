@@ -2,7 +2,7 @@
 
 Bayesian Pixel Domain shear estimation based on automatically differentiable cell-based coadd modeling. 
 
-This repository contains functions to run HMC (Hamiltonian Monte Carlo) using [JAX-Galsim](https://github.com/GalSim-developers/JAX-GalSim) as a forward model to perform galaxy parameter inference. 
+This repository contains functions to run HMC (Hamiltonian Monte Carlo) using [JAX-Galsim](https://github.com/GalSim-developers/JAX-GalSim) as a forward model to perform shear inference. 
 
 
 ## Installation
