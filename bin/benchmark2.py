@@ -29,6 +29,7 @@ from bpd.measure import get_snr
 print("devices available:", jax.devices())
 
 SCRATCH_DIR = Path("/pscratch/sd/i/imendoza/data/cache_chains")
+LOG_FILE = Path(__file__).parent / "log.txt"
 
 
 # GPU preamble
@@ -75,6 +76,10 @@ MAX_DOUBLINGS = 5
 N_SAMPLES = 1000
 SEED = 42
 TAG = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+
+# specific
+ALL_N_OBJECTS = (1, 5, 10, 25, 50)  # 50 => 200 chains total
+N_CHAINS_PER_OBJ = 4
 
 
 # sample from ball around some dictionary of true params
@@ -146,9 +151,6 @@ def _logprob_fn(params, data):
     return prior + likelihood
 
 
-LOG_FILE = Path(__file__).parent / "log.txt"
-
-
 def _log_setup(snr: float):
     with open(LOG_FILE, "a") as f:
         print(file=f)
@@ -216,10 +218,6 @@ def do_inference(rng_key, init_state, data, step_size: float, inverse_mass_matri
     return inference_loop(
         rng_key, init_state, kernel=kernel, n_samples=N_SAMPLES
     )  # state, info
-
-
-ALL_N_OBJECTS = (1, 5, 10, 25, 50)  # 50 => 200 chains total
-N_CHAINS_PER_OBJ = 4
 
 
 def main():
