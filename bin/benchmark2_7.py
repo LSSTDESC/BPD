@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-"""Here we investigate synchronized divergences between chains run in parallel (during warmup)."""
+"""Here we run multiple chains each on one independent noise realization with NUTS."""
 
+import datetime
 import os
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
@@ -65,6 +66,15 @@ BOUNDS = {
     "y": 1,  # sigma (in pixels)
 }
 BOUNDS_GPU = jax.device_put(BOUNDS, device=GPU)
+
+
+# run setup
+N_WARMUPS = 500
+MAX_DOUBLINGS = 5
+N_SAMPLES = 1000
+N_CHAINS = 100
+SEED = 42
+TAG = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
 
 
 # sample from ball around some dictionary of true params
@@ -135,12 +145,44 @@ def _logprob_fn(params, data):
     return jnp.sum(prior) + jnp.sum(likelihood)
 
 
-# run setup
-N_WARMUPS = 500
-MAX_DOUBLINGS = 5
-N_SAMPLES = 100
-N_CHAINS = 10
-SEED = 44
+LOG_FILE = Path(__file__).parent / "log.txt"
+
+
+def _log_setup(snr: float):
+    with open(LOG_FILE, "a") as f:
+        print(file=f)
+        print(
+            f"""Running benchmark 2.7 with configuration as follows
+    Single galaxy with different noise realizations over multiple chains.
+    The sampler used is NUTS with standard warmup.
+
+    TAG: {TAG}
+
+    Overall configuration:
+        seed: {SEED} 
+        max doublings: {MAX_DOUBLINGS}
+        n_samples: {N_SAMPLES}
+        n_chains: {N_CHAINS}
+        n_warmups: {N_WARMUPS}
+
+    galaxy parameters:
+        LOG_FLUX: {LOG_FLUX}
+        HLR: {HLR}
+        G1: {G1}
+        G2: {G2}
+        X: {X}
+        Y: {Y}
+
+    prior bounds: {BOUNDS}
+
+    other parameters:
+        slen: {SLEN}
+        psf_hlr: {PSF_HLR}
+        background: {BACKGROUND}  
+        snr: {snr}
+    """,
+            file=f,
+        )
 
 
 # vmap only rng_key
@@ -176,7 +218,9 @@ def do_inference(rng_key, init_state, data, step_size: float, inverse_mass_matri
 
 
 def main():
-    print("galaxy snr:", get_snr(_draw_gal(), BACKGROUND))
+    snr = get_snr(_draw_gal(), BACKGROUND)
+    print("galaxy snr:", snr)
+    _log_setup(snr)
 
     # get data
     data = add_noise(
@@ -258,9 +302,13 @@ def main():
     results["data"] = data
     results["init_positions"] = all_init_positions
 
-    filename = f"results_benchmark-v2_7_{N_CHAINS}_{SEED}.npy"
+    filename = f"results_benchmark-v2_7_{TAG}.npy"
     filepath = SCRATCH_DIR.joinpath(filename)
     jnp.save(filepath, results)
+
+    with open(LOG_FILE, "a") as f:
+        print(file=f)
+        print(f"results were saved to {filepath}", file=f)
 
 
 if __name__ == "__main__":
