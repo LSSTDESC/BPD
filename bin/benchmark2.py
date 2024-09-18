@@ -223,7 +223,6 @@ def do_inference(rng_key, init_state, data, step_size: float, inverse_mass_matri
 def main():
     snr = get_snr(_draw_gal(), BACKGROUND)
     print("galaxy snr:", snr)
-    _log_setup(snr)
 
     max_n_objs = max(ALL_N_OBJECTS)
 
@@ -325,6 +324,7 @@ def main():
     filepath = SCRATCH_DIR.joinpath(filename)
     jnp.save(filepath, results)
 
+    _log_setup(snr)
     with open(LOG_FILE, "a") as f:
         print(file=f)
         print(f"results were saved to {filepath}", file=f)
