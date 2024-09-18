@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Here we run 4 chains each on a variable number of noise realizations."""
+"""Here we run 4 chains each on a variable number of noise realizations (NUTS)."""
 
 import datetime
 import os

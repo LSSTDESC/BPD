@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Here we run a variable number of chains on a single galaxy and noise realization."""
+"""Here we run a variable number of chains on a single galaxy and noise realization (NUTS)."""
 
 import datetime
 import os
