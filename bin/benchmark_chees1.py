@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 
-"""Here we run multiple dynamic hmc with chees adaptation chains each on single noise realization.
+"""Here we run a variable number of chains on a single galaxy and noise realization (NUTS)."""
 
-We look at the time it takes to run different number of chains, should be more vectorizable
-than NUTS. We also measure the efficiency.
-"""
-
+import datetime
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 
 import time
@@ -21,6 +18,7 @@ import jax
 import jax.numpy as jnp
 import jax_galsim as xgalsim
 import numpy as np
+import optax
 from jax import jit as jjit
 from jax import random, vmap
 from jax.scipy import stats
@@ -40,6 +38,8 @@ GPU = jax.devices("gpu")[0]
 jax.config.update("jax_default_device", GPU)
 
 jax.config.update("jax_enable_x64", True)
+
+LOG_FILE = Path(__file__).parent / "log.txt"
 
 
 PIXEL_SCALE = 0.2
@@ -69,6 +69,20 @@ BOUNDS = {
     "y": 1,  # sigma (in pixels)
 }
 BOUNDS_GPU = jax.device_put(BOUNDS, device=GPU)
+
+
+# run setup
+IS_MATRIX_DIAGONAL = True
+N_WARMUPS = 500
+N_SAMPLES = 1000
+SEED = 42
+TAG = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+
+# chees setup
+LR = 1e-3
+INIT_STEP_SIZE = 0.1
+
+ALL_N_CHAINS = (1, 5, 10, 25, 50, 100, 150, 200, 300, 500)
 
 
 # sample from ball around some dictionary of true params
@@ -134,39 +148,34 @@ def _logprob_fn(params, data):
 
     # likelihood
     model = draw_gal(**params)
-    likelihood = stats.norm.logpdf(data, loc=model, scale=jnp.sqrt(BACKGROUND_GPU))
+    likelihood_pp = stats.norm.logpdf(data, loc=model, scale=jnp.sqrt(BACKGROUND_GPU))
+    likelihood = jnp.sum(likelihood_pp)
 
-    return jnp.sum(prior) + jnp.sum(likelihood)
-
-
-# run setup
-N_WARMUPS = 500
-N_SAMPLES = 1000
-SEED = 42
-LR = 1e-3
-INIT_STEP_SIZE = 0.1
-
-
-LOG_FILE = Path(__file__).parent / "log.txt"
+    return prior + likelihood
 
 
 def _log_setup(snr: float):
     with open(LOG_FILE, "a") as f:
         print(file=f)
         print(
-            f"""Running benchmark 2.8 with configuration as follows
-    Single galaxy with one noise realizations over multiple chains.
+            f"""Running benchmark chees 1 with configuration as follows. Variable number of chains.
+    
+    The sampler used is NUTS with standard warmup.
 
-    Overall configuration:
-        seed: {SEED} 
-        max doublings: {MAX_DOUBLINGS}
-        n_samples: 100
-        n_chains: 10
+    TAG: {TAG}
+    SEED: {SEED} 
+
+    Overall sampler configuration (fixed):
+        n_samples: {N_SAMPLES}
+        n_warmups: {N_WARMUPS}
+        diagonal matrix: {IS_MATRIX_DIAGONAL}
+        learning_rate: {LR}
+        init_step_size: {INIT_STEP_SIZE}
 
     galaxy parameters:
         LOG_FLUX: {LOG_FLUX}
         HLR: {HLR}
-        G1:  {G1}
+        G1: {G1}
         G2: {G2}
         X: {X}
         Y: {Y}
@@ -183,46 +192,30 @@ def _log_setup(snr: float):
         )
 
 
-# vmap only rng_key
-def do_warmup(rng_key, init_position: dict, data):
+def do_warmup(rng_key, positions, data, n_chains: int = None):
+    """Cannot jit!, but seems to automatically compile after running once."""
+    logdensity = partial(_logprob_fn, data=data)
+    warmup = blackjax.chees_adaptation(logdensity, n_chains)
+    optim = optax.adam(LR)
+    # `positions` = PyTree where each leaf has shape (num_chains, ...)
+    return warmup.run(rng_key, positions, INIT_STEP_SIZE, optim, N_WARMUPS)
 
+
+def do_inference(rng_key, init_states, data, tuned_params: dict):
+    """Also won't jit for unknown reasons"""
     _logdensity = partial(_logprob_fn, data=data)
-
-    warmup = blackjax.window_adaptation(
-        blackjax.nuts,
-        _logdensity,
-        progress_bar=False,
-        is_mass_matrix_diagonal=False,
-        max_num_doublings=MAX_DOUBLINGS,
-        initial_step_size=0.1,
-        target_acceptance_rate=0.90,
-    )
-    return warmup.run(
-        rng_key, init_position, N_WARMUPS
-    )  # (init_states, tuned_params), adapt_info
-
-
-def do_inference(rng_key, init_state, data, step_size: float, inverse_mass_matrix):
-    _logdensity = partial(_logprob_fn, data=data)
-    kernel = blackjax.nuts(
-        _logdensity,
-        step_size=step_size,
-        inverse_mass_matrix=inverse_mass_matrix,
-        max_num_doublings=MAX_DOUBLINGS,
-    ).step
-    return inference_loop(
-        rng_key, init_state, kernel=kernel, n_samples=N_SAMPLES
-    )  # state, info
+    kernel = blackjax.dynamic_hmc(_logdensity, **tuned_params).step
+    return inference_loop(rng_key, init_states, kernel=kernel, n_samples=N_SAMPLES)
 
 
 def main():
+    print("TAG:", TAG)
     snr = get_snr(_draw_gal(), BACKGROUND)
     print("galaxy snr:", snr)
-    _log_setup(snr)
 
     # get data
-    data = add_noise(_draw_gal(), BACKGROUND, rng=np.random.default_rng(SEED), n=1)[0]
-    data_gpu = jax.device_put(data, device=GPU)
+    _data = add_noise(_draw_gal(), BACKGROUND, rng=np.random.default_rng(SEED), n=1)[0]
+    data_gpu = jax.device_put(_data, device=GPU)
     print("data info:", data_gpu.devices(), type(data_gpu), data_gpu.shape)
 
     # collect random keys we need
@@ -230,78 +223,77 @@ def main():
     rng_key = jax.device_put(rng_key, device=GPU)
 
     ball_key, warmup_key, sample_key = random.split(rng_key, 3)
-    del rng_key
 
-    ball_keys = random.split(ball_key, N_CHAINS)
-    warmup_keys = random.split(warmup_key, N_CHAINS)
-    sample_keys = random.split(sample_key, N_CHAINS)
+    warmup_keys = random.split(warmup_key, len(ALL_N_CHAINS))
+    ball_keys = random.split(ball_key, max(ALL_N_CHAINS))
+    sample_keys = random.split(sample_key, max(ALL_N_CHAINS))
+    assert sample_keys.shape == (max(ALL_N_CHAINS),)
 
     # get initial positions for all chains
     all_init_positions = vmap(sample_ball, in_axes=(0, None))(
         ball_keys, TRUE_PARAMS_GPU
     )
+    assert all_init_positions["f"].shape == (max(ALL_N_CHAINS),)
 
     # jit and vmap functions to run chains
-    _run_warmup = vmap(jjit(do_warmup), in_axes=(0, 0, None))
-    _run_inference = vmap(jjit(do_inference), in_axes=(0, 0, None, 0, 0))
+    _run_inference = vmap(do_inference, in_axes=(0, 0, None, None))
 
     # results
-    results = {}
+    results = {n: {} for n in ALL_N_CHAINS}
 
-    # compilation times
-    t1 = time.time()
-    (_init_states, _tuned_params), _ = jax.block_until_ready(
-        _run_warmup(warmup_keys, all_init_positions, data_gpu)
-    )
-    t2 = time.time()
-    results["warmup_comp_time"] = t2 - t1
+    for ii, n_chains in enumerate(ALL_N_CHAINS):
+        print(f"n_chains: {n_chains}")
 
-    t1 = time.time()
-    _ = jax.block_until_ready(
-        _run_inference(
-            sample_keys,
-            _init_states,
-            data_gpu,
-            _tuned_params["step_size"],
-            _tuned_params["inverse_mass_matrix"],
+        _key1 = warmup_keys[ii]
+        _keys2 = sample_keys[:n_chains]
+        _init_positions = {p: q[:n_chains] for p, q in all_init_positions.items()}
+
+        _run_warmup = partial(do_warmup, n_chains=n_chains)
+
+        # compilation times for warmup
+        t1 = time.time()
+        (_sts, _tp), _ = jax.block_until_ready(
+            _run_warmup(_key1, _init_positions, data_gpu)
         )
-    )
-    t2 = time.time()
-    results["inference_comp_time"] = t2 - t1
+        t2 = time.time()
+        results[n_chains]["warmup_comp_time"] = t2 - t1
 
-    # run times
-    t1 = time.time()
-    (init_states, tuned_params), adapt_info = jax.block_until_ready(
-        _run_warmup(warmup_keys, all_init_positions, data_gpu)
-    )
-    t2 = time.time()
-    results["warmup_run_time"] = t2 - t1
+        # inference compilation time
+        if ii == 0:
+            t1 = time.time()
+            _ = jax.block_until_ready(_run_inference(_keys2, _sts, data_gpu, _tp))
+            t2 = time.time()
+            results["inference_comp_time"] = t2 - t1
 
-    t1 = time.time()
-    states, infos = jax.block_until_ready(
-        _run_inference(
-            sample_keys,
-            init_states,
-            data_gpu,
-            tuned_params["step_size"],
-            tuned_params["inverse_mass_matrix"],
+        # run times
+        t1 = time.time()
+        (last_states, tuned_params), adapt_info = jax.block_until_ready(
+            _run_warmup(_key1, _init_positions, data_gpu)
         )
-    )
-    t2 = time.time()
-    results["inference_run_time"] = t2 - t1
+        t2 = time.time()
+        results[n_chains]["warmup_run_time"] = t2 - t1
 
-    # save states and info for future reference
-    results["states"] = states
-    results["info"] = infos
-    results["adapt_info"] = adapt_info
-    results["tuned_params"] = tuned_params
-    results["data"] = data
+        t1 = time.time()
+        states, infos = jax.block_until_ready(
+            _run_inference(_keys2, last_states, data_gpu, tuned_params)
+        )
+        t2 = time.time()
+        results[n_chains]["inference_run_time"] = t2 - t1
+
+        # save states and info for future reference
+        results[n_chains]["states"] = states
+        results[n_chains]["info"] = infos
+        results[n_chains]["adapt_info"] = adapt_info
+        results[n_chains]["step_size"] = tuned_params["step_size"]
+
+    results["data"] = data_gpu
     results["init_positions"] = all_init_positions
 
-    filename = f"results_benchmark-v2_8_{N_CHAINS}_{SEED}_{TAG}.npy"
+    filename = f"results_chees_benchmark1_{TAG}.npy"
     filepath = SCRATCH_DIR.joinpath(filename)
     jnp.save(filepath, results)
 
+    _log_setup(snr)
     with open(LOG_FILE, "a") as f:
         print(file=f)
         print(f"results were saved to {filepath}", file=f)
