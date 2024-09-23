@@ -19,8 +19,8 @@ def shear_loglikelihood_unreduced(
     # normalizatoin in priors can be ignored for now as alpha is fixed.
     N, K, _ = e_post.shape
 
-    e_obs_mag = jnp.sqrt(e_post[..., 0] ** 2 + e_post[..., 1] ** 2)
-    denom = interim_prior(e_obs_mag)  # (N, K), can ignore angle in prior as uniform
+    e_post_mag = jnp.sqrt(e_post[..., 0] ** 2 + e_post[..., 1] ** 2)
+    denom = interim_prior(e_post_mag)  # (N, K), can ignore angle in prior as uniform
 
     # for num we do trick p(w_n' | g, alpha )  = p(w_n' \cross^{-1} g | alpha ) = p(w_n | alpha) * |jac(w_n / w_n')|
 
@@ -39,9 +39,9 @@ def shear_loglikelihood_unreduced(
     assert jac.shape == (N, K, 2, 2)
     jacdet = jnp.linalg.det(jac)  # shape = (N, K)
 
-    e_obs_unsheared = inv_shear_transformation(e_post, g)
+    e_post_unsheared = inv_shear_transformation(e_post, g)
     e_obs_unsheared_mag = jnp.sqrt(
-        e_obs_unsheared[..., 0] ** 2 + e_obs_unsheared[..., 1] ** 2
+        e_post_unsheared[..., 0] ** 2 + e_post_unsheared[..., 1] ** 2
     )
     num = prior(e_obs_unsheared_mag) * jacdet  # (N, K)
 
