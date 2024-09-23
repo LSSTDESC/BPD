@@ -2,7 +2,7 @@ import jax.numpy as jnp
 from jax import random
 
 
-def ellip_mag_prior(e, sigma: float = 0.3):
+def ellip_mag_prior(e, sigma: float):
     """Unnormalized Prior for the magnitude of the ellipticity, domain is (0, 1)
 
     This distribution is taken from Gary's 2013 paper on Bayesian shear inference.
@@ -14,7 +14,7 @@ def ellip_mag_prior(e, sigma: float = 0.3):
     return (1 - e**2) ** 2 * jnp.exp(-(e**2) / (2 * sigma**2))
 
 
-def sample_mag_ellip_prior(rng_key, n=1, n_bins=100000, sigma=0.3):
+def sample_mag_ellip_prior(rng_key, sigma: float, n: int = 1, n_bins: int = 100000):
     """Sample n points from Gary's ellipticity magnitude prior."""
     # this part could be cached
     e_array = jnp.linspace(0, 1, n_bins)
@@ -24,10 +24,10 @@ def sample_mag_ellip_prior(rng_key, n=1, n_bins=100000, sigma=0.3):
     return random.choice(rng_key, e_array, shape=(n,), p=p_array)
 
 
-def sample_ellip_prior(rng_key, n=1, sigma=0.3):
+def sample_ellip_prior(rng_key, sigma: float, n: int = 1):
     """Sample n ellipticities isotropic components with Gary's prior from magnitude."""
     key1, key2 = random.split(rng_key, 2)
-    e_mag = sample_mag_ellip_prior(key1, n, sigma=sigma)
+    e_mag = sample_mag_ellip_prior(key1, sigma=sigma, n=n)
     e_phi = random.uniform(key2, shape=(n,), minval=0, maxval=2 * jnp.pi)
     e1 = e_mag * jnp.cos(2 * e_phi)
     e2 = e_mag * jnp.sin(2 * e_phi)
@@ -99,21 +99,27 @@ def inv_shear_transformation(e, g: tuple[float, float]):
 def sample_synthetic_sheared_ellips_unclipped(
     rng_key,
     g: tuple[float, float],
-    n: int = 1,
-    sigma_m: float = 0.1,
-    sigma_e: float = 0.3,
+    n: int,
+    sigma_m: float,
+    sigma_e: float,
 ):
     """We sample sheared ellipticities from N(e_int + g, sigma_m^2)"""
     key1, key2 = random.split(rng_key, 2)
 
-    e_int = sample_ellip_prior(key1, n, sigma=sigma_e)
+    e_int = sample_ellip_prior(key1, sigma=sigma_e, n=n)
     e_sheared = shear_transformation(e_int, g)
     e_obs = random.normal(key2, shape=(n, 2)) * sigma_m + e_sheared.reshape(n, 2)
     return e_obs, e_sheared, e_int
 
 
 def sample_synthetic_sheared_ellips_clipped(
-    rng_key, g: tuple[float, float], n=1, m=10, sigma_m=0.05, sigma_e=1.0, e_tol=0.99999
+    rng_key,
+    g: tuple[float, float],
+    sigma_m: float,
+    sigma_e: float,
+    n: int = 1,
+    m: int = 10,
+    e_tol: float = 0.99999,
 ):
     """We sample sheared ellipticities from N(e_int + g, sigma_m^2)
 
@@ -123,7 +129,7 @@ def sample_synthetic_sheared_ellips_clipped(
     """
     key1, key2 = random.split(rng_key, 2)
 
-    e_int = sample_ellip_prior(key1, n, sigma=sigma_e)
+    e_int = sample_ellip_prior(key1, sigma=sigma_e, n=n)
     e_sheared = shear_transformation(e_int, g)
     e_obs = random.normal(key2, shape=(n, m, 2)) * sigma_m + e_sheared.reshape(n, 1, 2)
 
