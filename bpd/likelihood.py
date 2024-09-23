@@ -52,7 +52,7 @@ def shear_loglikelihood_unreduced(
 
 
 def shear_loglikelihood(
-    g: tuple[float, float], e_obs, prior: Callable, interim_prior: Callable
+    g: tuple[float, float], e_post, prior: Callable, interim_prior: Callable
 ) -> float:
     """Reduce with sum"""
-    return shear_loglikelihood_unreduced(g, e_obs, prior, interim_prior).sum()
+    return shear_loglikelihood_unreduced(g, e_post, prior, interim_prior).sum()
