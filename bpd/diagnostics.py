@@ -1,7 +1,23 @@
 import numpy as np
+import pandas as pd
+from chainconsumer import Chain, ChainConsumer, Truth
+from jax import Array
+from matplotlib.figure import Figure
 from matplotlib.pyplot import Axes
 from numpyro.diagnostics import hpdi
 from scipy import stats
+
+
+def get_contour_plot(
+    samples: dict[str, Array],
+    truth: dict[str, float],
+    figsize: tuple[float, float] = (5, 5),
+) -> Figure:
+    c = ChainConsumer()
+    df = pd.DataFrame.from_dict(samples)
+    c.add_chain(Chain(samples=df, name="Posterior"))
+    c.add_truth(Truth(location=truth))
+    return c.plotter.plot()
 
 
 def get_gauss_pc_fig(
