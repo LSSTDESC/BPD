@@ -9,8 +9,12 @@ import jax.numpy as jnp
 from jax import Array
 
 
-def save_dataset_h5py(ds: dict[str, Array], fpath: str) -> None:
-    assert not Path(fpath).exists(), "overwriting existing ds"
+def save_dataset_h5py(
+    ds: dict[str, Array], fpath: str, overwrite: bool = False
+) -> None:
+    if Path(fpath).exists() and not overwrite:
+        raise IOError("overwriting existing ds")
+
     with h5py.File(fpath, "w") as f:
         for k, v in ds.items():
             f.create_dataset(k, data=v)
