@@ -9,13 +9,15 @@ from scipy import stats
 
 
 def get_contour_plot(
-    samples: dict[str, Array],
+    samples_list: list[dict[str, Array]],
+    names: list[str],
     truth: dict[str, float],
-    figsize: tuple[float, float] = (5, 5),
+    figsize: tuple[float, float] = (7, 7),
 ) -> Figure:
     c = ChainConsumer()
-    df = pd.DataFrame.from_dict(samples)
-    c.add_chain(Chain(samples=df, name="Posterior"))
+    for name, samples in zip(names, samples_list):
+        df = pd.DataFrame.from_dict(samples)
+        c.add_chain(Chain(samples=df, name=name))
     c.add_truth(Truth(location=truth))
     return c.plotter.plot(figsize=figsize)
 
