@@ -17,7 +17,7 @@ def get_contour_plot(
     df = pd.DataFrame.from_dict(samples)
     c.add_chain(Chain(samples=df, name="Posterior"))
     c.add_truth(Truth(location=truth))
-    return c.plotter.plot()
+    return c.plotter.plot(figsize=figsize)
 
 
 def get_gauss_pc_fig(
