@@ -4,26 +4,25 @@
 
 from pathlib import Path
 
-import h5py
 import jax.numpy as jnp
 from jax import Array
 
 
-def save_dataset_h5py(
-    ds: dict[str, Array], fpath: str, overwrite: bool = False
+def save_dataset(
+    ds: dict[str, Array], fpath: str | Path, overwrite: bool = False
 ) -> None:
+
     if Path(fpath).exists() and not overwrite:
         raise IOError("overwriting existing ds")
 
-    with h5py.File(fpath, "w") as f:
-        for k, v in ds.items():
-            f.create_dataset(k, data=v)
+    jnp.savez(fpath, **ds)
 
 
-def load_dataset_h5py(fpath: str) -> dict[str, Array]:
+def load_dataset(fpath: str) -> dict[str, Array]:
     assert Path(fpath).exists(), "file path does not exists"
     ds = {}
-    with h5py.File(fpath, "r") as f:
-        for k, v in f.items():
-            ds[k] = jnp.array(v[...])
+
+    npzfile = jnp.load(fpath)
+    for k in npzfile.files:
+        ds[k] = npzfile[k]
     return ds
