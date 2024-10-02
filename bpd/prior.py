@@ -14,7 +14,7 @@ def ellip_mag_prior(e, sigma: float):
     return (1 - e**2) ** 2 * jnp.exp(-(e**2) / (2 * sigma**2))
 
 
-def sample_mag_ellip_prior(rng_key, sigma: float, n: int = 1, n_bins: int = 100000):
+def sample_mag_ellip_prior(rng_key, sigma: float, n: int = 1, n_bins: int = 1_000_000):
     """Sample n points from Gary's ellipticity magnitude prior."""
     # this part could be cached
     e_array = jnp.linspace(0, 1, n_bins)
