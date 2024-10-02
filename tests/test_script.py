@@ -1,4 +1,5 @@
-"""Minimal amount of code that checks if GPU is working correctly."""
+"""Minimal amount of code that checks jax-galsim is working correctly."""
+
 import jax
 import jax.numpy as jnp
 import jax_galsim as galsim
