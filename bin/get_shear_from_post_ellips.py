@@ -46,7 +46,7 @@ def do_inference(rng_key, init_g: ArrayLike, logtarget: Callable, n_samples: int
         progress_bar=False,
         is_mass_matrix_diagonal=True,
         max_num_doublings=2,
-        initial_step_size=0.01,
+        initial_step_size=1e-2,
         target_acceptance_rate=0.80,
     )
 
