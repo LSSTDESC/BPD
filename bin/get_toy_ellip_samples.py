@@ -77,7 +77,7 @@ def do_inference(
 @click.option("-n", "--n-samples", type=int, default=100_000, help="# of gals")
 @click.option("--k", type=int, default=50, help="# int. posterior samples per galaxy.")
 @click.option("--obs-noise", type=float, default=1e-3)
-@click.option("--shape-noise", type=float, default=1e-2)
+@click.option("--shape-noise", type=float, default=1e-2)  # 1e-3 also OK, lower no :(
 @click.option("--overwrite", type=bool, default=False)
 def main(
     tag: str,
