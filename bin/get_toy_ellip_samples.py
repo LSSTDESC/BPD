@@ -74,10 +74,10 @@ def do_inference(
 @click.option("--seed", type=int, default=42)
 @click.option("--g1", type=float, default=0.02)
 @click.option("--g2", type=float, default=0)
-@click.option("-n", "--n-samples", type=int, default=100_000, help="# of gals")
-@click.option("--k", type=int, default=50, help="# int. posterior samples per galaxy.")
-@click.option("--obs-noise", type=float, default=1e-3)
-@click.option("--shape-noise", type=float, default=1e-2)  # 1e-3 also OK, lower no :(
+@click.option("-n", "--n-samples", type=int, default=10_000, help="# of gals")
+@click.option("--k", type=int, default=10, help="# int. posterior samples per galaxy.")
+@click.option("--obs-noise", type=float, default=1e-4)
+@click.option("--shape-noise", type=float, default=1e-3)  # 1e-3 also OK, lower no :(
 @click.option("--overwrite", type=bool, default=False)
 def main(
     tag: str,
