@@ -44,7 +44,7 @@ def do_inference(
     e_obs: ArrayLike,
     sigma_m: float,
     sigma_e: float,
-    k=10,
+    k: int,
 ):
     interim_prior = partial(ellip_mag_prior, sigma=sigma_e * 2)
     _logtarget = partial(
