@@ -1,0 +1,94 @@
+#!/usr/bin/env python3
+"""This file creates toy samples of ellipticities and saves them to .hdf5 file."""
+
+from functools import partial
+from pathlib import Path
+from typing import Callable
+
+import blackjax
+import click
+import jax
+import jax.numpy as jnp
+from jax import jit as jjit
+from jax import random
+from jax.scipy import stats
+from jax.typing import ArrayLike
+
+from bpd import DATA_DIR
+from bpd.chains import inference_loop
+from bpd.io import load_dataset
+from bpd.likelihood import shear_loglikelihood
+from bpd.prior import ellip_mag_prior
+
+jax.config.update("jax_enable_x64", True)
+
+
+def _extract_tag(fpath: str):
+    name = Path(fpath).name
+    first = name.find("_")
+    second = name.find("_", first + 1)
+    last = name.find(".")
+    return name[second + 1 : last]
+
+
+def logtarget_density(g: ArrayLike, e_post: ArrayLike, loglikelihood: Callable):
+    loglike = loglikelihood(g, e_post)
+    logprior = stats.uniform.logpdf(g, -0.1, 0.2).sum()
+    return logprior + loglike
+
+
+def do_inference(rng_key, init_g: ArrayLike, logtarget: Callable, n_samples: int):
+    key1, key2 = random.split(rng_key)
+
+    warmup = blackjax.window_adaptation(
+        blackjax.nuts,
+        logtarget,
+        progress_bar=False,
+        is_mass_matrix_diagonal=True,
+        max_num_doublings=2,
+        initial_step_size=0.01,
+        target_acceptance_rate=0.80,
+    )
+
+    (init_states, tuned_params), _ = warmup.run(key1, init_g, 500)
+    kernel = blackjax.nuts(logtarget, **tuned_params).step
+    states, _ = inference_loop(key2, init_states, kernel=kernel, n_samples=n_samples)
+    return states.position
+
+
+@click.command()
+@click.option("--seed", type=int, required=True)
+@click.option("--e-samples-file", type=str, required=True)
+@click.option("-n", "--n-samples", type=int, default=3000, help="# of shear samples")
+@click.option("--overwrite", type=bool, default=False)
+def main(seed: int, e_samples_file: str, n_samples: int, overwrite: bool):
+    assert Path(e_samples_file).exists()
+    tag = _extract_tag(e_samples_file)
+
+    fpath = DATA_DIR / "cache_chains" / f"g_samples_{tag}_{seed}.npy"
+    if fpath.exists():
+        if not overwrite:
+            raise IOError("overwriting...")
+
+    samples_dataset = load_dataset(e_samples_file)
+    e_post = samples_dataset["e_post"]
+    true_g = samples_dataset["true_g"]
+    sigma_e = samples_dataset["sigma_e"]
+
+    rng_key = random.key(seed)
+
+    prior = partial(ellip_mag_prior, sigma=sigma_e)
+    interim_prior = partial(ellip_mag_prior, sigma=sigma_e * 2)
+    _loglikelihood = jjit(
+        partial(shear_loglikelihood, prior=prior, interim_prior=interim_prior)
+    )
+
+    _logtarget = partial(logtarget_density, loglikelihood=_loglikelihood, e_post=e_post)
+    _do_inference = partial(do_inference, logtarget=_logtarget, n_samples=n_samples)
+
+    g_samples = _do_inference(rng_key, true_g)
+    jnp.save(fpath, g_samples)
+
+
+if __name__ == "__main__":
+    main()
