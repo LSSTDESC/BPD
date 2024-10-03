@@ -14,12 +14,14 @@ def save_dataset(
 
     if Path(fpath).exists() and not overwrite:
         raise IOError("overwriting existing ds")
+    assert Path(fpath).suffix == ".npz"
 
     jnp.savez(fpath, **ds)
 
 
 def load_dataset(fpath: str) -> dict[str, Array]:
     assert Path(fpath).exists(), "file path does not exists"
+    assert Path(fpath).suffix == ".npz"
     ds = {}
 
     npzfile = jnp.load(fpath)
