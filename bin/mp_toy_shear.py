@@ -14,7 +14,8 @@ from bpd import DATA_DIR
 
 @click.command()
 @click.option("--tag", type=str, required=True)
-@click.option("--n-seeds", type=int, required=True)
+@click.option("--start-seed", type=int, required=True)
+@click.option("--end-seed", type=int, required=True)
 @click.option("--g1", type=float, default=0.02)
 @click.option("--g2", type=float, default=0)
 @click.option("--n-samples-gals", type=int, default=10_000, help="# of gals")
@@ -25,7 +26,8 @@ from bpd import DATA_DIR
 @click.option("--overwrite", type=bool, default=False)
 def main(
     tag: str,
-    n_seeds,
+    start_seed: int,
+    end_seed: int,
     g1: float,
     g2: float,
     n_samples_gals: int,
@@ -35,7 +37,8 @@ def main(
     obs_noise: float,
     overwrite: bool,
 ):
-    seeds = np.arange(1, n_seeds + 1, 1)
+    n_seeds = end_seed - start_seed + 1
+    seeds = np.arange(start_seed, end_seed + 1, 1)
 
     n_processes = min(mp.cpu_count() - 3, n_seeds)
     print(f"n_processes: {n_processes}")
