@@ -109,7 +109,7 @@ def pipeline_toy_ellips_samples(
 @click.option("--g2", type=float, default=0)
 @click.option("-n", "--n-samples", type=int, default=10_000, help="# of gals")
 @click.option("--k", type=int, default=10, help="# int. posterior samples per galaxy.")
-@click.option("--shape-noise", type=float, default=1e-3)  # 1e-3 also OK, lower no :(
+@click.option("--shape-noise", type=float, default=1e-3)  # > OK, 1e-4 not OK :(
 @click.option("--obs-noise", type=float, default=1e-4)
 @click.option("--overwrite", type=bool, default=False)
 def main(
