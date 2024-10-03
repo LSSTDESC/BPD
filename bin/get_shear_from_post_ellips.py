@@ -57,7 +57,7 @@ def do_inference(rng_key, init_g: ArrayLike, logtarget: Callable, n_samples: int
 
 
 def pipeline_shear_inference(
-    seed: int, true_g: ArrayLike, e_post: ArrayLike, sigma_e: float, n_samples: int
+    seed: int, e_post: ArrayLike, true_g: ArrayLike, sigma_e: float, n_samples: int
 ):
     rng_key = random.key(seed)
     prior = partial(ellip_mag_prior, sigma=sigma_e)
@@ -95,7 +95,7 @@ def main(seed: int, e_samples_file: str, n_samples: int, overwrite: bool):
     true_g = samples_dataset["true_g"]
     sigma_e = samples_dataset["sigma_e"]
 
-    g_samples = pipeline_shear_inference(seed, true_g, e_post, sigma_e, n_samples)
+    g_samples = pipeline_shear_inference(seed, e_post, true_g, sigma_e, n_samples)
 
     jnp.save(fpath, g_samples)
 
