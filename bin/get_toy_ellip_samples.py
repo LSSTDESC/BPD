@@ -123,7 +123,10 @@ def main(
     obs_noise: float,
     overwrite: bool,
 ):
-    fpath = DATA_DIR / "cache_chains" / f"e_post_{seed}_{tag}.npz"
+    dirpath = DATA_DIR / "cache_chains" / tag
+    if not dirpath.exists():
+        dirpath.mkdir(exist_ok=False)
+    fpath = DATA_DIR / "cache_chains" / dirpath / f"e_post_{seed}.npz"
 
     e_post, e_obs, e_sheared = pipeline_toy_ellips_samples(
         seed, g1, g2, sigma_e=shape_noise, sigma_m=obs_noise, n_samples=n_samples, k=k

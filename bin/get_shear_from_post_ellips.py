@@ -20,15 +20,13 @@ from bpd.io import load_dataset
 from bpd.likelihood import shear_loglikelihood
 from bpd.prior import ellip_mag_prior
 
-jax.config.update("jax_enable_x64", True)
 
-
-def _extract_tag(fpath: str):
+def _extract_seed(fpath: str) -> int:
     name = Path(fpath).name
     first = name.find("_")
     second = name.find("_", first + 1)
-    last = name.find(".")
-    return name[second + 1 : last]
+    third = name.find(".")
+    return int(name[second + 1 : third])
 
 
 def logtarget_density(g: ArrayLike, e_post: ArrayLike, loglikelihood: Callable):
@@ -77,20 +75,26 @@ def pipeline_shear_inference(
 
 
 @click.command()
+@click.option("--tag", type=str, required=True)
 @click.option("--seed", type=int, required=True)
-@click.option("--e-samples-file", type=str, required=True)
+@click.option("--e-samples-fname", type=str, required=True)
 @click.option("-n", "--n-samples", type=int, default=3000, help="# of shear samples")
 @click.option("--overwrite", type=bool, default=False)
-def main(seed: int, e_samples_file: str, n_samples: int, overwrite: bool):
-    assert Path(e_samples_file).exists()
-    tag = _extract_tag(e_samples_file)
+def main(tag: str, seed: int, e_samples_fname: str, n_samples: int, overwrite: bool):
 
-    fpath = DATA_DIR / "cache_chains" / f"g_samples_{tag}_{seed}.npy"
+    # directory structure
+    dirpath = DATA_DIR / "cache_chains" / tag
+    assert dirpath.exists()
+    e_samples_fpath = DATA_DIR / "cache_chains" / tag / e_samples_fname
+    assert e_samples_fpath.exists(), "ellipticity samples file does not exist"
+    old_seed = _extract_seed(e_samples_fname)
+    fpath = DATA_DIR / "cache_chains" / tag / f"g_samples_{old_seed}_{seed}.npy"
+
     if fpath.exists():
         if not overwrite:
             raise IOError("overwriting...")
 
-    samples_dataset = load_dataset(e_samples_file)
+    samples_dataset = load_dataset(e_samples_fpath)
     e_post = samples_dataset["e_post"]
     true_g = samples_dataset["true_g"]
     sigma_e = samples_dataset["sigma_e"]
