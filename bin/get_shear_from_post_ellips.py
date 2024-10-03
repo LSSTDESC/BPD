@@ -56,6 +56,26 @@ def do_inference(rng_key, init_g: ArrayLike, logtarget: Callable, n_samples: int
     return states.position
 
 
+def pipeline_shear_inference(
+    seed: int, true_g: ArrayLike, e_post: ArrayLike, sigma_e: float, n_samples: int
+):
+    rng_key = random.key(seed)
+    prior = partial(ellip_mag_prior, sigma=sigma_e)
+    interim_prior = partial(ellip_mag_prior, sigma=sigma_e * 2)
+
+    # NOTE: jit must be applied without `e_post` in partial!
+    _loglikelihood = jjit(
+        partial(shear_loglikelihood, prior=prior, interim_prior=interim_prior)
+    )
+
+    _logtarget = partial(logtarget_density, loglikelihood=_loglikelihood, e_post=e_post)
+    _do_inference = partial(do_inference, logtarget=_logtarget, n_samples=n_samples)
+
+    g_samples = _do_inference(rng_key, true_g)
+
+    return g_samples
+
+
 @click.command()
 @click.option("--seed", type=int, required=True)
 @click.option("--e-samples-file", type=str, required=True)
@@ -75,18 +95,8 @@ def main(seed: int, e_samples_file: str, n_samples: int, overwrite: bool):
     true_g = samples_dataset["true_g"]
     sigma_e = samples_dataset["sigma_e"]
 
-    rng_key = random.key(seed)
+    g_samples = pipeline_shear_inference(seed, true_g, e_post, sigma_e, n_samples)
 
-    prior = partial(ellip_mag_prior, sigma=sigma_e)
-    interim_prior = partial(ellip_mag_prior, sigma=sigma_e * 2)
-    _loglikelihood = jjit(
-        partial(shear_loglikelihood, prior=prior, interim_prior=interim_prior)
-    )
-
-    _logtarget = partial(logtarget_density, loglikelihood=_loglikelihood, e_post=e_post)
-    _do_inference = partial(do_inference, logtarget=_logtarget, n_samples=n_samples)
-
-    g_samples = _do_inference(rng_key, true_g)
     jnp.save(fpath, g_samples)
 
 

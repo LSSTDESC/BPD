@@ -69,36 +69,20 @@ def do_inference(
     return states.position
 
 
-@click.command()
-@click.option("--tag", type=str, required=True)
-@click.option("--seed", type=int, default=42)
-@click.option("--g1", type=float, default=0.02)
-@click.option("--g2", type=float, default=0)
-@click.option("-n", "--n-samples", type=int, default=10_000, help="# of gals")
-@click.option("--k", type=int, default=10, help="# int. posterior samples per galaxy.")
-@click.option("--obs-noise", type=float, default=1e-4)
-@click.option("--shape-noise", type=float, default=1e-3)  # 1e-3 also OK, lower no :(
-@click.option("--overwrite", type=bool, default=False)
-def main(
-    tag: str,
+def pipeline_toy_ellips_samples(
     seed: int,
     g1: float,
     g2: float,
+    sigma_e: float,
+    sigma_m: float,
     n_samples: int,
     k: int,
-    obs_noise: float,
-    shape_noise: float,
-    overwrite: bool,
 ):
-    fpath = DATA_DIR / "cache_chains" / f"e_post_{seed}_{tag}.npz"
-
     rng_key = random.key(seed)
 
     k1, k2 = random.split(rng_key)
 
     true_g = jnp.array([g1, g2])
-    sigma_e = shape_noise
-    sigma_m = obs_noise
 
     e_obs, e_sheared, _ = sample_synthetic_sheared_ellips_unclipped(
         k1, true_g, n=n_samples, sigma_m=sigma_m, sigma_e=sigma_e
@@ -115,13 +99,43 @@ def main(
 
     e_post = _do_inference(keys2, e_sheared, e_obs)
 
+    return e_post, e_obs, e_sheared
+
+
+@click.command()
+@click.option("--tag", type=str, required=True)
+@click.option("--seed", type=int, default=42)
+@click.option("--g1", type=float, default=0.02)
+@click.option("--g2", type=float, default=0)
+@click.option("-n", "--n-samples", type=int, default=10_000, help="# of gals")
+@click.option("--k", type=int, default=10, help="# int. posterior samples per galaxy.")
+@click.option("--shape-noise", type=float, default=1e-3)  # 1e-3 also OK, lower no :(
+@click.option("--obs-noise", type=float, default=1e-4)
+@click.option("--overwrite", type=bool, default=False)
+def main(
+    tag: str,
+    seed: int,
+    g1: float,
+    g2: float,
+    n_samples: int,
+    k: int,
+    shape_noise: float,
+    obs_noise: float,
+    overwrite: bool,
+):
+    fpath = DATA_DIR / "cache_chains" / f"e_post_{seed}_{tag}.npz"
+
+    e_post, e_obs, e_sheared = pipeline_toy_ellips_samples(
+        seed, g1, g2, sigma_e=shape_noise, sigma_m=obs_noise, n_samples=n_samples, k=k
+    )
+
     ds = {
         "e_post": e_post,
         "e_obs": e_obs,
         "e_sheared": e_sheared,
-        "true_g": true_g,
-        "sigma_e": jnp.array(sigma_e),
-        "sigma_m": jnp.array(sigma_m),
+        "true_g": jnp.array([g1, g2]),
+        "sigma_e": jnp.array(shape_noise),
+        "sigma_m": jnp.array(obs_noise),
         "seed": jnp.array(seed),
     }
     save_dataset(ds, fpath, overwrite=overwrite)
