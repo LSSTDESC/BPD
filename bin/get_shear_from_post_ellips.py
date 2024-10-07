@@ -78,7 +78,7 @@ def pipeline_shear_inference(
 @click.option("--tag", type=str, required=True)
 @click.option("--seed", type=int, required=True)
 @click.option("--e-samples-fname", type=str, required=True)
-@click.option("-n", "--n-samples", type=int, default=3000, help="# of shear samples")
+@click.option("-n", "--n-samples", type=int, default=2000, help="# of shear samples")
 @click.option("--trim", type=int, default=1, help="trimming makes like. eval. fast")
 @click.option("--overwrite", type=bool, default=False)
 def main(
