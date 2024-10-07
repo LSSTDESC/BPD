@@ -162,4 +162,4 @@ cython_debug/
 
 # personal
 experiments/samples/*.hdf5
-*/slurm-*.out
+**/slurm-*.out
