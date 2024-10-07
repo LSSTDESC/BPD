@@ -18,8 +18,6 @@ from bpd.chains import inference_loop
 from bpd.io import save_dataset
 from bpd.prior import ellip_mag_prior, sample_synthetic_sheared_ellips_unclipped
 
-jax.config.update("jax_enable_x64", True)
-
 
 def log_target(
     e_sheared: ArrayLike,
@@ -124,9 +122,11 @@ def main(
     overwrite: bool,
 ):
     dirpath = DATA_DIR / "cache_chains" / tag
+    fpath = DATA_DIR / "cache_chains" / dirpath / f"e_post_{seed}.npz"
     if not dirpath.exists():
         dirpath.mkdir(exist_ok=False)
-    fpath = DATA_DIR / "cache_chains" / dirpath / f"e_post_{seed}.npz"
+    if fpath.exists():
+        assert overwrite
 
     e_post, e_obs, e_sheared = pipeline_toy_ellips_samples(
         seed, g1, g2, sigma_e=shape_noise, sigma_m=obs_noise, n_samples=n_samples, k=k
