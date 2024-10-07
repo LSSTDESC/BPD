@@ -79,8 +79,16 @@ def pipeline_shear_inference(
 @click.option("--seed", type=int, required=True)
 @click.option("--e-samples-fname", type=str, required=True)
 @click.option("-n", "--n-samples", type=int, default=3000, help="# of shear samples")
+@click.option("--trim", type=int, default=1, help="trimming makes like. eval. fast")
 @click.option("--overwrite", type=bool, default=False)
-def main(tag: str, seed: int, e_samples_fname: str, n_samples: int, overwrite: bool):
+def main(
+    tag: str,
+    seed: int,
+    e_samples_fname: str,
+    n_samples: int,
+    trim: int,
+    overwrite: bool,
+):
 
     # directory structure
     dirpath = DATA_DIR / "cache_chains" / tag
@@ -95,7 +103,7 @@ def main(tag: str, seed: int, e_samples_fname: str, n_samples: int, overwrite: b
             raise IOError("overwriting...")
 
     samples_dataset = load_dataset(e_samples_fpath)
-    e_post = samples_dataset["e_post"]
+    e_post = samples_dataset["e_post"][:, ::trim, :]
     true_g = samples_dataset["true_g"]
     sigma_e = samples_dataset["sigma_e"]
 
