@@ -1,6 +1,7 @@
 
 export CUDA_VISIBLE_DEVICES=""
 export JAX_PLATFORMS="cpu"
+export JAX_ENABLE_X64="False"
 
 # easy, don't need GPU
 # ./get_toy_ellip_samples.py --n-samples 10_000 --seed 42 --tag cpu_test2 --k 10 --obs-noise 1e-4 --shape-noise 1e-3
