@@ -104,7 +104,7 @@ def pipeline_toy_ellips_samples(
 @click.option("--tag", type=str, required=True)
 @click.option("--seed", type=int, default=42)
 @click.option("--g1", type=float, default=0.02)
-@click.option("--g2", type=float, default=0)
+@click.option("--g2", type=float, default=0.0)
 @click.option("-n", "--n-samples", type=int, default=10_000, help="# of gals")
 @click.option("--k", type=int, default=10, help="# int. posterior samples per galaxy.")
 @click.option("--shape-noise", type=float, default=1e-3)  # > OK, 1e-4 not OK :(
