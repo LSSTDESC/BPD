@@ -37,7 +37,7 @@ def shear_loglikelihood_unreduced(
 
     jac = jnp.stack([jac1, jac2], axis=-1)  # shape = (N, K, 2, 2)
     assert jac.shape == (N, K, 2, 2)
-    jacdet = jnp.linalg.det(jac)  # shape = (N, K)
+    jacdet = jnp.abs(jnp.linalg.det(jac))  # shape = (N, K)
 
     e_post_unsheared = inv_shear_transformation(e_post, g)
     e_obs_unsheared_mag = jnp.sqrt(
