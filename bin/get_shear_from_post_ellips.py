@@ -7,7 +7,6 @@ from typing import Callable
 
 import blackjax
 import click
-import jax
 import jax.numpy as jnp
 from jax import jit as jjit
 from jax import random

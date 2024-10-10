@@ -73,6 +73,7 @@ def main(
         b_seeds = seeds[ii * n_vec : (ii + 1) * n_vec]
         e_post, _, _ = vpipe1(b_seeds)
         e_post_trimmed = e_post[:, :, ::trim, :]
+
         g_samples = vpipe2(b_seeds, e_post_trimmed)
 
         fpath_ellip = dirpath / f"e_post_{b_seeds[0]}_{b_seeds[-1]}.npy"
