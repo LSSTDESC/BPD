@@ -1,7 +1,6 @@
 
 export CUDA_VISIBLE_DEVICES=$1
 echo "Using CUDA ${CUDA_VISIBLE_DEVICES}"
-export JAX_ENABLE_X64="False"
 START=$2
 END=$3
 
