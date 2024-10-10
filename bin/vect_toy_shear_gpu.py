@@ -46,7 +46,7 @@ def main(
     dirpath = DATA_DIR / "cache_chains" / tag
 
     if not dirpath.exists():
-        dirpath.mkdir(exist_ok=False)
+        dirpath.mkdir(exist_ok=True)
 
     n_batch = ceil(len(seeds) / n_vec)
 
