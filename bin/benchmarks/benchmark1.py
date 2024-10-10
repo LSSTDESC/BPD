@@ -37,8 +37,6 @@ GPU = jax.devices("gpu")[0]
 
 jax.config.update("jax_default_device", GPU)
 
-jax.config.update("jax_enable_x64", True)
-
 
 PIXEL_SCALE = 0.2
 BACKGROUND = 1e4
@@ -310,7 +308,6 @@ def main():
     filename = f"results_benchmark1_{TAG}.npy"
     filepath = SCRATCH_DIR.joinpath(filename)
     jnp.save(filepath, results)
-
 
     _log_setup(snr)
     with open(LOG_FILE, "a") as f:

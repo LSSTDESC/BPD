@@ -37,8 +37,6 @@ GPU = jax.devices("gpu")[0]
 
 jax.config.update("jax_default_device", GPU)
 
-jax.config.update("jax_enable_x64", True)
-
 LOG_FILE = Path(__file__).parent / "log.txt"
 
 

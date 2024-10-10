@@ -36,8 +36,6 @@ GPU = jax.devices("gpu")[0]
 
 jax.config.update("jax_default_device", GPU)
 
-jax.config.update("jax_enable_x64", True)
-
 
 PIXEL_SCALE = 0.2
 BACKGROUND = 1e4
