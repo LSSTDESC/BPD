@@ -23,6 +23,8 @@ def draw_gal(lf):
     return image.array
 
 
-a = draw_gal(jnp.array([1e4, 1e5]))
-assert a.ndim == 3
-assert a.shape == (2, 101, 101)
+def test_jax_galsim():
+
+    a = draw_gal(jnp.array([1e4, 1e5]))
+    assert a.ndim == 3
+    assert a.shape == (2, 101, 101)
