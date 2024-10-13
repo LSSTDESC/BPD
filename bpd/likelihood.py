@@ -25,25 +25,23 @@ def shear_loglikelihood_unreduced(
     # for num we do trick p(w_n' | g, alpha )  = p(w_n' \cross^{-1} g | alpha ) = p(w_n | alpha) * |jac(w_n / w_n')|
 
     # shape = (N, K, 2)
-    jac1 = vmap(
+    grad1 = vmap(
         vmap(grad(inv_shear_func1, argnums=0), in_axes=(0, None)),
         in_axes=(0, None),
     )(e_post, g)
 
-    jac2 = vmap(
+    grad2 = vmap(
         vmap(grad(inv_shear_func2, argnums=0), in_axes=(0, None)),
         in_axes=(0, None),
     )(e_post, g)
 
-    jac = jnp.stack([jac1, jac2], axis=-1)  # shape = (N, K, 2, 2)
-    assert jac.shape == (N, K, 2, 2)
-    jacdet = jnp.abs(jnp.linalg.det(jac))  # shape = (N, K)
+    absjacdet = jnp.abs(grad1[..., 0] * grad2[..., 1] - grad1[..., 1] * grad2[..., 0])
 
     e_post_unsheared = inv_shear_transformation(e_post, g)
     e_obs_unsheared_mag = jnp.sqrt(
         e_post_unsheared[..., 0] ** 2 + e_post_unsheared[..., 1] ** 2
     )
-    num = prior(e_obs_unsheared_mag) * jacdet  # (N, K)
+    num = prior(e_obs_unsheared_mag) * absjacdet  # (N, K)
 
     ratio = jnp.log((1 / K)) + jsp.special.logsumexp(
         jnp.log(num) - jnp.log(denom), axis=-1
