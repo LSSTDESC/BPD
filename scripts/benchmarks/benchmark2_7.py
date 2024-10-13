@@ -23,8 +23,8 @@ from jax import random, vmap
 from jax.scipy import stats
 
 from bpd.chains import inference_loop
-from bpd.draw import add_noise
 from bpd.measure import get_snr
+from bpd.noise import add_noise
 
 print("devices available:", jax.devices())
 
