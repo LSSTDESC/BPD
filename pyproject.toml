@@ -18,7 +18,7 @@ dev = ["pytest"]
 home = "https://github.com/LSSTDESC/BPD"
 
 [tool.setuptools.packages.find]
-include = ["bpd*"]
+include = ["bpd*", "scripts*"]
 
 
 [tool.flake8]
