@@ -16,13 +16,25 @@ def test_shear_inference_toy_ellipticities(seed):
     sigma_m = 1e-4
 
     e_post = pipeline_toy_ellips_samples(
-        seed, g1=g1, g2=g2, sigma_e=sigma_e, sigma_m=sigma_m, n_samples=1000, k=100
+        seed,
+        g1=g1,
+        g2=g2,
+        sigma_e=sigma_e,
+        sigma_e_int=2 * sigma_e,
+        sigma_m=sigma_m,
+        n_samples=1000,
+        k=100,
     )[0]
     assert e_post.shape == (1000, 100, 2)
     e_post_trimmed = e_post[:, ::10, :]
 
     shear_samples = pipeline_shear_inference(
-        seed, e_post_trimmed, jnp.array([g1, g2]), sigma_e=sigma_e, n_samples=1000
+        seed,
+        e_post_trimmed,
+        jnp.array([g1, g2]),
+        sigma_e=sigma_e,
+        sigma_e_int=2 * sigma_e,
+        n_samples=1000,
     )
     assert shear_samples.shape == (1000, 2)
     assert jnp.abs((jnp.mean(shear_samples[:, 0]) - g1) / g1) <= 3e-3
