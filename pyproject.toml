@@ -9,7 +9,16 @@ description = "Bayesian Pixel Domain method for shear inference."
 version = "0.0.1"
 license = { file = "LICENSE" }
 readme = "README.md"
-dependencies = ["numpy >=1.18.0", "galsim >=2.3.0", "jax", "jaxlib", "blackjax>=1.2.0", "click"]
+dependencies = [
+    "numpy >=1.18.0",
+    "galsim >=2.3.0",
+    "jax >=0.4.34",
+    "jaxlib",
+    "blackjax >=1.2.0",
+    "click",
+    "ChainConsumer >=1.1.0",
+    "numpyro >=0.15.0",
+]
 
 [project.optional-dependencies]
 dev = ["pytest"]
