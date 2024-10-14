@@ -41,9 +41,9 @@ def do_inference(
     e_obs: ArrayLike,
     sigma_m: float,
     sigma_e: float,
+    interim_prior: Callable,
     k: int,
 ):
-    interim_prior = partial(ellip_mag_prior, sigma=sigma_e * 2)
     _logtarget = partial(
         log_target, e_obs=e_obs, sigma_m=sigma_m, interim_prior=interim_prior
     )
@@ -74,6 +74,7 @@ def pipeline_toy_ellips_samples(
     sigma_m: float,
     n_samples: int,
     k: int,
+    sigma_e_int: float | None = None,  # interim posterior sigma, default 2 * sigma_e
 ):
     rng_key = random.key(seed)
 
@@ -85,9 +86,18 @@ def pipeline_toy_ellips_samples(
         k1, true_g, n=n_samples, sigma_m=sigma_m, sigma_e=sigma_e
     )
 
+    _sigma_e_int = sigma_e_int if sigma_e_int is not None else 2 * sigma_e
+    interim_prior = partial(ellip_mag_prior, sigma=_sigma_e_int)
+
     keys2 = random.split(k2, n_samples)
     _do_inference_jitted = jjit(
-        partial(do_inference, sigma_e=sigma_e, sigma_m=sigma_m, k=k)
+        partial(
+            do_inference,
+            sigma_e=sigma_e,
+            sigma_m=sigma_m,
+            interim_posterior=interim_prior,
+            k=k,
+        )
     )
     _do_inference = vmap(_do_inference_jitted, in_axes=(0, 0, 0))
 
