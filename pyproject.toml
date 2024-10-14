@@ -9,10 +9,17 @@ description = "Bayesian Pixel Domain method for shear inference."
 version = "0.0.1"
 license = { file = "LICENSE" }
 readme = "README.md"
-dependencies = ["numpy >=1.18.0", "galsim >=2.3.0", "jax", "jaxlib", "blackjax>=1.2.0", "click"]
+dependencies = [
+    "numpy >=1.18.0",
+    "galsim >=2.3.0",
+    "jax >=0.4.30",
+    "jaxlib",
+    "blackjax >=1.2.0",
+    "numpyro >=0.15.0",
+]
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest", "click"]
 
 [project.urls]
 home = "https://github.com/LSSTDESC/BPD"
