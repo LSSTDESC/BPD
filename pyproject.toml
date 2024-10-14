@@ -15,12 +15,11 @@ dependencies = [
     "jax >=0.4.30",
     "jaxlib",
     "blackjax >=1.2.0",
-    "click",
     "numpyro >=0.15.0",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest", "click"]
 
 [project.urls]
 home = "https://github.com/LSSTDESC/BPD"
