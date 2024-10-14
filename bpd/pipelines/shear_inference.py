@@ -7,7 +7,6 @@ from jax import jit as jjit
 from jax import random
 from jax._src.prng import PRNGKeyArray
 from jax.scipy import stats
-from jax.typing import ArrayLike
 
 from bpd.chains import inference_loop
 from bpd.likelihood import shear_loglikelihood
@@ -43,8 +42,8 @@ def do_inference(
 
 def pipeline_shear_inference(
     rng_key: PRNGKeyArray,
-    e_post: ArrayLike,
-    true_g: ArrayLike,
+    e_post: Array,
+    true_g: Array,
     sigma_e: float,
     sigma_e_int: float,
     n_samples: int,
