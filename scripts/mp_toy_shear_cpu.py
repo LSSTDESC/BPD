@@ -6,10 +6,10 @@ from functools import partial
 import click
 import jax.numpy as jnp
 import numpy as np
-from get_shear_from_post_ellips import pipeline_shear_inference
-from get_toy_ellip_samples import pipeline_toy_ellips_samples
 
 from bpd import DATA_DIR
+from bpd.pipelines.shear_inference import pipeline_shear_inference
+from bpd.pipelines.toy_ellips import pipeline_toy_ellips_samples
 
 
 @click.command()
@@ -52,6 +52,7 @@ def main(
         sigma_m=obs_noise,
         n_samples=n_samples_gals,
         k=k,
+        sigma_e_int=shape_noise * 2,
     )
     results1 = pool.map(task1, seeds)
     print("INFO: Ellipticity samples obtained")
