@@ -24,6 +24,7 @@ from bpd.pipelines.toy_ellips import pipeline_toy_ellips_samples
 @click.option("--n-samples-shear", type=int, default=3000, help="shear samples")
 @click.option("--k", type=int, default=100, help="# int. posterior samples per galaxy.")
 @click.option("--shape-noise", type=float, default=1e-3)
+@click.option("--sigma-e-int", type=float, default=2e-3)
 @click.option("--obs-noise", type=float, default=1e-4)
 @click.option("--trim", type=int, default=1)
 def main(
@@ -37,6 +38,7 @@ def main(
     n_samples_shear: int,
     k: int,
     shape_noise: float,
+    sigma_e_int: float,
     obs_noise: float,
     trim: int,
 ):
@@ -57,7 +59,7 @@ def main(
         g1=g1,
         g2=g2,
         sigma_e=shape_noise,
-        sigma_e_int=shape_noise * 2,
+        sigma_e_int=sigma_e_int,
         sigma_m=obs_noise,
         n_samples=n_samples_gals,
         k=k,
@@ -66,7 +68,7 @@ def main(
         pipeline_shear_inference,
         true_g=jnp.array([g1, g2]),
         sigma_e=shape_noise,
-        sigma_e_int=shape_noise * 2,
+        sigma_e_int=sigma_e_int,
         n_samples=n_samples_shear,
     )
     vpipe1 = vmap(pipe1, in_axes=(0,))
