@@ -35,7 +35,7 @@ def do_inference(
     init_positions: Array,
     e_obs: Array,
     sigma_m: float,
-    sigma_e: float,
+    initial_step_size: float,
     interim_prior: Callable,
     k: int,
 ):
@@ -51,7 +51,7 @@ def do_inference(
         progress_bar=False,
         is_mass_matrix_diagonal=True,
         max_num_doublings=2,
-        initial_step_size=sigma_e,
+        initial_step_size=initial_step_size,
         target_acceptance_rate=0.80,
     )
 
@@ -86,8 +86,8 @@ def pipeline_toy_ellips_samples(
     _do_inference_jitted = jjit(
         partial(
             do_inference,
-            sigma_e=sigma_e,
             sigma_m=sigma_m,
+            initial_step_size=sigma_e,
             interim_prior=interim_prior,
             k=k,
         )
