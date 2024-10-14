@@ -16,7 +16,6 @@ dependencies = [
     "jaxlib",
     "blackjax >=1.2.0",
     "click",
-    "ChainConsumer >=1.1.0",
     "numpyro >=0.15.0",
 ]
 
