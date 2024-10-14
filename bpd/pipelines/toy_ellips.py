@@ -88,7 +88,7 @@ def pipeline_toy_ellips_samples(
             do_inference,
             sigma_e=sigma_e,
             sigma_m=sigma_m,
-            interim_posterior=interim_prior,
+            interim_prior=interim_prior,
             k=k,
         )
     )

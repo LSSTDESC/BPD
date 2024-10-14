@@ -2,6 +2,7 @@
 
 import jax.numpy as jnp
 import pytest
+from jax import random
 
 from scripts.get_shear_from_post_ellips import pipeline_shear_inference
 from scripts.get_toy_ellip_samples import pipeline_toy_ellips_samples
@@ -10,13 +11,16 @@ from scripts.get_toy_ellip_samples import pipeline_toy_ellips_samples
 @pytest.mark.parametrize("seed", [1234, 4567])
 def test_shear_inference_toy_ellipticities(seed):
 
+    key = random.key(seed)
+    k1, k2 = random.split(key)
+
     g1 = 0.02
     g2 = 0.0
     sigma_e = 1e-3
     sigma_m = 1e-4
 
     e_post = pipeline_toy_ellips_samples(
-        seed,
+        k1,
         g1=g1,
         g2=g2,
         sigma_e=sigma_e,
@@ -29,7 +33,7 @@ def test_shear_inference_toy_ellipticities(seed):
     e_post_trimmed = e_post[:, ::10, :]
 
     shear_samples = pipeline_shear_inference(
-        seed,
+        k2,
         e_post_trimmed,
         jnp.array([g1, g2]),
         sigma_e=sigma_e,
