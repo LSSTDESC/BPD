@@ -38,6 +38,7 @@ def do_inference(
     initial_step_size: float,
     interim_prior: Callable,
     k: int,
+    n_warmup_steps: int = 500,
 ):
     _logtarget = partial(
         log_target, e_obs=e_obs, sigma_m=sigma_m, interim_prior=interim_prior
@@ -55,7 +56,7 @@ def do_inference(
         target_acceptance_rate=0.80,
     )
 
-    (init_states, tuned_params), _ = warmup.run(key1, init_positions, 500)
+    (init_states, tuned_params), _ = warmup.run(key1, init_positions, n_warmup_steps)
     kernel = blackjax.nuts(_logtarget, **tuned_params).step
     states, _ = inference_loop(key2, init_states, kernel=kernel, n_samples=k)
     return states.position
@@ -70,6 +71,7 @@ def pipeline_toy_ellips_samples(
     sigma_m: float,
     n_samples: int,
     k: int,
+    n_warmup_steps: int = 500,
 ):
 
     k1, k2 = random.split(key)
@@ -90,6 +92,7 @@ def pipeline_toy_ellips_samples(
             initial_step_size=sigma_e,
             interim_prior=interim_prior,
             k=k,
+            n_warmup_steps=n_warmup_steps,
         )
     )
     _do_inference = vmap(_do_inference_jitted, in_axes=(0, 0, 0))
