@@ -20,7 +20,11 @@ def logtarget_density(g: Array, e_post: Array, loglikelihood: Callable):
 
 
 def do_inference(
-    rng_key: PRNGKeyArray, init_g: Array, logtarget: Callable, n_samples: int
+    rng_key: PRNGKeyArray,
+    init_g: Array,
+    logtarget: Callable,
+    n_samples: int,
+    n_warmup_steps: int = 500,
 ):
     key1, key2 = random.split(rng_key)
 
@@ -34,7 +38,7 @@ def do_inference(
         target_acceptance_rate=0.80,
     )
 
-    (init_states, tuned_params), _ = warmup.run(key1, init_g, 500)
+    (init_states, tuned_params), _ = warmup.run(key1, init_g, n_warmup_steps)
     kernel = blackjax.nuts(logtarget, **tuned_params).step
     states, _ = inference_loop(key2, init_states, kernel=kernel, n_samples=n_samples)
     return states.position
@@ -47,6 +51,7 @@ def pipeline_shear_inference(
     sigma_e: float,
     sigma_e_int: float,
     n_samples: int,
+    n_warmup_steps: int = 500,
 ):
     prior = partial(ellip_mag_prior, sigma=sigma_e)
     interim_prior = partial(ellip_mag_prior, sigma=sigma_e_int)
@@ -57,7 +62,13 @@ def pipeline_shear_inference(
     )
     _logtarget = partial(logtarget_density, loglikelihood=_loglikelihood, e_post=e_post)
 
-    _do_inference = partial(do_inference, logtarget=_logtarget, n_samples=n_samples)
+    _do_inference = partial(
+        do_inference,
+        logtarget=_logtarget,
+        n_samples=n_samples,
+        n_warmup_steps=n_warmup_steps,
+    )
+
     g_samples = _do_inference(rng_key, true_g)
 
     return g_samples
