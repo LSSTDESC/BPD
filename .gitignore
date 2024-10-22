@@ -163,8 +163,7 @@ cython_debug/
 # personal
 experiments/samples/*.hdf5
 **/slurm-*.out
-**/bash/*.sh
-**/bash/**/*.sh
+**/bash/old/*.sh
 **/logs/**
 **log**.txt
 **/jobs_out/**

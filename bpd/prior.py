@@ -1,5 +1,5 @@
 import jax.numpy as jnp
-from jax import random
+from jax import Array, random
 
 
 def ellip_mag_prior(e, sigma: float):
@@ -68,7 +68,7 @@ inv_shear_func1 = lambda e, g: scalar_inv_shear_transformation(e, g)[0]
 inv_shear_func2 = lambda e, g: scalar_inv_shear_transformation(e, g)[1]
 
 
-def shear_transformation(e, g: tuple[float, float]):
+def shear_transformation(e: Array, g: tuple[float, float]):
     """Transform elliptiticies by a fixed shear.
 
     The transformation we used is equation 3.4b in Seitz & Schneider (1997).
@@ -83,7 +83,7 @@ def shear_transformation(e, g: tuple[float, float]):
     return jnp.stack([e_prime.real, e_prime.imag], axis=-1)
 
 
-def inv_shear_transformation(e, g: tuple[float, float]):
+def inv_shear_transformation(e: Array, g: tuple[float, float]):
     """Same as above but the inverse."""
     e1, e2 = e[..., 0], e[..., 1]
     g1, g2 = g
