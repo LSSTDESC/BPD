@@ -49,7 +49,7 @@ def test_transformation(seed):
 def test_image_shear_commute():
     """Test that the shear operation on galsim commutes with the analytical shear transformation."""
     ellips = (0.0, 0.1, 0.2, -0.1, -0.2)
-    shears = (0.0, -0.01, 0.01, -0.02, 0.02)
+    shears = (0.0, -0.01, 0.01, -0.02, 0.02, 0.05, 0.1, -0.05, -0.1)
     f = 1e3
     hlr = 0.9
     x, y = (1, 1)
@@ -66,5 +66,11 @@ def test_image_shear_commute():
                     im2 = draw_jitted(
                         f=f, hlr=hlr, e1=e1_p, e2=e2_p, g1=0.0, g2=0.0, x=x, y=y
                     )
+                    im3 = draw_jitted(
+                        f=f, hlr=hlr, e1=e1, e2=e2, g1=0.0, g2=0.0, x=x, y=y
+                    )
 
                     np.testing.assert_allclose(im1, im2, rtol=1e-6, atol=1e-10)
+
+                    if not (g1 == 0 and g2 == 0):
+                        assert not np.allclose(im3, im1, rtol=1e-6, atol=1e-10)
