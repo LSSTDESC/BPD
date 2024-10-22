@@ -12,9 +12,7 @@ from bpd.pipelines.toy_ellips import pipeline_toy_ellips_samples
 
 
 @click.command()
-@click.option(
-    "--n-vec", type=int, default=100, help="# shear chains to run in parallel"
-)
+@click.option("--n-vec", type=int, default=50, help="# shear chains in parallel")
 @click.option("--tag", type=str, required=True)
 @click.option("--seed", type=int, required=True)
 @click.option("--n-seeds", type=int, required=True)

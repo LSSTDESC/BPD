@@ -167,3 +167,4 @@ experiments/samples/*.hdf5
 **/bash/**/*.sh
 **/logs/**
 **log**.txt
+**/jobs_out/**
