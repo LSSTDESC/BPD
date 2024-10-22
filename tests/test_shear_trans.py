@@ -73,4 +73,4 @@ def test_image_shear_commute():
                     np.testing.assert_allclose(im1, im2, rtol=1e-6, atol=1e-10)
 
                     if not (g1 == 0 and g2 == 0):
-                        assert not np.allclose(im1, im3, rtol=1e-6, atol=1e-10)
+                        assert not np.allclose(im3, im1, rtol=1e-6, atol=1e-10)
