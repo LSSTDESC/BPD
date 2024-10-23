@@ -9,7 +9,7 @@ from jax._src.prng import PRNGKeyArray
 def init_with_truth(
     rng_key: PRNGKeyArray, true_params: dict[str, float], *, data: Array = None
 ):
-    """Seems useless but we can actually vmap this easily."""
+    """Seems useless but we it can actually be helpful when vmapping this function."""
     new = {}
     for p in true_params:
         new[p] = true_params[p]
