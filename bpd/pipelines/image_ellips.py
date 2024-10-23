@@ -27,7 +27,7 @@ def logprior(
     prior = jnp.array(0.0)
 
     f1, f2 = flux_bds
-    prior += stats.uniform.logpdf(params["f"], f1, f2 - f1)
+    prior += stats.uniform.logpdf(params["lf"], f1, f2 - f1)
 
     h1, h2 = hlr_bds
     prior += stats.uniform.logpdf(params["hlr"], h1, h2 - h1)
@@ -45,10 +45,11 @@ def logprior(
 def loglikelihood(
     params: dict[str, Array], data: Array, *, draw_fnc: Callable, background: float
 ):
-    _full_params = {**{"g1": 0.0, "g2": 0.0}, **params}  # function is more general
-    _full_params["f"] = 10 ** _full_params["f"]  # log-flux
+    _draw_params = {**{"g1": 0.0, "g2": 0.0}, **params}  # function is more general
+    lf = _draw_params.pop("lf")
+    _draw_params["f"] = 10**lf
 
-    model = draw_fnc(**_full_params)
+    model = draw_fnc(**_draw_params)
     likelihood_pp = stats.norm.logpdf(data, loc=model, scale=jnp.sqrt(background))
     likelihood = jnp.sum(likelihood_pp)
     return likelihood
@@ -101,8 +102,8 @@ def do_inference(
 
 def get_target_galaxy_params_simple(
     rng_key: PRNGKeyArray,
-    sigma_e=0.3,
-    f: float = 1000.0,
+    sigma_e: float = 1e-3,
+    lf: float = 3.0,
     hlr: float = 1.0,
     x: float = 0.0,  # pixels
     y: float = 0.0,
@@ -112,7 +113,7 @@ def get_target_galaxy_params_simple(
     """Fix all parameters except ellipticity, which come from prior."""
     e = sample_ellip_prior(rng_key, sigma=sigma_e, n=1)
     return {
-        "f": f,
+        "lf": lf,
         "hlr": hlr,
         "e1": e[0, 0],
         "e1": e[0, 1],
@@ -133,6 +134,7 @@ def get_target_images_single(
     pixel_scale: float = 0.2,
 ):
     """In this case, we sample multiple noise realizations of the same galaxy."""
+    assert "f" in single_galaxy_params and "lf" not in single_galaxy_params
 
     noiseless = draw_gaussian_galsim(
         **single_galaxy_params,
@@ -143,9 +145,9 @@ def get_target_images_single(
     return add_noise(rng_key, noiseless, bg=background, n=n_samples)
 
 
-# TODO: avoid vmapping over assumed shear?
-def pipeline_interim_samples(
+def pipeline_image_interim_samples(
     key: PRNGKeyArray,
+    true_params: dict[str, float],
     images: Array,
     *,
     initialization_fnc: Callable,
@@ -166,7 +168,7 @@ def pipeline_interim_samples(
     k1, k2 = random.split(key)
     keys2 = random.split(k2, n_galaxies)
 
-    init_positions = initialization_fnc(k1, images)
+    init_positions = initialization_fnc(k1, true_params=true_params, data=images)
 
     _draw_fnc = partial(
         draw_gaussian, pixel_scale=pixel_scale, slen=slen, psf_hlr=psf_hlr
