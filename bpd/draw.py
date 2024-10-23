@@ -35,7 +35,7 @@ def draw_gaussian_galsim(
     e2: float,
     g1: float,
     g2: float,
-    x: float,
+    x: float,  # pixels
     y: float,
     pixel_scale: float = 0.2,
     slen: int = 53,
