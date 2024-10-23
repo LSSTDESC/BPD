@@ -1,7 +1,8 @@
 import numpy as np
+from jax.typing import ArrayLike
 
 
-def get_snr(im: np.ndarray, background: float) -> float:
+def get_snr(im: ArrayLike, background: float) -> float:
     """Calculate the signal-to-noise ratio of an image.
 
     Args:
