@@ -15,7 +15,7 @@ def draw_gaussian(
     pixel_scale: float = 0.2,
     slen: int = 53,
     psf_hlr: float = 0.7,
-    fft_size: int = 256,
+    fft_size: int = 256,  # rule of thumb, at least 4 times `slen`
 ):
     gsparams = GSParams(minimum_fft_size=fft_size, maximum_fft_size=fft_size)
 
