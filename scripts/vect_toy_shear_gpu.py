@@ -20,11 +20,11 @@ from bpd.pipelines.toy_ellips import pipeline_toy_ellips_samples
 @click.option("--g2", type=float, default=0.0)
 @click.option("--n-samples-gals", type=int, default=1000, help="# of gals")
 @click.option("--n-samples-shear", type=int, default=3000, help="shear samples")
-@click.option("--k", type=int, default=100, help="# int. posterior samples per galaxy.")
+@click.option("--k", type=int, default=1000, help="# int. post. samples galaxy.")
 @click.option("--shape-noise", type=float, default=1e-3)
-@click.option("--sigma-e-int", type=float, default=2e-3)
+@click.option("--sigma-e-int", type=float, default=1e-2)
 @click.option("--obs-noise", type=float, default=1e-4)
-@click.option("--trim", type=int, default=1)
+@click.option("--trim", type=int, default=10)
 def main(
     n_vec: int,
     tag: str,
