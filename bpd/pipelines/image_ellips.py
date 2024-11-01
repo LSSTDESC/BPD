@@ -66,7 +66,7 @@ def logprior(
     params: dict[str, Array],
     flux_bds: tuple = (-1.0, 9.0),
     hlr_bds: tuple = (0.01, 5.0),
-    sigma_e: float = 1e-2,
+    sigma_e: float = 3e-2,
     sigma_x: float = 1.0,  # pixels
 ) -> Array:
     prior = jnp.array(0.0)
@@ -151,7 +151,7 @@ def pipeline_image_interim_samples(
     target_image: Array,
     *,
     initialization_fnc: Callable,
-    sigma_e_int: float = 1e-2,
+    sigma_e_int: float = 3e-2,
     n_samples: int = 100,
     max_num_doublings: int = 5,
     initial_step_size: float = 1e-3,

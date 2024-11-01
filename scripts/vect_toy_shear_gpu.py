@@ -22,7 +22,7 @@ from bpd.pipelines.toy_ellips import pipeline_toy_ellips_samples
 @click.option("--n-samples-shear", type=int, default=3000, help="shear samples")
 @click.option("--k", type=int, default=1000, help="# int. post. samples galaxy.")
 @click.option("--shape-noise", type=float, default=1e-3)
-@click.option("--sigma-e-int", type=float, default=2e-2)
+@click.option("--sigma-e-int", type=float, default=3e-2)
 @click.option("--obs-noise", type=float, default=1e-4)
 @click.option("--trim", type=int, default=10)
 def main(
