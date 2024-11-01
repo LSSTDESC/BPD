@@ -18,7 +18,7 @@ from bpd.prior import ellip_mag_prior, sample_ellip_prior
 
 def get_target_galaxy_params_simple(
     rng_key: PRNGKeyArray,
-    sigma_e: float = 1e-3,
+    shape_noise: float = 1e-3,
     lf: float = 3.0,
     hlr: float = 1.0,
     x: float = 0.0,  # pixels
@@ -27,7 +27,7 @@ def get_target_galaxy_params_simple(
     g2: float = 0.0,
 ):
     """Fix all parameters except ellipticity, which come from prior."""
-    e = sample_ellip_prior(rng_key, sigma=sigma_e, n=1)
+    e = sample_ellip_prior(rng_key, sigma=shape_noise, n=1)
     return {
         "lf": lf,
         "hlr": hlr,
@@ -162,6 +162,7 @@ def pipeline_image_interim_samples(
     pixel_scale: float = 0.2,
     psf_hlr: float = 0.7,
     background: float = 1.0,
+    fft_size: int = 256,
 ):
 
     k1, k2 = random.split(rng_key)
@@ -169,7 +170,11 @@ def pipeline_image_interim_samples(
     init_position = initialization_fnc(k1, true_params=true_params, data=target_image)
 
     _draw_fnc = partial(
-        draw_gaussian, pixel_scale=pixel_scale, slen=slen, psf_hlr=psf_hlr
+        draw_gaussian,
+        pixel_scale=pixel_scale,
+        slen=slen,
+        psf_hlr=psf_hlr,
+        fft_size=fft_size,
     )
     _loglikelihood = partial(loglikelihood, draw_fnc=_draw_fnc, background=background)
     _logprior = partial(logprior, sigma_e=sigma_e_int)
