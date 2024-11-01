@@ -13,11 +13,12 @@ def get_contour_plot(
     names: list[str],
     truth: dict[str, float],
     figsize: tuple[float, float] = (7, 7),
+    kde: bool | int | float = False,
 ) -> Figure:
     c = ChainConsumer()
     for name, samples in zip(names, samples_list):
         df = pd.DataFrame.from_dict(samples)
-        c.add_chain(Chain(samples=df, name=name))
+        c.add_chain(Chain(samples=df, name=name, kde=kde))
     c.add_truth(Truth(location=truth))
     return c.plotter.plot(figsize=figsize)
 
