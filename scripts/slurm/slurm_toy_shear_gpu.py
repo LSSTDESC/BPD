@@ -18,6 +18,8 @@ from bpd import DATA_DIR
 @click.option("--n-seeds-per-task", default=250, type=int, show_default=True)
 @click.option("--n-gals", default=1000, type=int, show_default=True)
 @click.option("--n-samples-shear", default=3000, type=int, show_default=True)
+@click.option("--g1", type=float, default=0.02)
+@click.option("--g2", type=float, default=0.0)
 @click.option(
     "--add-extra",
     is_flag=True,
@@ -37,6 +39,8 @@ def main(
     n_seeds_per_task: int,
     n_gals: int,
     n_samples_shear: int,
+    g1: float,
+    g2: float,
     add_extra: bool,
     qos: str,
 ):
@@ -47,7 +51,7 @@ def main(
 
     jobfile = setup_sbatch_job_gpu(jobname, time, nodes=1, n_tasks_per_node=4, qos=qos)
 
-    template_cmd = "python /global/u2/i/imendoza/BPD/scripts/vect_toy_shear_gpu.py --n-samples-gals {n_gals} --n-samples-shear {n_samples_shear} --n-vec {n_vec} --seed {{seed}}  --n-seeds {n_seeds_per_task} --tag {jobname} --k {k} --trim {trim}"
+    template_cmd = "python /global/u2/i/imendoza/BPD/scripts/vect_toy_shear_gpu.py --n-samples-gals {n_gals} --n-samples-shear {n_samples_shear} --n-vec {n_vec} --seed {{seed}}  --n-seeds {n_seeds_per_task} --tag {jobname} --k {k} --trim {trim} --g1 {g1} --g2 {g2}"
 
     base_cmd = template_cmd.format(
         n_gals=n_gals,
@@ -57,6 +61,8 @@ def main(
         jobname=jobname,
         k=k,
         trim=trim,
+        g1=g1,
+        g2=g2,
     )
 
     # append to jobfile the  commands.
