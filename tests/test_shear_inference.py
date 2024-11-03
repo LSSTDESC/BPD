@@ -10,7 +10,6 @@ from scripts.get_toy_ellip_samples import pipeline_toy_ellips_samples
 
 @pytest.mark.parametrize("seed", [1234, 4567])
 def test_shear_inference_toy_ellipticities(seed):
-
     key = random.key(seed)
     k1, k2 = random.split(key)
 
