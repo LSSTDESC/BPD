@@ -86,4 +86,4 @@ exclude = ["*.ipynb", "scripts/image_shear_gpu_one_galaxy.py", "scripts/benchmar
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-ra -q"
+addopts = "-rv"
