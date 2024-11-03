@@ -16,7 +16,7 @@ def get_contour_plot(
     kde: bool | int | float = False,
 ) -> Figure:
     c = ChainConsumer()
-    for name, samples in zip(names, samples_list):
+    for name, samples in zip(names, samples_list, strict=False):
         df = pd.DataFrame.from_dict(samples)
         c.add_chain(Chain(samples=df, name=name, kde=kde))
     c.add_truth(Truth(location=truth))
