@@ -1,10 +1,13 @@
-import numpy as np
+import jax.numpy as jnp
+from jax import random
+from jax._src.prng import PRNGKeyArray
+from jax.typing import ArrayLike
 
 
 def add_noise(
-    x: np.ndarray,
+    rng_key: PRNGKeyArray,
+    x: ArrayLike,
     bg: float,
-    rng: np.random.Generator = np.random.default_rng(42),
     n: int = 1,
 ):
     """Produce `n` independent Gaussian noise realizations of a given image `x`.
@@ -14,5 +17,5 @@ def add_noise(
     assert isinstance(bg, float) or bg.shape == ()
     x = x.reshape(1, *x.shape)
     x = x.repeat(n, axis=0)
-    noise = rng.normal(loc=0, scale=np.sqrt(bg), size=x.shape)
+    noise = random.normal(rng_key, shape=x.shape) * jnp.sqrt(bg)
     return x + noise
