@@ -44,7 +44,6 @@ def main(
     add_extra: bool,
     qos: str,
 ):
-
     tagpath = DATA_DIR / "cache_chains" / jobname
     if not add_extra:
         assert not tagpath.exists()
@@ -80,7 +79,7 @@ def main(
     with open(jobfile, "a") as f:
         f.write("\nwait")
 
-    subprocess.run(f"sbatch {jobfile.as_posix()}", shell=True)
+    subprocess.run(f"sbatch {jobfile.as_posix()}", shell=True, check=False)
 
 
 if __name__ == "__main__":
