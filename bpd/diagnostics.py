@@ -24,7 +24,7 @@ def get_contour_plot(
 
 
 def get_gauss_pc_fig(
-    ax: Axes, samples: np.ndarray, truth: float, param_name: str = None
+    ax: Axes, samples: np.ndarray, truth: float, param_name: str | None = None
 ) -> None:
     """Get a marginal pc figure assuming Gaussian distribution of samples."""
     assert samples.ndim == 2  # (n_chains, n_samples)
@@ -49,7 +49,7 @@ def get_gauss_pc_fig(
 
 
 def get_pc_fig(
-    ax: Axes, samples: np.ndarray, truth: float, param_name: str = None
+    ax: Axes, samples: np.ndarray, truth: float, param_name: str | None = None
 ) -> None:
     """Get a marginal probability calibration figure using `hpdi` from `numpyro`."""
     assert samples.ndim == 2  # (n_chains, n_samples)

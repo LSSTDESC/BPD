@@ -4,9 +4,8 @@ from typing import Callable
 import blackjax
 import jax.numpy as jnp
 import jax.scipy as jsp
-from jax import Array
+from jax import Array, random, vmap
 from jax import jit as jjit
-from jax import random, vmap
 from jax._src.prng import PRNGKeyArray
 
 from bpd.chains import inference_loop
@@ -73,7 +72,6 @@ def pipeline_toy_ellips_samples(
     k: int,
     n_warmup_steps: int = 500,
 ):
-
     k1, k2 = random.split(key)
 
     true_g = jnp.array([g1, g2])

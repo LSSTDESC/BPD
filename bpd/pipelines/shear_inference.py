@@ -2,9 +2,8 @@ from functools import partial
 from typing import Callable
 
 import blackjax
-from jax import Array
+from jax import Array, random
 from jax import jit as jjit
-from jax import random
 from jax._src.prng import PRNGKeyArray
 from jax.scipy import stats
 

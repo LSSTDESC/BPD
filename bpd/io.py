@@ -11,7 +11,6 @@ from jax import Array
 def save_dataset(
     ds: dict[str, Array], fpath: str | Path, overwrite: bool = False
 ) -> None:
-
     if Path(fpath).exists() and not overwrite:
         raise IOError("overwriting existing ds")
     assert Path(fpath).suffix == ".npz"

@@ -17,7 +17,7 @@ def shear_loglikelihood_unreduced(
     # the priors are callables for now on only ellipticities
     # the interim_prior should have been used when obtaining e_obs from the chain (i.e. for now same sigma)
     # normalizatoin in priors can be ignored for now as alpha is fixed.
-    N, K, _ = e_post.shape
+    _, K, _ = e_post.shape  # (N, K, 2)
 
     e_post_mag = jnp.sqrt(e_post[..., 0] ** 2 + e_post[..., 1] ** 2)
     denom = interim_prior(e_post_mag)  # (N, K), can ignore angle in prior as uniform
