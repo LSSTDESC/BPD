@@ -4,8 +4,8 @@ import jax.numpy as jnp
 import pytest
 from jax import random
 
-from scripts.get_shear_from_post_ellips import pipeline_shear_inference
-from scripts.get_toy_ellip_samples import pipeline_toy_ellips_samples
+from bpd.pipelines.shear_inference import pipeline_shear_inference
+from bpd.pipelines.toy_ellips import pipeline_toy_ellips_samples
 
 
 @pytest.mark.parametrize("seed", [1234, 4567])
