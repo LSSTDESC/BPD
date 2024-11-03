@@ -30,6 +30,7 @@ jobs:
           python -m pip install -U pip
           python -m pip install .
           python -m pip install .[dev]
+          python -m pip install git+https://github.com/GalSim-developers/JAX-GalSim.git
 
       - name: Run Ruff
         run: ruff check --output-format=github .
