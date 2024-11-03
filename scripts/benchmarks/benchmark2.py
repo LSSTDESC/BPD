@@ -84,7 +84,7 @@ N_CHAINS_PER_OBJ = 4
 def sample_ball(rng_key, center_params: dict):
     new = {}
     keys = random.split(rng_key, len(center_params.keys()))
-    rng_key_dict = {p: k for p, k in zip(center_params, keys)}
+    rng_key_dict = {p: k for p, k in zip(center_params, keys, strict=False)}
     for p in center_params:
         centr = center_params[p]
         if p == "f":
@@ -130,7 +130,6 @@ def draw_gal(f, hlr, g1, g2, x, y):
 
 
 def _logprob_fn(params, data):
-
     # prior
     prior = jnp.array(0.0, device=GPU)
     for p in ("f", "hlr", "g1", "g2"):  # uniform priors
@@ -188,7 +187,6 @@ def _log_setup(snr: float):
 
 # vmap only rng_key
 def do_warmup(rng_key, init_position: dict, data):
-
     _logdensity = partial(_logprob_fn, data=data)
 
     warmup = blackjax.window_adaptation(
@@ -271,7 +269,6 @@ def main():
         _data_ii = data_gpu[:n_obj]
 
         if ii == 0:
-
             # compilation times
             t1 = time.time()
             (_sts, _tp), _ = jax.block_until_ready(
