@@ -86,4 +86,5 @@ exclude = ["*.ipynb", "scripts/image_shear_gpu_one_galaxy.py", "scripts/benchmar
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-rv"
+addopts = "-rav"
+filterwarnings = ["ignore::DeprecationWarning:tensorflow.*"]
