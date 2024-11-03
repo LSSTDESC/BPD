@@ -21,6 +21,7 @@ def save_dataset(
 def load_dataset(fpath: str) -> dict[str, Array]:
     assert Path(fpath).exists(), "file path does not exists"
     assert Path(fpath).suffix == ".npz"
+
     ds = {}
 
     npzfile = jnp.load(fpath)
