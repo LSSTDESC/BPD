@@ -79,7 +79,7 @@ exclude = ["*.ipynb"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W", "B", "SIM", "PLE", "PLC", "PLW", "RUF"]
-ignore = ["C901", "E203", "E501", "E731", "PLC0206"]
+ignore = ["C901", "E203", "E501", "E731", "PLC0206", "RUF027"]
 preview = true
 exclude = ["*.ipynb"]
 
