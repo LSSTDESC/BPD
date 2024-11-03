@@ -35,7 +35,6 @@ def main(
     trim: int,
     overwrite: bool,
 ):
-
     # directory structure
     dirpath = DATA_DIR / "cache_chains" / tag
     assert dirpath.exists()
@@ -44,9 +43,8 @@ def main(
     old_seed = _extract_seed(e_samples_fname)
     fpath = DATA_DIR / "cache_chains" / tag / f"g_samples_{old_seed}_{seed}.npy"
 
-    if fpath.exists():
-        if not overwrite:
-            raise IOError("overwriting...")
+    if fpath.exists() and not overwrite:
+        raise IOError("overwriting...")
 
     samples_dataset = load_dataset(e_samples_fpath)
     e_post = samples_dataset["e_post"][:, ::trim, :]

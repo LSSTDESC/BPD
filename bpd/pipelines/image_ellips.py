@@ -3,16 +3,14 @@ from typing import Callable
 
 import blackjax
 import jax.numpy as jnp
-from jax import Array
+from jax import Array, random
 from jax import jit as jjit
-from jax import random
 from jax._src.prng import PRNGKeyArray
 from jax.scipy import stats
 
 from bpd.chains import inference_loop
 from bpd.draw import draw_gaussian, draw_gaussian_galsim
 from bpd.noise import add_noise
-from bpd.pipelines.toy_ellips import do_inference
 from bpd.prior import ellip_mag_prior, sample_ellip_prior
 
 
@@ -122,7 +120,6 @@ def do_inference(
     target_acceptance_rate: float = 0.80,
     n_samples: int = 100,
 ):
-
     key1, key2 = random.split(rng_key)
 
     _logdensity = partial(logtarget_fnc, data=data)
@@ -164,7 +161,6 @@ def pipeline_image_interim_samples(
     background: float = 1.0,
     fft_size: int = 256,
 ):
-
     k1, k2 = random.split(rng_key)
 
     init_position = initialization_fnc(k1, true_params=true_params, data=target_image)

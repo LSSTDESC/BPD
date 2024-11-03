@@ -82,7 +82,7 @@ ALL_N_CHAINS = (1, 5, 10, 25, 50, 100, 150, 200)
 def sample_ball(rng_key, center_params: dict):
     new = {}
     keys = random.split(rng_key, len(center_params.keys()))
-    rng_key_dict = {p: k for p, k in zip(center_params, keys)}
+    rng_key_dict = {p: k for p, k in zip(center_params, keys, strict=False)}
     for p in center_params:
         centr = center_params[p]
         if p == "f":
@@ -128,7 +128,6 @@ def draw_gal(f, hlr, g1, g2, x, y):
 
 
 def _logprob_fn(params, data):
-
     # prior
     prior = jnp.array(0.0, device=GPU)
     for p in ("f", "hlr", "g1", "g2"):  # uniform priors
@@ -148,7 +147,7 @@ def _logprob_fn(params, data):
 
 
 def _log_setup(snr: float):
-    with open(LOG_FILE, "a") as f:
+    with open(LOG_FILE, "a", encoding="utf-8") as f:
         print(file=f)
         print(
             f"""Running benchmark 1 with configuration as follows. Variable number of chains.
@@ -186,7 +185,6 @@ def _log_setup(snr: float):
 
 # vmap only rng_key
 def do_warmup(rng_key, init_position: dict, data):
-
     _logdensity = partial(_logprob_fn, data=data)
 
     warmup = blackjax.window_adaptation(
@@ -258,7 +256,6 @@ def main():
         _init_positions = {p: q[:n_chains] for p, q in all_init_positions.items()}
 
         if ii == 0:
-
             # compilation times
             t1 = time.time()
             (_sts, _tp), _ = jax.block_until_ready(
@@ -310,7 +307,7 @@ def main():
     jnp.save(filepath, results)
 
     _log_setup(snr)
-    with open(LOG_FILE, "a") as f:
+    with open(LOG_FILE, "a", encoding="utf-8") as f:
         print(file=f)
         print(f"results were saved to {filepath}", file=f)
 

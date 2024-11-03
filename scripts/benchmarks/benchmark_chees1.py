@@ -19,7 +19,6 @@ import jax.numpy as jnp
 import jax_galsim as xgalsim
 import numpy as np
 import optax
-from jax import jit as jjit
 from jax import random, vmap
 from jax.scipy import stats
 
@@ -87,7 +86,7 @@ ALL_N_CHAINS = (1, 5, 10, 25, 50, 100, 150, 200, 300, 500)
 def sample_ball(rng_key, center_params: dict):
     new = {}
     keys = random.split(rng_key, len(center_params.keys()))
-    rng_key_dict = {p: k for p, k in zip(center_params, keys)}
+    rng_key_dict = {p: k for p, k in zip(center_params, keys, strict=False)}
     for p in center_params:
         centr = center_params[p]
         if p == "f":
@@ -133,7 +132,6 @@ def draw_gal(f, hlr, g1, g2, x, y):
 
 
 def _logprob_fn(params, data):
-
     # prior
     prior = jnp.array(0.0, device=GPU)
     for p in ("f", "hlr", "g1", "g2"):  # uniform priors
@@ -153,15 +151,15 @@ def _logprob_fn(params, data):
 
 
 def _log_setup(snr: float):
-    with open(LOG_FILE, "a") as f:
+    with open(LOG_FILE, "a", encoding="utf-8") as f:
         print(file=f)
         print(
             f"""Running benchmark chees 1 with configuration as follows. Variable number of chains.
-    
+
     The sampler used is NUTS with standard warmup.
 
     TAG: {TAG}
-    SEED: {SEED} 
+    SEED: {SEED}
 
     Overall sampler configuration (fixed):
         n_samples: {N_SAMPLES}
@@ -183,7 +181,7 @@ def _log_setup(snr: float):
     other parameters:
         slen: {SLEN}
         psf_hlr: {PSF_HLR}
-        background: {BACKGROUND}  
+        background: {BACKGROUND}
         snr: {snr}
     """,
             file=f,
@@ -292,7 +290,7 @@ def main():
     jnp.save(filepath, results)
 
     _log_setup(snr)
-    with open(LOG_FILE, "a") as f:
+    with open(LOG_FILE, "a", encoding="utf-8") as f:
         print(file=f)
         print(f"results were saved to {filepath}", file=f)
 

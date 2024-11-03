@@ -16,7 +16,7 @@ def get_contour_plot(
     kde: bool | int | float = False,
 ) -> Figure:
     c = ChainConsumer()
-    for name, samples in zip(names, samples_list):
+    for name, samples in zip(names, samples_list, strict=False):
         df = pd.DataFrame.from_dict(samples)
         c.add_chain(Chain(samples=df, name=name, kde=kde))
     c.add_truth(Truth(location=truth))
@@ -24,7 +24,7 @@ def get_contour_plot(
 
 
 def get_gauss_pc_fig(
-    ax: Axes, samples: np.ndarray, truth: float, param_name: str = None
+    ax: Axes, samples: np.ndarray, truth: float, param_name: str | None = None
 ) -> None:
     """Get a marginal pc figure assuming Gaussian distribution of samples."""
     assert samples.ndim == 2  # (n_chains, n_samples)
@@ -49,7 +49,7 @@ def get_gauss_pc_fig(
 
 
 def get_pc_fig(
-    ax: Axes, samples: np.ndarray, truth: float, param_name: str = None
+    ax: Axes, samples: np.ndarray, truth: float, param_name: str | None = None
 ) -> None:
     """Get a marginal probability calibration figure using `hpdi` from `numpyro`."""
     assert samples.ndim == 2  # (n_chains, n_samples)

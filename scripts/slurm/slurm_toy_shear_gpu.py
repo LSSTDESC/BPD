@@ -44,7 +44,6 @@ def main(
     add_extra: bool,
     qos: str,
 ):
-
     tagpath = DATA_DIR / "cache_chains" / jobname
     if not add_extra:
         assert not tagpath.exists()
@@ -66,7 +65,7 @@ def main(
     )
 
     # append to jobfile the  commands.
-    with open(jobfile, "a") as f:
+    with open(jobfile, "a", encoding="utf-8") as f:
         f.write("\n")
 
     for ii in range(4):
@@ -74,13 +73,13 @@ def main(
         cmd = base_cmd.format(seed=cmd_seed)
         srun_cmd = f"srun --exact -u -n 1 -c 1 --gpus-per-task 1 --mem-per-gpu={mem_per_gpu} {cmd}  &\n"
 
-        with open(jobfile, "a") as f:
+        with open(jobfile, "a", encoding="utf-8") as f:
             f.write(srun_cmd)
 
-    with open(jobfile, "a") as f:
+    with open(jobfile, "a", encoding="utf-8") as f:
         f.write("\nwait")
 
-    subprocess.run(f"sbatch {jobfile.as_posix()}", shell=True)
+    subprocess.run(f"sbatch {jobfile.as_posix()}", shell=True, check=False)
 
 
 if __name__ == "__main__":

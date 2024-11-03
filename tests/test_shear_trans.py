@@ -14,7 +14,6 @@ from bpd.prior import (
 
 
 def test_scalar_inverse():
-
     # scalar version
     ellips = (0.0, 0.1, 0.2, -0.1, -0.2)
     shears = (0.0, -0.01, 0.01, -0.02, 0.02)

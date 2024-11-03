@@ -66,7 +66,7 @@ def main(
         sigma_e=shape_noise,
         n_samples=n_samples_shear,
     )
-    g_samples_list = pool.starmap(task2, zip(seeds, e_post_list))
+    g_samples_list = pool.starmap(task2, zip(seeds, e_post_list, strict=False))
     print("INFO: Shear samples obtained")
 
     print("INFO: Saving shear samples to disk...")

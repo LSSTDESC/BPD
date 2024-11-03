@@ -26,7 +26,7 @@ def init_with_ball(
     """Sample ball given offset of each parameter."""
     new = {}
     keys = random.split(rng_key, len(true_params.keys()))
-    rng_key_dict = {p: k for p, k in zip(true_params, keys)}
+    rng_key_dict = {p: k for p, k in zip(true_params, keys, strict=False)}
 
     for p, centr in true_params.items():
         offset = offset_dict[p]
