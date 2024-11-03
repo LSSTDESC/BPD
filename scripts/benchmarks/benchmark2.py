@@ -149,15 +149,15 @@ def _logprob_fn(params, data):
 
 
 def _log_setup(snr: float):
-    with open(LOG_FILE, "a") as f:
+    with open(LOG_FILE, "a", encoding='utf-8') as f:
         print(file=f)
         print(
             f"""Running benchmark 2 with configuration as follows. Variable number of chains.
-    
+
     The sampler used is NUTS with standard warmup.
 
     TAG: {TAG}
-    SEED: {SEED} 
+    SEED: {SEED}
 
     Overall sampler configuration (fixed):
         max doublings: {MAX_DOUBLINGS}
@@ -320,7 +320,7 @@ def main():
     jnp.save(filepath, results)
 
     _log_setup(snr)
-    with open(LOG_FILE, "a") as f:
+    with open(LOG_FILE, "a", encoding='utf-8') as f:
         print(file=f)
         print(f"results were saved to {filepath}", file=f)
 

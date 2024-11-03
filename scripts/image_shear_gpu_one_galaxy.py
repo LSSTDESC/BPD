@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from functools import partial
-from math import ceil
 
 import click
 import jax.numpy as jnp
@@ -103,7 +102,6 @@ def main(
         slen=slen,
         pixel_scale=pixel_scale,
         fft_size=fft_size,
-        background=background,
     )
     vpipe1 = vmap(jjit(pipe1), (0, None, 0))
 
@@ -125,7 +123,6 @@ def main(
 
 
 def main():
-
     pipe1 = partial(
         pipeline_toy_ellips_samples,
         g1=g1,

@@ -149,7 +149,7 @@ LOG_FILE = Path(__file__).parent / "log.txt"
 
 
 def _log_setup(snr: float):
-    with open(LOG_FILE, "a") as f:
+    with open(LOG_FILE, "a", encoding="utf-8") as f:
         print(file=f)
         print(
             f"""Running benchmark 2.8 with configuration as follows
@@ -299,7 +299,7 @@ def main():
     filepath = SCRATCH_DIR.joinpath(filename)
     jnp.save(filepath, results)
 
-    with open(LOG_FILE, "a") as f:
+    with open(LOG_FILE, "a", encoding="utf-8") as f:
         print(file=f)
         print(f"results were saved to {filepath}", file=f)
 

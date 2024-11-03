@@ -81,7 +81,7 @@ exclude = ["*.ipynb"]
 select = ["E", "F", "I", "W", "B", "SIM", "PLE", "PLC", "PLW", "RUF"]
 ignore = ["C901", "E203", "E501", "E731", "PLC0206", "RUF027"]
 preview = true
-exclude = ["*.ipynb"]
+exclude = ["*.ipynb", "scripts/image_shear_gpu_one_galaxy.py", "scripts/benchmarks/*.py"]
 
 
 [tool.pytest.ini_options]

@@ -27,7 +27,7 @@ def setup_sbatch_job_gpu(
     job_dir = Path(JOB_DIR)
     jobfile = job_dir.joinpath(jobfile_name)
 
-    with open(jobfile, "w") as f:
+    with open(jobfile, "w", encoding="utf-8") as f:
         f.writelines(
             "#!/bin/bash\n"
             f"#SBATCH --job-name={jobname}\n"
