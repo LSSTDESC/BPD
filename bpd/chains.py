@@ -29,10 +29,10 @@ def run_inference_nuts(
     logtarget: Callable,
     n_samples: int,
     initial_step_size: float,
+    max_num_doublings: int,
     n_warmup_steps: int = 500,
-    is_mass_matrix_diagonal: bool = True,
-    max_num_doublings: int = 5,
     target_acceptance_rate: float = 0.80,
+    is_mass_matrix_diagonal: bool = True,
 ):
     key1, key2 = random.split(rng_key)
 
