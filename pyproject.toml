@@ -14,7 +14,7 @@ dependencies = ["numpy >=1.18.0", "galsim >=2.3.0", "jax >=0.4.30", "jaxlib", "b
 
 
 [project.optional-dependencies]
-dev = ["pytest", "click", "ruff", "ChainConsumer", "ipython"]
+dev = ["pytest", "typer", "ruff", "ChainConsumer", "ipython"]
 
 
 [project.urls]
@@ -86,5 +86,5 @@ exclude = ["*.ipynb", "scripts/image_shear_gpu_one_galaxy.py", "scripts/benchmar
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-rav"
+addopts = "-ra"
 filterwarnings = ["ignore::DeprecationWarning:tensorflow.*"]
