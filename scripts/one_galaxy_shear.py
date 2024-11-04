@@ -11,10 +11,10 @@ from bpd.initialization import init_with_truth
 from bpd.pipelines.image_ellips import (
     get_target_galaxy_params_simple,
     get_target_images_single,
+    get_true_params_from_galaxy_params,
     pipeline_image_interim_samples,
 )
 from bpd.pipelines.shear_inference import pipeline_shear_inference
-from bpd.prior import scalar_shear_transformation
 
 init_fnc = init_with_truth
 
@@ -53,19 +53,11 @@ def main(
         nkey,
         n_samples=n_gals,
         single_galaxy_params=galaxy_params,
-        psf_hlr=psf_hlr,
         background=background,
         slen=slen,
-        pixel_scale=pixel_scale,
     )
 
-    true_params = {**galaxy_params}
-    e1, e2 = true_params.pop("e1"), true_params.pop("e2")
-    g1, g2 = true_params.pop("g1"), true_params.pop("g2")
-
-    e1_prime, e2_prime = scalar_shear_transformation((e1, e2), (g1, g2))
-    true_params["e1"] = e1_prime
-    true_params["e2"] = e2_prime
+    true_params = get_true_params_from_galaxy_params(galaxy_params)
 
     # prepare pipelines
     pipe1 = partial(
