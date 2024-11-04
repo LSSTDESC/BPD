@@ -62,7 +62,7 @@ def pipeline_toy_ellips_samples(
             logtarget=_logtarget,
             n_samples=n_samples_per_gal,
             initial_step_size=sigma_e,
-            max_num_doublins=max_num_doublings,
+            max_num_doublings=max_num_doublings,
             n_warmup_steps=n_warmup_steps,
         )
     )
