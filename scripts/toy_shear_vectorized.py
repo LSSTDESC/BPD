@@ -14,7 +14,7 @@ from bpd.pipelines.toy_ellips import pipeline_toy_ellips_samples
 def main(
     tag: str,
     seed: int,
-    n_exp: int,
+    n_exps: int,
     shape_noise: float = 1e-3,
     obs_noise: float = 1e-4,
     sigma_e_int: float = 3e-2,
@@ -28,8 +28,8 @@ def main(
     trim: int = 10,
 ):
     key0 = random.key(seed)
-    _keys = random.split(key0, n_exp * 2)  # one for toy ellipticities, one for shear
-    keys = _keys.reshape(n_exp, 2)
+    _keys = random.split(key0, n_exps * 2)  # one for toy ellipticities, one for shear
+    keys = _keys.reshape(n_exps, 2)
 
     # directory structure
     dirpath = DATA_DIR / "cache_chains" / tag
