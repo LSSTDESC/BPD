@@ -16,7 +16,7 @@ from bpd.prior import ellip_mag_prior, sample_ellip_prior
 def get_target_galaxy_params_simple(
     rng_key: PRNGKeyArray,
     shape_noise: float = 1e-3,
-    lf: float = 3.0,
+    lf: float = 6.0,
     hlr: float = 1.0,
     x: float = 0.0,  # pixels
     y: float = 0.0,
