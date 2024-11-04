@@ -12,9 +12,9 @@ from bpd.pipelines.toy_ellips import pipeline_toy_ellips_samples
 
 
 def main(
-    tag: str,
     seed: int,
-    n_exps: int,
+    tag: str,
+    n_exps: int = 250,
     shape_noise: float = 1e-3,
     obs_noise: float = 1e-4,
     sigma_e_int: float = 3e-2,
