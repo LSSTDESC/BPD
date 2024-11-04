@@ -46,7 +46,7 @@ def pipeline_shear_inference(
         n_samples=n_samples,
         n_warmup_steps=n_warmup_steps,
         max_num_doublings=max_num_doublings,
-        intial_step_size=initial_step_size,
+        initial_step_size=initial_step_size,
     )
 
     g_samples = _do_inference(rng_key, true_g)
