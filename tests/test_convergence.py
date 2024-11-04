@@ -183,7 +183,7 @@ def test_low_noise_single_galaxy_interim_samples(seed):
     samples = vpipe1(keys, init_positions, target_image)
 
     # check each component
-    for _, v in samples.item():
+    for _, v in samples.items():
         assert v.shape == (4, n_samples)
         ess = effective_sample_size(v)
         rhat = potential_scale_reduction(v)
