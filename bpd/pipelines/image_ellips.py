@@ -7,7 +7,7 @@ from jax import jit as jjit
 from jax._src.prng import PRNGKeyArray
 from jax.scipy import stats
 
-from bpd.chains import do_inference_nuts
+from bpd.chains import run_inference_nuts
 from bpd.draw import draw_gaussian, draw_gaussian_galsim
 from bpd.noise import add_noise
 from bpd.prior import ellip_mag_prior, sample_ellip_prior
@@ -41,29 +41,24 @@ def get_target_images_single(
     rng_key: PRNGKeyArray,
     n_samples: int,
     single_galaxy_params: dict[str, float],
-    psf_hlr: float = 0.7,
-    background: float = 1.0,
-    slen: int = 53,
-    pixel_scale: float = 0.2,
+    *,
+    background: float,
+    slen: int,
 ):
     """In this case, we sample multiple noise realizations of the same galaxy."""
     assert "f" in single_galaxy_params and "lf" not in single_galaxy_params
 
-    noiseless = draw_gaussian_galsim(
-        **single_galaxy_params,
-        pixel_scale=pixel_scale,
-        psf_hlr=psf_hlr,
-        slen=slen,
-    )
+    noiseless = draw_gaussian_galsim(**single_galaxy_params, slen=slen)
     return add_noise(rng_key, noiseless, bg=background, n=n_samples), noiseless
 
 
 # interim prior
 def logprior(
     params: dict[str, Array],
+    *,
+    sigma_e: float,
     flux_bds: tuple = (-1.0, 9.0),
     hlr_bds: tuple = (0.01, 5.0),
-    sigma_e: float = 3e-2,
     sigma_x: float = 1.0,  # pixels
 ) -> Array:
     prior = jnp.array(0.0)
@@ -106,35 +101,27 @@ def logtarget(
     return logprior_fnc(params) + loglikelihood_fnc(params, data)
 
 
-def pipeline_image_interim_samples(
+def pipeline_image_interim_samples_one_galaxy(
     rng_key: PRNGKeyArray,
     true_params: dict[str, float],
     target_image: Array,
     *,
     initialization_fnc: Callable,
-    sigma_e_int: float = 3e-2,
+    sigma_e_int: float,
     n_samples: int = 100,
     max_num_doublings: int = 5,
     initial_step_size: float = 1e-3,
     n_warmup_steps: int = 500,
     is_mass_matrix_diagonal: bool = False,
     slen: int = 53,
-    pixel_scale: float = 0.2,
-    psf_hlr: float = 0.7,
-    background: float = 1.0,
     fft_size: int = 256,
+    background: float = 1.0,
 ):
     k1, k2 = random.split(rng_key)
 
     init_position = initialization_fnc(k1, true_params=true_params, data=target_image)
 
-    _draw_fnc = partial(
-        draw_gaussian,
-        pixel_scale=pixel_scale,
-        slen=slen,
-        psf_hlr=psf_hlr,
-        fft_size=fft_size,
-    )
+    _draw_fnc = partial(draw_gaussian, slen=slen, fft_size=fft_size)
     _loglikelihood = partial(loglikelihood, draw_fnc=_draw_fnc, background=background)
     _logprior = partial(logprior, sigma_e=sigma_e_int)
 
@@ -143,7 +130,7 @@ def pipeline_image_interim_samples(
     )
 
     _inference_fnc = partial(
-        do_inference_nuts,
+        run_inference_nuts,
         logtarget=_logtarget,
         is_mass_matrix_diagonal=is_mass_matrix_diagonal,
         n_warmup_steps=n_warmup_steps,
