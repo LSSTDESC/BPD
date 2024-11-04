@@ -8,8 +8,9 @@ from blackjax.diagnostics import effective_sample_size, potential_scale_reductio
 from jax import jit as jjit
 from jax import random, vmap
 
+from bpd.chains import run_inference_nuts
 from bpd.pipelines.shear_inference import pipeline_shear_inference
-from bpd.pipelines.toy_ellips import do_inference as do_inference_ellips
+from bpd.pipelines.toy_ellips import logtarget as logtarget_toy_ellips
 from bpd.pipelines.toy_ellips import pipeline_toy_ellips_samples
 from bpd.prior import ellip_mag_prior, sample_synthetic_sheared_ellips_unclipped
 
@@ -20,8 +21,10 @@ def test_interim_ellipticity_posterior_convergence(seed):
     g1, g2 = 0.02, 0.0
     sigma_m = 1e-4
     sigma_e = 1e-3
-    n_samples = 100
-    k = 1_000  # enough to test convergence
+    sigma_e_int = 3e-2
+    n_gals = 100
+    n_samples_per_galaxy = 1_000  # enough to test convergence
+    max_num_doublings = 2
 
     true_g = jnp.array([g1, g2])
 
@@ -29,41 +32,44 @@ def test_interim_ellipticity_posterior_convergence(seed):
     k1, k2 = random.split(key)
 
     e_obs, e_sheared, _ = sample_synthetic_sheared_ellips_unclipped(
-        k1, true_g, n=n_samples, sigma_m=sigma_m, sigma_e=sigma_e
+        k1, true_g, n=n_gals, sigma_m=sigma_m, sigma_e=sigma_e
     )
 
     # now we vectorize and run 4 chains over each observed ellipticity sample
-    keys2 = random.split(k2, 4 * n_samples).reshape(n_samples, 4)
+    keys2 = random.split(k2, 4 * n_gals).reshape(n_gals, 4)
+    interim_prior = partial(ellip_mag_prior, sigma=sigma_e_int)
+    _logtarget = partial(
+        logtarget_toy_ellips, sigma_m=sigma_m, interim_prior=interim_prior
+    )
 
-    interim_prior = partial(ellip_mag_prior, sigma=sigma_e * 2)
     _do_inference_jitted = jjit(
         partial(
-            do_inference_ellips,
-            sigma_m=sigma_m,
+            run_inference_nuts,
+            logtarget=_logtarget,
             initial_step_size=sigma_e,
-            interim_prior=interim_prior,
-            k=k,
+            n_samples=n_samples_per_galaxy,
+            max_num_doublings=max_num_doublings,
         )
     )
     _do_inference_vmapped = vmap(_do_inference_jitted, in_axes=(0, None, None))
     _run_inference = vmap(_do_inference_vmapped, in_axes=(0, 0, 0))
 
     e_post = _run_inference(keys2, e_sheared, e_obs)
-    assert e_post.shape == (n_samples, 4, k, 2)
+    assert e_post.shape == (n_gals, 4, n_samples_per_galaxy, 2)
 
     for ii in (0, 1):
         ess_list = []
         rhat_list = []
         e_ii = e_post[..., ii]
 
-        for jj in range(n_samples):
+        for jj in range(n_gals):
             ess_list.append(effective_sample_size(e_ii[jj]))
             rhat_list.append(potential_scale_reduction(e_ii[jj]))
 
         ess = jnp.array(ess_list)
         rhat = jnp.array(rhat_list)
 
-        assert ess.min() > 0.5 * k * 4
+        assert ess.min() > 0.5 * n_samples_per_galaxy * 4
         assert jnp.abs(rhat - 1).max() < 0.01
 
 
@@ -72,6 +78,7 @@ def test_shear_posterior_convergence(seed):
     g1, g2 = 0.02, 0.0
     sigma_m = 1e-4
     sigma_e = 1e-3
+    sigma_e_int = 3e-2
     n_gals = 1000
     n_samples = 1000
     k = 10  # enough to test convergence
@@ -83,13 +90,13 @@ def test_shear_posterior_convergence(seed):
 
     e_post, _, _ = pipeline_toy_ellips_samples(
         k1,
-        g1,
-        g2,
+        g1=g1,
+        g2=g2,
         sigma_e=sigma_e,
-        sigma_e_int=sigma_e * 2,
+        sigma_e_int=sigma_e_int,
         sigma_m=sigma_m,
-        n_samples=n_gals,
-        k=k,
+        n_gals=n_gals,
+        n_samples_per_gal=k,
     )
 
     # run 4 shear chains over the given e_post
