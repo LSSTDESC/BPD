@@ -1,14 +1,13 @@
 from functools import partial
 from typing import Callable
 
-import blackjax
 import jax.numpy as jnp
 from jax import Array, random
 from jax import jit as jjit
 from jax._src.prng import PRNGKeyArray
 from jax.scipy import stats
 
-from bpd.chains import inference_loop
+from bpd.chains import do_inference_nuts
 from bpd.draw import draw_gaussian, draw_gaussian_galsim
 from bpd.noise import add_noise
 from bpd.prior import ellip_mag_prior, sample_ellip_prior
@@ -107,41 +106,6 @@ def logtarget(
     return logprior_fnc(params) + loglikelihood_fnc(params, data)
 
 
-def do_inference(
-    rng_key: PRNGKeyArray,
-    init_positions: dict[str, Array],
-    data: Array,
-    *,
-    logtarget_fnc: Callable,
-    is_mass_matrix_diagonal: bool = False,
-    n_warmup_steps: int = 500,
-    max_num_doublings: int = 5,
-    initial_step_size: float = 1e-3,
-    target_acceptance_rate: float = 0.80,
-    n_samples: int = 100,
-):
-    key1, key2 = random.split(rng_key)
-
-    _logdensity = partial(logtarget_fnc, data=data)
-
-    warmup = blackjax.window_adaptation(
-        blackjax.nuts,
-        _logdensity,
-        progress_bar=False,
-        is_mass_matrix_diagonal=is_mass_matrix_diagonal,
-        max_num_doublings=max_num_doublings,
-        initial_step_size=initial_step_size,
-        target_acceptance_rate=target_acceptance_rate,
-    )
-
-    (init_states, tuned_params), _ = warmup.run(key1, init_positions, n_warmup_steps)
-
-    kernel = blackjax.nuts(_logdensity, **tuned_params).step
-    states, _ = inference_loop(key2, init_states, kernel=kernel, n_samples=n_samples)
-
-    return states.position
-
-
 def pipeline_image_interim_samples(
     rng_key: PRNGKeyArray,
     true_params: dict[str, float],
@@ -152,7 +116,6 @@ def pipeline_image_interim_samples(
     n_samples: int = 100,
     max_num_doublings: int = 5,
     initial_step_size: float = 1e-3,
-    target_acceptance_rate: float = 0.80,
     n_warmup_steps: int = 500,
     is_mass_matrix_diagonal: bool = False,
     slen: int = 53,
@@ -180,13 +143,12 @@ def pipeline_image_interim_samples(
     )
 
     _inference_fnc = partial(
-        do_inference,
-        logtarget_fnc=_logtarget,
+        do_inference_nuts,
+        logtarget=_logtarget,
         is_mass_matrix_diagonal=is_mass_matrix_diagonal,
         n_warmup_steps=n_warmup_steps,
         max_num_doublings=max_num_doublings,
         initial_step_size=initial_step_size,
-        target_acceptance_rate=target_acceptance_rate,
         n_samples=n_samples,
     )
     _run_inference = jjit(_inference_fnc)
