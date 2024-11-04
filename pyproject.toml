@@ -14,7 +14,7 @@ dependencies = ["numpy >=1.18.0", "galsim >=2.3.0", "jax >=0.4.30", "jaxlib", "b
 
 
 [project.optional-dependencies]
-dev = ["pytest", "click", "ruff", "ChainConsumer"]
+dev = ["pytest", "click", "ruff", "ChainConsumer", "ipython"]
 
 
 [project.urls]
