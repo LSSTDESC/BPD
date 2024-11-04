@@ -10,25 +10,18 @@ This repository contains functions to run HMC (Hamiltonian Monte Carlo) using [J
 ```bash
 # fresh conda env
 pip install --upgrade pip
-conda create -n bpd python=3.10
+conda create -n bpd python=3.12
 conda activate bpd
 
-# Install JAX
+# Install JAX (cuda)
 pip install -U "jax[cuda12]"
 
-# descwl-shear-sims dependencies
-conda install -c conda-forge mamba
-mamba install -c conda-forge stackvana
-mamba install -c conda-forge pip lsstdesc.weaklensingdeblending numba galsim ipykernel ngmix
-
-pip install git+https://github.com/LSSTDESC/descwl-shear-sims.git
-pip install git+https://github.com/esheldon/metadetect.git
+# Install JAX-Galsim
 pip install git+https://github.com/GalSim-developers/JAX-GalSim.git
 
-pip install numpyro
-pip install blackjax
-pip install ChainConsumer arviz
-
+# Install package and depedencies
+git clone git@github.com:LSSTDESC/BPD.git
 cd BPD
-pip install -e .
+python -m pip install . -e
+python -m pip install .[dev]
 ```
