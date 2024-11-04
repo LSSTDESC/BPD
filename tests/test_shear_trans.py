@@ -1,3 +1,5 @@
+from functools import partial
+
 import numpy as np
 import pytest
 from jax import jit as jjit
@@ -53,7 +55,7 @@ def test_image_shear_commute():
     hlr = 0.9
     x, y = (1, 1)
 
-    draw_jitted = jjit(draw_gaussian)
+    draw_jitted = jjit(partial(draw_gaussian), slen=53, fft_size=256)
     for e1 in ellips:
         for e2 in ellips:
             for g1 in shears:
