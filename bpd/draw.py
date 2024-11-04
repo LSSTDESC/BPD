@@ -12,10 +12,11 @@ def draw_gaussian(
     g2: float,
     x: float,
     y: float,
-    pixel_scale: float = 0.2,
-    slen: int = 53,
+    *,
+    slen: int,
+    fft_size: int,  # rule of thumb: at least 4 times `slen`
     psf_hlr: float = 0.7,
-    fft_size: int = 256,  # rule of thumb, at least 4 times `slen`
+    pixel_scale: float = 0.2,
 ):
     gsparams = GSParams(minimum_fft_size=fft_size, maximum_fft_size=fft_size)
 
@@ -39,9 +40,10 @@ def draw_gaussian_galsim(
     g2: float,
     x: float,  # pixels
     y: float,
-    pixel_scale: float = 0.2,
-    slen: int = 53,
+    *,
+    slen: int,
     psf_hlr: float = 0.7,
+    pixel_scale: float = 0.2,
 ):
     gal = galsim.Gaussian(flux=f, half_light_radius=hlr)
     gal = gal.shear(g1=e1, g2=e2)
