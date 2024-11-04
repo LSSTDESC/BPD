@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 from functools import partial
 
-import click
 import jax.numpy as jnp
+import typer
 from jax import jit as jjit
 from jax import random, vmap
 
@@ -19,43 +19,21 @@ from bpd.prior import scalar_shear_transformation
 init_fnc = init_with_truth
 
 
-@click.group()
-@click.option("--tag", type=str, required=True)
-@click.option("--seed", type=int, required=True)
-@click.option("--g1", type=float, default=0.02)
-@click.option("--g2", type=float, default=0.0)
-@click.option("--shape-noise", type=float, default=1e-3)
-@click.option("--sigma-e-int", type=float, default=3e-2)
-@click.option("--slen", type=int, default=53)
-@click.option("--psf-hlr", type=float, default=0.7)
-@click.option("--background", type=float, default=1.0)
-@click.option("--pixel-scale", type=float, default=0.2)
-@click.option("--lf", type=float, default=6.0)
-@click.option("--hlr", type=float, default=1.0)
-@click.option("--fft-size", type=int, default=256)
-@click.option("--obs-noise", type=float, default=1e-4)
-@click.option("--n-gals", type=int, default=1000, help="# of gals")
-@click.option("--n-samples-shear", type=int, default=3000, help="shear samples")
-@click.option("--k", type=int, default=1000, help="# int. post. samples galaxy.")
-@click.option("--trim", type=int, default=10)
 def main(
     tag: str,
     seed: int,
-    g1: float,
-    g2: float,
-    shape_noise: float,
-    sigma_e_int: float,
-    slen,
-    psf_hlr,
-    background,
-    pixel_scale,
-    lf,
-    hlr,
-    fft_size,
-    n_gals: int,
-    n_samples_shear: int,
-    k: int,
-    trim: int,
+    g1: float = 0.02,
+    g2: float = 0.0,
+    lf: float = 6.0,
+    shape_noise: float = 1e-3,
+    sigma_e_int: float = 3e-2,
+    slen: int = 53,
+    fft_size: int = 256,
+    background: float = 1.0,
+    n_gals: int = 1000,  # technically, here it means 'noise realizations'
+    n_samples_shear: int = 3000,
+    n_samples_per_gal: int = 100,
+    trim: int = 1,
 ):
     rng_key = random.key(seed)
     pkey, nkey, gkey, skey = random.split(rng_key, 3)
@@ -155,4 +133,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    typer.run(main)

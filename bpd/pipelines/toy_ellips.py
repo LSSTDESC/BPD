@@ -1,23 +1,24 @@
 from functools import partial
 from typing import Callable
 
-import blackjax
 import jax.numpy as jnp
 import jax.scipy as jsp
 from jax import Array, random, vmap
 from jax import jit as jjit
 from jax._src.prng import PRNGKeyArray
 
-from bpd.chains import inference_loop
+from bpd.chains import run_inference_nuts
 from bpd.prior import ellip_mag_prior, sample_synthetic_sheared_ellips_unclipped
 
 
-def log_target(
+def logtarget(
     e_sheared: Array,
-    e_obs: Array,
+    *,
+    data: Array,  # renamed from `e_obs` for comptability with `do_inference_nuts`
     sigma_m: float,
     interim_prior: Callable,
 ):
+    e_obs = data
     assert e_sheared.shape == (2,) and e_obs.shape == (2,)
 
     # ignore angle prior assumed uniform
@@ -29,67 +30,39 @@ def log_target(
     return prior + likelihood
 
 
-def do_inference(
-    rng_key: PRNGKeyArray,
-    init_positions: Array,
-    e_obs: Array,
-    sigma_m: float,
-    initial_step_size: float,
-    interim_prior: Callable,
-    k: int,
-    n_warmup_steps: int = 500,
-):
-    _logtarget = partial(
-        log_target, e_obs=e_obs, sigma_m=sigma_m, interim_prior=interim_prior
-    )
-
-    key1, key2 = random.split(rng_key)
-
-    warmup = blackjax.window_adaptation(
-        blackjax.nuts,
-        _logtarget,
-        progress_bar=False,
-        is_mass_matrix_diagonal=True,
-        max_num_doublings=2,
-        initial_step_size=initial_step_size,
-        target_acceptance_rate=0.80,
-    )
-
-    (init_states, tuned_params), _ = warmup.run(key1, init_positions, n_warmup_steps)
-    kernel = blackjax.nuts(_logtarget, **tuned_params).step
-    states, _ = inference_loop(key2, init_states, kernel=kernel, n_samples=k)
-    return states.position
-
-
 def pipeline_toy_ellips_samples(
     key: PRNGKeyArray,
+    *,
     g1: float,
     g2: float,
     sigma_e: float,
     sigma_e_int: float,
     sigma_m: float,
-    n_samples: int,
-    k: int,
+    n_gals: int,
+    n_samples_per_gal: int,
     n_warmup_steps: int = 500,
+    max_num_doublings: int = 2,
 ):
     k1, k2 = random.split(key)
 
     true_g = jnp.array([g1, g2])
 
     e_obs, e_sheared, _ = sample_synthetic_sheared_ellips_unclipped(
-        k1, true_g, n=n_samples, sigma_m=sigma_m, sigma_e=sigma_e
+        k1, true_g, n=n_gals, sigma_m=sigma_m, sigma_e=sigma_e
     )
 
     interim_prior = partial(ellip_mag_prior, sigma=sigma_e_int)
 
-    keys2 = random.split(k2, n_samples)
+    _logtarget = partial(logtarget, sigma_m=sigma_m, interim_prior=interim_prior)
+
+    keys2 = random.split(k2, n_gals)
     _do_inference_jitted = jjit(
         partial(
-            do_inference,
-            sigma_m=sigma_m,
-            initial_step_size=sigma_e,
-            interim_prior=interim_prior,
-            k=k,
+            run_inference_nuts,
+            logtarget=_logtarget,
+            n_samples=n_samples_per_gal,
+            initial_step_size=max(sigma_e, sigma_m),
+            max_num_doublings=max_num_doublings,
             n_warmup_steps=n_warmup_steps,
         )
     )

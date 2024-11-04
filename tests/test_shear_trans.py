@@ -1,3 +1,5 @@
+from functools import partial
+
 import numpy as np
 import pytest
 from jax import jit as jjit
@@ -53,7 +55,7 @@ def test_image_shear_commute():
     hlr = 0.9
     x, y = (1, 1)
 
-    draw_jitted = jjit(draw_gaussian)
+    draw_jitted = jjit(partial(draw_gaussian, slen=53, fft_size=256))
     for e1 in ellips:
         for e2 in ellips:
             for g1 in shears:
@@ -69,7 +71,8 @@ def test_image_shear_commute():
                         f=f, hlr=hlr, e1=e1, e2=e2, g1=0.0, g2=0.0, x=x, y=y
                     )
 
-                    np.testing.assert_allclose(im1, im2, rtol=1e-6, atol=1e-10)
+                    # rtol is 0 because image contains lots of 0s
+                    np.testing.assert_allclose(im1, im2, rtol=0, atol=1e-10)
 
                     if not (g1 == 0 and g2 == 0):
-                        assert not np.allclose(im3, im1, rtol=1e-6, atol=1e-10)
+                        assert not np.allclose(im3, im1, rtol=0, atol=1e-10)
