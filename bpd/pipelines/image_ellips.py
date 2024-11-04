@@ -10,7 +10,7 @@ from jax.scipy import stats
 from bpd.chains import run_inference_nuts
 from bpd.draw import draw_gaussian, draw_gaussian_galsim
 from bpd.noise import add_noise
-from bpd.prior import ellip_mag_prior, sample_ellip_prior
+from bpd.prior import ellip_mag_prior, sample_ellip_prior, scalar_shear_transformation
 
 
 def get_target_galaxy_params_simple(
@@ -35,6 +35,18 @@ def get_target_galaxy_params_simple(
         "g1": g1,
         "g2": g2,
     }
+
+
+def get_true_params_from_galaxy_params(galaxy_params: dict[str, Array]):
+    true_params = {**galaxy_params}
+    e1, e2 = true_params.pop("e1"), true_params.pop("e2")
+    g1, g2 = true_params.pop("g1"), true_params.pop("g2")
+
+    e1_prime, e2_prime = scalar_shear_transformation((e1, e2), (g1, g2))
+    true_params["e1"] = e1_prime
+    true_params["e2"] = e2_prime
+
+    return true_params  # don't add g1,g2 back as we are not inferring those
 
 
 def get_target_images_single(
@@ -112,7 +124,7 @@ def pipeline_image_interim_samples_one_galaxy(
     max_num_doublings: int = 5,
     initial_step_size: float = 1e-3,
     n_warmup_steps: int = 500,
-    is_mass_matrix_diagonal: bool = False,
+    is_mass_matrix_diagonal: bool = True,
     slen: int = 53,
     fft_size: int = 256,
     background: float = 1.0,
