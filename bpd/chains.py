@@ -21,7 +21,7 @@ def inference_loop(rng_key, initial_state, kernel, n_samples: int):
     return (states, infos)
 
 
-def do_inference_nuts(
+def run_inference_nuts(
     rng_key: PRNGKeyArray,
     init_positions: ArrayLike,
     data: ArrayLike,
