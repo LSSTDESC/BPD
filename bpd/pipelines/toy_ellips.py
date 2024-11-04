@@ -61,7 +61,7 @@ def pipeline_toy_ellips_samples(
             run_inference_nuts,
             logtarget=_logtarget,
             n_samples=n_samples_per_gal,
-            initial_step_size=sigma_e,
+            initial_step_size=max(sigma_e, sigma_m),
             max_num_doublings=max_num_doublings,
             n_warmup_steps=n_warmup_steps,
         )
