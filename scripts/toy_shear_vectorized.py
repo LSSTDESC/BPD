@@ -18,12 +18,13 @@ def main(
     shape_noise: float = 1e-3,
     obs_noise: float = 1e-4,
     sigma_e_int: float = 3e-2,
+    initial_shear_step_size: float = 1e-3,
     n_vec: int = 50,
     g1: float = 0.02,
     g2: float = 0.0,
-    n_samples_gals: int = 1000,
+    n_gals: int = 1000,
     n_samples_shear: int = 3000,
-    k: int = 1000,
+    n_samples_per_gal: int = 1000,
     trim: int = 10,
 ):
     key0 = random.key(base_seed)
@@ -45,8 +46,8 @@ def main(
         sigma_e=shape_noise,
         sigma_e_int=sigma_e_int,
         sigma_m=obs_noise,
-        n_samples=n_samples_gals,
-        k=k,
+        n_gals=n_gals,
+        n_samples_per_gal=n_samples_per_gal,
     )
     pipe2 = partial(
         pipeline_shear_inference,
@@ -54,6 +55,7 @@ def main(
         sigma_e=shape_noise,
         sigma_e_int=sigma_e_int,
         n_samples=n_samples_shear,
+        initial_step_size=initial_shear_step_size,
     )
     vpipe1 = vmap(pipe1, in_axes=(0,))
     vpipe2 = vmap(pipe2, in_axes=(0, 0))
