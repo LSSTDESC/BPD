@@ -35,7 +35,7 @@ def test_shear_inference_toy_ellipticities(seed):
     shear_samples = pipeline_shear_inference(
         k2,
         e_post_trimmed,
-        jnp.array([g1, g2]),
+        true_g=jnp.array([g1, g2]),
         sigma_e=sigma_e,
         sigma_e_int=sigma_e_int,
         n_samples=1000,

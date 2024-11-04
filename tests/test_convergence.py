@@ -104,8 +104,9 @@ def test_shear_posterior_convergence(seed):
         pipeline_shear_inference,
         true_g=true_g,
         sigma_e=sigma_e,
-        sigma_e_int=sigma_e * 2,
+        sigma_e_int=sigma_e_int,
         n_samples=n_samples,
+        initial_step_size=1e-2,
     )
     _pipeline_shear1_jitted = jjit(_pipeline_shear1)
     _pipeline_shear = vmap(_pipeline_shear1_jitted, in_axes=(0, None))
