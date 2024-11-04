@@ -13,7 +13,7 @@ from bpd.pipelines.toy_ellips import pipeline_toy_ellips_samples
 
 def main(
     tag: str,
-    base_seed: int,
+    seed: int,
     n_exp: int,
     shape_noise: float = 1e-3,
     obs_noise: float = 1e-4,
@@ -27,7 +27,7 @@ def main(
     n_samples_per_gal: int = 1000,
     trim: int = 10,
 ):
-    key0 = random.key(base_seed)
+    key0 = random.key(seed)
     _keys = random.split(key0, n_exp * 2)  # one for toy ellipticities, one for shear
     keys = _keys.reshape(n_exp, 2)
 
@@ -72,8 +72,8 @@ def main(
 
         g_samples = vpipe2(skeys, e_post_trimmed)
 
-        fpath_ellip = dirpath / f"e_post_{base_seed}_{ii}.npy"
-        fpath_shear = dirpath / f"g_samples_{base_seed}_{ii}.npy"
+        fpath_ellip = dirpath / f"e_post_{seed}_{ii}.npy"
+        fpath_shear = dirpath / f"g_samples_{seed}_{ii}.npy"
 
         assert not fpath_shear.exists()
         jnp.save(fpath_ellip, e_post)
