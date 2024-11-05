@@ -9,6 +9,13 @@ from jax import jit as jjit
 from jax import random, vmap
 
 from bpd.chains import run_inference_nuts
+from bpd.initialization import init_with_truth
+from bpd.pipelines.image_ellips import (
+    get_target_galaxy_params_simple,
+    get_target_images_single,
+    get_true_params_from_galaxy_params,
+    pipeline_image_interim_samples_one_galaxy,
+)
 from bpd.pipelines.shear_inference import pipeline_shear_inference
 from bpd.pipelines.toy_ellips import logtarget as logtarget_toy_ellips
 from bpd.pipelines.toy_ellips import pipeline_toy_ellips_samples
@@ -16,7 +23,7 @@ from bpd.prior import ellip_mag_prior, sample_synthetic_sheared_ellips_unclipped
 
 
 @pytest.mark.parametrize("seed", [1234, 4567])
-def test_interim_ellipticity_posterior_convergence(seed):
+def test_interim_toy_convergence(seed):
     """Check efficiency and convergence of chains for 100 galaxies."""
     g1, g2 = 0.02, 0.0
     sigma_m = 1e-4
@@ -74,7 +81,7 @@ def test_interim_ellipticity_posterior_convergence(seed):
 
 
 @pytest.mark.parametrize("seed", [1234, 4567])
-def test_shear_posterior_convergence(seed):
+def test_toy_shear_convergence(seed):
     g1, g2 = 0.02, 0.0
     sigma_m = 1e-4
     sigma_e = 1e-3
@@ -123,4 +130,64 @@ def test_shear_posterior_convergence(seed):
         rhat = potential_scale_reduction(g_samples[..., ii])
 
         assert ess > 0.5 * 4000
+        assert jnp.abs(rhat - 1) < 0.01
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("seed", [1234, 4567])
+def test_low_noise_single_galaxy_interim_samples(seed):
+    lf = 6.0
+    hlr = 1.0
+    g1, g2 = 0.02, 0.0
+    sigma_e = 1e-3
+    sigma_e_int = 3e-2
+    n_samples = 500
+    background = 1.0
+    slen = 53
+    fft_size = 256
+    init_fnc = init_with_truth
+
+    rng_key = random.key(seed)
+    pkey, nkey, gkey = random.split(rng_key, 3)
+
+    galaxy_params = get_target_galaxy_params_simple(
+        pkey, lf=lf, g1=g1, g2=g2, hlr=hlr, shape_noise=sigma_e
+    )
+
+    draw_params = {**galaxy_params}
+    draw_params["f"] = 10 ** draw_params.pop("lf")
+    target_image = get_target_images_single(
+        nkey,
+        n_samples=1,
+        single_galaxy_params=draw_params,
+        background=background,
+        slen=slen,
+    )[0]
+    true_params = get_true_params_from_galaxy_params(galaxy_params)
+
+    pipe1 = partial(
+        pipeline_image_interim_samples_one_galaxy,
+        initialization_fnc=init_fnc,
+        sigma_e_int=sigma_e_int,
+        n_samples=n_samples,
+        slen=slen,
+        fft_size=fft_size,
+        n_warmup_steps=300,
+    )
+    vpipe1 = vmap(jjit(pipe1), (0, 0, None))
+
+    # chain initialization
+    # one galaxy, test convergence, so 4 random seeds
+    keys = random.split(gkey, 4)
+    init_positions = vmap(init_fnc, (0, None))(keys, true_params)
+
+    samples = vpipe1(keys, init_positions, target_image)
+
+    # check each component
+    for _, v in samples.items():
+        assert v.shape == (4, n_samples)
+        ess = effective_sample_size(v)
+        rhat = potential_scale_reduction(v)
+
+        assert ess > 0.5 * n_samples
         assert jnp.abs(rhat - 1) < 0.01
