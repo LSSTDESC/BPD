@@ -86,5 +86,6 @@ exclude = ["*.ipynb", "scripts/one_galaxy_shear.py", "scripts/benchmarks/*.py"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-ra -v"
+addopts = "-ra -v --strict-markers"
 filterwarnings = ["ignore::DeprecationWarning:tensorflow.*"]
+markers = ["slow: marks tests as slow (deselect with '-m \"not slow\"')"]
