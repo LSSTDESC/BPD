@@ -85,13 +85,17 @@ def main(
     n_batch = ceil(len(n_gals) / n_vec)
 
     for ii in range(n_batch):
-        # slice
         start, stop = ii * n_vec, (ii + 1) * n_vec
+
+        # slice
         b_ipositions = {k: v[start:stop] for k, v in init_positions.items()}
         bimages = target_images[start:stop]
         _keys = gkeys2[start:stop]
+
+        # run
         _samples = vpipe(_keys, b_ipositions, bimages)
 
+        # save
         e_post = jnp.stack([_samples["e1"], _samples["e2"]], axis=-1)
         fpath = dirpath / f"e_post_{seed}_{ii}.npy"
 
