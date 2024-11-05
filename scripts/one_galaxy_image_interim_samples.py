@@ -34,7 +34,6 @@ def main(
     fft_size: int = 256,
     background: float = 1.0,
     initial_step_size: float = 1e-3,
-    trim: int = 1,
 ):
     rng_key = random.key(seed)
     pkey, nkey, gkey = random.split(rng_key, 3)
