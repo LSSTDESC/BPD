@@ -133,6 +133,7 @@ def test_toy_shear_convergence(seed):
         assert jnp.abs(rhat - 1) < 0.01
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("seed", [1234, 4567])
 def test_low_noise_single_galaxy_interim_samples(seed):
     lf = 6.0
