@@ -86,5 +86,5 @@ exclude = ["*.ipynb", "scripts/one_galaxy_shear.py", "scripts/benchmarks/*.py"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-ra"
+addopts = "-ra -v"
 filterwarnings = ["ignore::DeprecationWarning:tensorflow.*"]
