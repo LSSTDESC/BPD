@@ -17,7 +17,7 @@ from bpd.pipelines.image_ellips import (
     pipeline_image_interim_samples_one_galaxy,
 )
 
-init_fnc = init_with_truth
+INIT_FNC = init_with_truth
 
 
 def main(
@@ -46,9 +46,8 @@ def main(
         dirpath.mkdir(exist_ok=True)
 
     # galaxy galaxy parameters
-    pkeys = random.split(pkey, n_gals)
-
     # fix everything except ellipticity (change via rng_key)
+    pkeys = random.split(pkey, n_gals)
     _get_galaxy_params = partial(
         get_target_galaxy_params_simple, lf=lf, g1=g1, g2=g2, shape_noise=shape_noise
     )
@@ -79,7 +78,7 @@ def main(
     # prepare pipelines
     pipe = partial(
         pipeline_image_interim_samples_one_galaxy,
-        initialization_fnc=init_fnc,
+        initialization_fnc=INIT_FNC,
         sigma_e_int=sigma_e_int,
         n_samples=n_samples_per_gal,
         initial_step_size=initial_step_size,
