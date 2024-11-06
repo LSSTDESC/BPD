@@ -24,7 +24,6 @@ def main(
     seed: int,
     tag: str,
     interim_samples_fname: str,
-    sigma_e_int: float = 3e-2,
     initial_step_size: float = 1e-3,
     n_samples: int = 3000,
     trim: int = 1,
@@ -45,6 +44,7 @@ def main(
     e_post = samples_dataset["e_post"][:, ::trim, :]
     true_g = samples_dataset["true_g"]
     sigma_e = samples_dataset["sigma_e"]
+    sigma_e_int = samples_dataset["sigma_e_int"]
 
     rng_key = jax.random.key(seed)
     g_samples = pipeline_shear_inference(
