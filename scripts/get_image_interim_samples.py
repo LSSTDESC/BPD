@@ -9,6 +9,7 @@ from jax import random, vmap
 
 from bpd import DATA_DIR
 from bpd.initialization import init_with_truth
+from bpd.io import save_dataset
 from bpd.pipelines.image_ellips import (
     get_target_galaxy_params_simple,
     get_target_images_single,
@@ -20,8 +21,8 @@ init_fnc = init_with_truth
 
 
 def main(
-    tag: str,
     seed: int,
+    tag: str,
     n_gals: int = 100,  # technically, in this file it means 'noise realizations'
     n_samples_per_gal: int = 100,
     n_vec: int = 50,  # how many galaxies to process simultaneously in 1 GPU core
@@ -44,23 +45,36 @@ def main(
     if not dirpath.exists():
         dirpath.mkdir(exist_ok=True)
 
-    # get images
-    galaxy_params = get_target_galaxy_params_simple(  # default hlr, x, y
-        pkey, lf=lf, g1=g1, g2=g2, shape_noise=shape_noise
-    )
+    # galaxy galaxy parameters
+    pkeys = random.split(pkey, n_gals)
 
+    # fix everything except ellipticity (change via rng_key)
+    _get_galaxy_params = partial(
+        get_target_galaxy_params_simple, lf=lf, g1=g1, g2=g2, shape_noise=shape_noise
+    )
+    _get_galaxies_params = vmap(_get_galaxy_params)
+    galaxy_params = _get_galaxies_params(pkeys)
+    assert galaxy_params["lf"].shape == (n_gals,)
+
+    # now get corresponding target images
+    # 'lf' is used for inference, but 'f' is used for drawing
+    nkeys = random.split(nkey, n_gals)
     draw_params = {**galaxy_params}
     draw_params["f"] = 10 ** draw_params.pop("lf")
-    target_images, _ = get_target_images_single(
-        nkey,
-        n_samples=n_gals,
-        single_galaxy_params=draw_params,
+
+    _get_target_images_single = partial(
+        get_target_images_single,
+        n_samples=1,  # one noise realization per galaxy
         background=background,
         slen=slen,
     )
+    _get_target_images = vmap(_get_target_images_single)
+    target_images = _get_target_images(nkeys, draw_params)
     assert target_images.shape == (n_gals, slen, slen)
 
-    true_params = get_true_params_from_galaxy_params(galaxy_params)
+    # finally, interim samples are on 'sheared ellipticity'
+    _get_true_params = vmap(get_true_params_from_galaxy_params)
+    true_params = _get_true_params(galaxy_params)
 
     # prepare pipelines
     pipe = partial(
@@ -73,32 +87,48 @@ def main(
         fft_size=fft_size,
         background=background,
     )
-    vpipe = vmap(jjit(pipe), (0, None, 0))
+    vpipe = vmap(jjit(pipe), (0, 0, 0))
 
     # initialization
-    gkey1, gkey2 = random.split(gkey, 2)
-    gkeys1 = random.split(gkey1, n_gals)
-    gkeys2 = random.split(gkey2, n_gals)
-    init_positions = vmap(init_fnc, (0, None))(gkeys1, true_params)
+    gkeys = random.split(gkey, n_gals)
 
-    n_batch = ceil(len(n_gals) / n_vec)
+    # compilation on single target image
+    _ = vpipe(
+        gkeys[0, None],
+        {k: v[0, None] for k, v in true_params.items()},
+        target_images[0, None],
+    )
 
+    # run in batches
+    n_batch = ceil(n_gals / n_vec)
+    all_e_post = []
     for ii in range(n_batch):
         start, stop = ii * n_vec, (ii + 1) * n_vec
 
         # slice
-        b_ipositions = {k: v[start:stop] for k, v in init_positions.items()}
-        bimages = target_images[start:stop]
-        _keys = gkeys2[start:stop]
+        _bkeys = gkeys[start:stop]
+        _btparams = {k: v[start:stop] for k, v in true_params.items()}
+        _bimages = target_images[start:stop]
 
         # run
-        _samples = vpipe(_keys, b_ipositions, bimages)
+        _samples = vpipe(_bkeys, _btparams, _bimages)
 
         # save
         e_post = jnp.stack([_samples["e1"], _samples["e2"]], axis=-1)
-        fpath = dirpath / f"e_post_{seed}_{ii}.npy"
+        all_e_post.append(e_post)
 
-        jnp.save(fpath, e_post)
+    fpath = dirpath / f"e_post_{seed}.npz"
+    e_post_arr = jnp.concatenate(all_e_post)
+
+    save_dataset(
+        {
+            "e_post": e_post_arr,
+            "true_g": jnp.array([g1, g2]),
+            "sigma_e": shape_noise,
+            "sigma_e_int": sigma_e_int,
+        },
+        fpath,
+    )
 
 
 if __name__ == "__main__":
