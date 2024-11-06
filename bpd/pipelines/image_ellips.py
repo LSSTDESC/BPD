@@ -47,7 +47,7 @@ def get_true_params_from_galaxy_params(galaxy_params: dict[str, Array]):
     true_params["e1"] = e1_prime
     true_params["e2"] = e2_prime
 
-    return true_params  # don't add g1,g2 back as we are not inferring those
+    return true_params  # don't add g1,g2 back as we are not inferring those in interim posterior
 
 
 def get_target_images_single(
