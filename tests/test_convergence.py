@@ -156,7 +156,7 @@ def test_low_noise_single_galaxy_interim_samples(seed):
 
     draw_params = {**galaxy_params}
     draw_params["f"] = 10 ** draw_params.pop("lf")
-    target_image, _ = get_target_images_single(
+    target_image = get_target_images_single(
         nkey,
         n_samples=1,
         single_galaxy_params=draw_params,
