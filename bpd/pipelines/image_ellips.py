@@ -15,6 +15,7 @@ from bpd.prior import ellip_mag_prior, sample_ellip_prior, scalar_shear_transfor
 
 def get_target_galaxy_params_simple(
     rng_key: PRNGKeyArray,
+    *,
     shape_noise: float = 1e-3,
     lf: float = 6.0,
     hlr: float = 1.0,
@@ -51,9 +52,9 @@ def get_true_params_from_galaxy_params(galaxy_params: dict[str, Array]):
 
 def get_target_images_single(
     rng_key: PRNGKeyArray,
-    n_samples: int,
     single_galaxy_params: dict[str, float],
     *,
+    n_samples: int,
     background: float,
     slen: int,
 ):
@@ -61,7 +62,7 @@ def get_target_images_single(
     assert "f" in single_galaxy_params and "lf" not in single_galaxy_params
 
     noiseless = draw_gaussian_galsim(**single_galaxy_params, slen=slen)
-    return add_noise(rng_key, noiseless, bg=background, n=n_samples), noiseless
+    return add_noise(rng_key, noiseless, bg=background, n=n_samples)
 
 
 # interim prior
@@ -107,6 +108,7 @@ def loglikelihood(
 def logtarget(
     params: dict[str, Array],
     data: Array,
+    *,
     logprior_fnc: Callable,
     loglikelihood_fnc: Callable,
 ):
