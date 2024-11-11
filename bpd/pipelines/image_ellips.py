@@ -52,17 +52,39 @@ def get_true_params_from_galaxy_params(galaxy_params: dict[str, Array]):
 
 def get_target_images_single(
     rng_key: PRNGKeyArray,
-    single_galaxy_params: dict[str, float],
     *,
-    n_samples: int,
+    single_galaxy_params: dict[str, float],
     background: float,
     slen: int,
+    n_samples: int = 1,  # single noise realization
 ):
-    """In this case, we sample multiple noise realizations of the same galaxy."""
+    """Multiple noise realizations of single galaxy (GalSim)."""
     assert "f" in single_galaxy_params and "lf" not in single_galaxy_params
 
     noiseless = draw_gaussian_galsim(**single_galaxy_params, slen=slen)
     return add_noise(rng_key, noiseless, bg=background, n=n_samples)
+
+
+def get_target_images(
+    rng_key: PRNGKeyArray,
+    galaxy_params: dict[str, Array],
+    *,
+    background: float,
+    slen: int,
+):
+    """Single noise realization of multiple galaxies (GalSim)."""
+    n_gals = galaxy_params["f"].shape[0]
+    nkeys = random.split(rng_key, n_gals)
+
+    target_images = []
+    for ii in range(n_gals):
+        _params = {k: v[ii].item() for k, v in galaxy_params.items()}
+        noiseless = draw_gaussian_galsim(**_params, slen=slen)
+        target_image = add_noise(nkeys[ii], noiseless, bg=background, n=1)
+        assert target_image.shape == (1, slen, slen)
+        target_images.append(target_image)
+
+    return jnp.concatenate(target_images, axis=0)
 
 
 # interim prior
