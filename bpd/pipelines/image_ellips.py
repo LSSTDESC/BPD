@@ -19,13 +19,14 @@ def get_target_galaxy_params_simple(
     shape_noise: float = 1e-3,
     lf: float = 6.0,
     hlr: float = 1.0,
-    x: float = 0.0,  # pixels
-    y: float = 0.0,
     g1: float = 0.02,
     g2: float = 0.0,
 ):
     """Fix all parameters except ellipticity, which come from prior."""
-    e = sample_ellip_prior(rng_key, sigma=shape_noise, n=1)
+    dkey, ekey = random.spit(rng_key, 2)
+
+    x, y = random.uniform(dkey, shape=(2,), minval=-0.5, maxval=0.5)
+    e = sample_ellip_prior(ekey, sigma=shape_noise, n=1)
     return {
         "lf": lf,
         "hlr": hlr,
@@ -92,9 +93,9 @@ def logprior(
     params: dict[str, Array],
     *,
     sigma_e: float,
+    sigma_x: float = 1.0,  # pixels
     flux_bds: tuple = (-1.0, 9.0),
     hlr_bds: tuple = (0.01, 5.0),
-    sigma_x: float = 1.0,  # pixels
 ) -> Array:
     prior = jnp.array(0.0)
 
