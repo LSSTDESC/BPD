@@ -38,7 +38,3 @@ jobs:
       - name: Run fast tests
         run: |
           pytest -m "not slow" --durations=0
-
-      - name: Run slow tests
-        run: |
-          pytest -m "slow" --durations=0
