@@ -1,5 +1,6 @@
 import jax.numpy as jnp
 from jax import Array, random
+from jax.numpy.linalg import norm
 
 
 def ellip_mag_prior(e, sigma: float):
@@ -136,7 +137,7 @@ def sample_synthetic_sheared_ellips_clipped(
     # clip magnitude to < 1
     # preserve angle after noise added when clipping
     beta = jnp.arctan2(e_obs[:, :, 1], e_obs[:, :, 0]) / 2
-    e_obs_mag = jnp.sqrt(e_obs[:, :, 0] ** 2 + e_obs[:, :, 1] ** 2)
+    e_obs_mag = norm(e_obs, axis=-1)
     e_obs_mag = jnp.clip(e_obs_mag, 0, e_tol)  # otherwise likelihood explodes
 
     final_eobs1 = e_obs_mag * jnp.cos(2 * beta)
