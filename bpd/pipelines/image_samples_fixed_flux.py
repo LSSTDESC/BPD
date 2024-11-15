@@ -1,3 +1,5 @@
+"""In this script, we fix the flux and HLR to truth when doing fits."""
+
 from functools import partial
 from typing import Callable
 
@@ -17,19 +19,20 @@ def get_target_galaxy_params_simple(
     rng_key: PRNGKeyArray,
     *,
     shape_noise: float = 1e-3,
-    lf: float = 6.0,
-    hlr: float = 1.0,
     g1: float = 0.02,
     g2: float = 0.0,
 ):
-    """Fix all parameters except ellipticity, which come from prior."""
-    dkey, ekey = random.spit(rng_key, 2)
+    """Fix parameters except position and ellipticity, which come from a prior.
+
+    * The position is drawn uniformly within a pixel (dither).
+    * The ellipticity is drawn from Gary's prior given the shape noise.
+
+    """
+    dkey, ekey = random.split(rng_key, 2)
 
     x, y = random.uniform(dkey, shape=(2,), minval=-0.5, maxval=0.5)
     e = sample_ellip_prior(ekey, sigma=shape_noise, n=1)
     return {
-        "lf": lf,
-        "hlr": hlr,
         "e1": e[0, 0],
         "e2": e[0, 1],
         "x": x,
@@ -60,8 +63,6 @@ def get_target_images_single(
     n_samples: int = 1,  # single noise realization
 ):
     """Multiple noise realizations of single galaxy (GalSim)."""
-    assert "f" in single_galaxy_params and "lf" not in single_galaxy_params
-
     noiseless = draw_gaussian_galsim(**single_galaxy_params, slen=slen)
     return add_noise(rng_key, noiseless, bg=background, n=n_samples)
 
@@ -90,25 +91,15 @@ def get_target_images(
 
 # interim prior
 def logprior(
-    params: dict[str, Array],
-    *,
-    sigma_e: float,
-    sigma_x: float = 1.0,  # pixels
-    flux_bds: tuple = (-1.0, 9.0),
-    hlr_bds: tuple = (0.01, 5.0),
+    params: dict[str, Array], *, sigma_e: float, sigma_x: float = 0.5
 ) -> Array:
     prior = jnp.array(0.0)
-
-    f1, f2 = flux_bds
-    prior += stats.uniform.logpdf(params["lf"], f1, f2 - f1)
-
-    h1, h2 = hlr_bds
-    prior += stats.uniform.logpdf(params["hlr"], h1, h2 - h1)
 
     e_mag = jnp.sqrt(params["e1"] ** 2 + params["e2"] ** 2)
     prior += jnp.log(ellip_mag_prior(e_mag, sigma=sigma_e))
 
-    # NOTE: hard-coded assumption that galaxy is always centered in odd-size image.
+    # NOTE: hard-coded assumption that galaxy is in center-pixel within odd-size image.
+    # sigma_x in units of pixels.
     prior += stats.norm.logpdf(params["x"], loc=0.0, scale=sigma_x)
     prior += stats.norm.logpdf(params["y"], loc=0.0, scale=sigma_x)
 
@@ -118,11 +109,10 @@ def logprior(
 def loglikelihood(
     params: dict[str, Array], data: Array, *, draw_fnc: Callable, background: float
 ):
+    # NOTE: draw_fnc should already contain `f` and `hlr` as constant arguments.
     _draw_params = {**{"g1": 0.0, "g2": 0.0}, **params}  # function is more general
-    lf = _draw_params.pop("lf")
-    _draw_params["f"] = 10**lf
-
     model = draw_fnc(**_draw_params)
+
     likelihood_pp = stats.norm.logpdf(data, loc=model, scale=jnp.sqrt(background))
     likelihood = jnp.sum(likelihood_pp)
     return likelihood
@@ -145,6 +135,8 @@ def pipeline_image_interim_samples_one_galaxy(
     *,
     initialization_fnc: Callable,
     sigma_e_int: float,
+    f: float,
+    hlr: float,
     n_samples: int = 100,
     max_num_doublings: int = 5,
     initial_step_size: float = 1e-3,
@@ -154,11 +146,12 @@ def pipeline_image_interim_samples_one_galaxy(
     fft_size: int = 256,
     background: float = 1.0,
 ):
+    # Flux and HLR are fixed to truth and not inferred in this function.
     k1, k2 = random.split(rng_key)
 
     init_position = initialization_fnc(k1, true_params=true_params, data=target_image)
 
-    _draw_fnc = partial(draw_gaussian, slen=slen, fft_size=fft_size)
+    _draw_fnc = partial(draw_gaussian, f=f, hlr=hlr, slen=slen, fft_size=fft_size)
     _loglikelihood = partial(loglikelihood, draw_fnc=_draw_fnc, background=background)
     _logprior = partial(logprior, sigma_e=sigma_e_int)
 
