@@ -6,6 +6,7 @@ import jax.scipy as jsp
 from jax import Array, random, vmap
 from jax import jit as jjit
 from jax._src.prng import PRNGKeyArray
+from jax.numpy.linalg import norm
 
 from bpd.chains import run_inference_nuts
 from bpd.prior import ellip_mag_prior, sample_synthetic_sheared_ellips_unclipped
@@ -23,9 +24,7 @@ def logtarget(
 
     # ignore angle prior assumed uniform
     # prior enforces magnitude < 1.0 for posterior samples
-    e_sheared_mag = jnp.sqrt(e_sheared[0] ** 2 + e_sheared[1] ** 2)
-    prior = jnp.log(interim_prior(e_sheared_mag))
-
+    prior = jnp.log(interim_prior(norm(e_sheared)))
     likelihood = jnp.sum(jsp.stats.norm.logpdf(e_obs, loc=e_sheared, scale=sigma_m))
     return prior + likelihood
 
