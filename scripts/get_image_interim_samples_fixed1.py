@@ -50,8 +50,7 @@ def main(
     _get_galaxy_params = partial(
         get_target_galaxy_params_simple, g1=g1, g2=g2, shape_noise=shape_noise
     )
-    _get_galaxies_params = vmap(_get_galaxy_params)
-    galaxy_params = _get_galaxies_params(pkeys)
+    galaxy_params = vmap(_get_galaxy_params)(pkeys)
     assert galaxy_params["x"].shape == (n_gals,)
 
     # now get corresponding target images
@@ -91,7 +90,8 @@ def main(
 
     # run in batches
     n_batch = ceil(n_gals / n_vec)
-    all_e_post = []
+    samples = []
+
     for ii in range(n_batch):
         start, stop = ii * n_vec, (ii + 1) * n_vec
 
@@ -102,17 +102,17 @@ def main(
 
         # run
         _samples = vpipe(_bkeys, _btparams, _bimages)
+        samples.append(_samples)
 
-        # save
-        e_post = jnp.stack([_samples["e1"], _samples["e2"]], axis=-1)
-        all_e_post.append(e_post)
-
+    # get e_post
+    e_post = jnp.concatenate([jnp.stack([s["e1"], s["e2"]], axis=-1) for s in samples])
+    xy = jnp.concatenate([jnp.stack([s["x"], s["y"]], axis=-1) for s in samples])
     fpath = dirpath / f"e_post_{seed}.npz"
-    e_post_arr = jnp.concatenate(all_e_post)
 
     save_dataset(
         {
-            "e_post": e_post_arr,
+            "e_post": e_post,
+            "xy": xy,
             "true_g": jnp.array([g1, g2]),
             "sigma_e": shape_noise,
             "sigma_e_int": sigma_e_int,
