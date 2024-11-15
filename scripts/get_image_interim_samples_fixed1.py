@@ -10,7 +10,7 @@ from jax import random, vmap
 from bpd import DATA_DIR
 from bpd.initialization import init_with_truth
 from bpd.io import save_dataset
-from bpd.pipelines.image_ellips import (
+from bpd.pipelines.image_samples_fixed_flux import (
     get_target_galaxy_params_simple,
     get_target_images,
     get_true_params_from_galaxy_params,
@@ -29,6 +29,7 @@ def main(
     g1: float = 0.02,
     g2: float = 0.0,
     lf: float = 6.0,
+    hlr: float = 1.0,
     shape_noise: float = 1e-3,
     sigma_e_int: float = 3e-2,
     slen: int = 53,
@@ -41,32 +42,29 @@ def main(
 
     # directory structure
     dirpath = DATA_DIR / "cache_chains" / tag
-
     if not dirpath.exists():
         dirpath.mkdir(exist_ok=True)
 
     # galaxy galaxy parameters
-    # fix everything except ellipticity (change via rng_key)
     pkeys = random.split(pkey, n_gals)
     _get_galaxy_params = partial(
-        get_target_galaxy_params_simple, lf=lf, g1=g1, g2=g2, shape_noise=shape_noise
+        get_target_galaxy_params_simple, g1=g1, g2=g2, shape_noise=shape_noise
     )
     _get_galaxies_params = vmap(_get_galaxy_params)
     galaxy_params = _get_galaxies_params(pkeys)
-    assert galaxy_params["lf"].shape == (n_gals,)
+    assert galaxy_params["x"].shape == (n_gals,)
 
     # now get corresponding target images
-    # 'lf' is used for inference, but 'f' is used for drawing
-    draw_params = {**galaxy_params}
-    draw_params["f"] = 10 ** draw_params.pop("lf")
+    # we use the same flux and hlr for every galaxy in this experiment (and fix them in sampling)
+    extra_params = {"f": 10 ** jnp.full((n_gals,), lf), "hlr": jnp.full((n_gals,), hlr)}
+    draw_params = {**galaxy_params, **extra_params}
     target_images = get_target_images(
         nkey, draw_params, background=background, slen=slen
     )
     assert target_images.shape == (n_gals, slen, slen)
 
     # finally, interim samples are on 'sheared ellipticity'
-    _get_true_params = vmap(get_true_params_from_galaxy_params)
-    true_params = _get_true_params(galaxy_params)
+    true_params = vmap(get_true_params_from_galaxy_params)(galaxy_params)
 
     # prepare pipelines
     gkeys = random.split(gkey, n_gals)
@@ -79,6 +77,8 @@ def main(
         slen=slen,
         fft_size=fft_size,
         background=background,
+        f=10**lf,
+        hlr=hlr,
     )
     vpipe = vmap(jjit(pipe), (0, 0, 0))
 
