@@ -21,7 +21,7 @@ def shear_loglikelihood_unreduced(
     # the priors are callables for now on only ellipticities
     # the interim_prior should have been used when obtaining e_obs from the chain (i.e. for now same sigma)
     # normalization in priors can be ignored for now as alpha is fixed.
-    _, K, _ = e_post.shape  # (N, K, 2)
+    _, _, _ = e_post.shape  # (N, K, 2)
 
     e_post_mag = norm(e_post, axis=-1)
     denom = interim_prior(e_post_mag)  # (N, K), can ignore angle in prior as uniform
@@ -35,8 +35,8 @@ def shear_loglikelihood_unreduced(
     absjacdet = jnp.abs(grad1[..., 0] * grad2[..., 1] - grad1[..., 1] * grad2[..., 0])
 
     e_post_unsheared = inv_shear_transformation(e_post, g)
-    e_obs_unsheared_mag = norm(e_post_unsheared, axis=-1)
-    num = prior(e_obs_unsheared_mag) * absjacdet  # (N, K)
+    e_post_unsheared_mag = norm(e_post_unsheared, axis=-1)
+    num = prior(e_post_unsheared_mag) * absjacdet  # (N, K)
 
     ratio = jsp.special.logsumexp(jnp.log(num) - jnp.log(denom), axis=-1)
     return ratio
