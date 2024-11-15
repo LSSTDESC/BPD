@@ -16,13 +16,14 @@ def shear_loglikelihood_unreduced(
     # assume e_obs.shape == (N, K, 2) where N is number of galaxies, K is samples per galaxy
     # the priors are callables for now on only ellipticities
     # the interim_prior should have been used when obtaining e_obs from the chain (i.e. for now same sigma)
-    # normalizatoin in priors can be ignored for now as alpha is fixed.
+    # normalization in priors can be ignored for now as alpha is fixed.
     _, K, _ = e_post.shape  # (N, K, 2)
 
     e_post_mag = jnp.sqrt(e_post[..., 0] ** 2 + e_post[..., 1] ** 2)
     denom = interim_prior(e_post_mag)  # (N, K), can ignore angle in prior as uniform
 
-    # for num we do trick p(w_n' | g, alpha )  = p(w_n' \cross^{-1} g | alpha ) = p(w_n | alpha) * |jac(w_n / w_n')|
+    # for num, use trick
+    # p(w_n' | g, alpha )  = p(w_n' \cross^{-1} g | alpha ) = p(w_n | alpha) * |jac(w_n / w_n')|
 
     # shape = (N, K, 2)
     grad1 = vmap(

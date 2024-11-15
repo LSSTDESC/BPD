@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.10", "3.11", "3.12"]
 
     steps:
       - name: Checkout github repo
@@ -37,8 +37,4 @@ jobs:
 
       - name: Run fast tests
         run: |
-          pytest -m "not slow" --durations=0
-
-      - name: Run slow tests
-        run: |
-          pytest -m "slow" --durations=0
+          pytest --durations=0

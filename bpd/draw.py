@@ -25,7 +25,7 @@ def draw_gaussian(
     gal = gal.shear(g1=e1, g2=e2)
     gal = gal.shear(g1=g1, g2=g2)
 
-    psf = xgalsim.Gaussian(flux=1, half_light_radius=psf_hlr)
+    psf = xgalsim.Gaussian(flux=1.0, half_light_radius=psf_hlr)
     gal_conv = xgalsim.Convolve([gal, psf]).withGSParams(gsparams)
     image = gal_conv.drawImage(nx=slen, ny=slen, scale=pixel_scale, offset=(x, y))
     return image.array
