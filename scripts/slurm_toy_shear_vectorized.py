@@ -29,7 +29,7 @@ def main(
 
     jobfile = setup_sbatch_job_gpu(jobname, time, nodes=1, n_tasks_per_node=4, qos=qos)
 
-    template_cmd = "python /global/u2/i/imendoza/BPD/scripts/toy_shear_vectorized.py {{seed}} {jobname} --n-samples-gals {n_gals} --n-samples-shear {n_samples_shear} --n-vec {n_vec} --n-exps {n_exps} --n-samples-per-gal {n_samples_per_gal} --trim {trim} --g1 {g1} --g2 {g2}"
+    template_cmd = "python /global/u2/i/imendoza/BPD/scripts/toy_shear_vectorized.py {{seed}} {jobname} --n-gals {n_gals} --n-samples-shear {n_samples_shear} --n-vec {n_vec} --n-exps {n_exps} --n-samples-per-gal {n_samples_per_gal} --trim {trim} --g1 {g1} --g2 {g2}"
 
     base_cmd = template_cmd.format(
         n_gals=n_gals,
