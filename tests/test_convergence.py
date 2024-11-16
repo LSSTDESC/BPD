@@ -36,7 +36,7 @@ def test_interim_toy_convergence(seed):
     )
 
     # now we vectorize and run 4 chains over each observed ellipticity sample
-    keys2 = random.split(k2, 4 * n_gals).reshape(n_gals, 4)
+    keys2 = random.split(k2, (n_gals, 4))
     interim_prior = partial(ellip_mag_prior, sigma=sigma_e_int)
     _logtarget = partial(
         logtarget_toy_ellips, sigma_m=sigma_m, interim_prior=interim_prior
@@ -69,7 +69,7 @@ def test_interim_toy_convergence(seed):
         ess = jnp.array(ess_list)
         rhat = jnp.array(rhat_list)
 
-        assert ess.min() > 0.5 * n_samples_per_galaxy * 4
+        assert ess.min() > 0.7 * n_samples_per_galaxy * 4
         assert jnp.abs(rhat - 1).max() < 0.01
 
 
@@ -122,5 +122,5 @@ def test_toy_shear_convergence(seed):
         ess = effective_sample_size(g_samples[..., ii])
         rhat = potential_scale_reduction(g_samples[..., ii])
 
-        assert ess > 0.5 * 4000
+        assert ess > 0.7 * 4000
         assert jnp.abs(rhat - 1) < 0.01
