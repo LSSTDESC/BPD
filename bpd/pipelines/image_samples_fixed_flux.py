@@ -9,7 +9,7 @@ from bpd.prior import ellip_mag_prior, sample_ellip_prior
 def get_target_galaxy_params_simple(
     rng_key: PRNGKeyArray,
     *,
-    shape_noise: float = 1e-3,
+    shape_noise: float,
     g1: float = 0.02,
     g2: float = 0.0,
 ):
