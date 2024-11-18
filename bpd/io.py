@@ -23,7 +23,6 @@ def load_dataset(fpath: str) -> dict[str, Array]:
     assert Path(fpath).suffix == ".npz"
 
     ds = {}
-
     npzfile = jnp.load(fpath)
     for k in npzfile.files:
         ds[k] = npzfile[k]
