@@ -42,10 +42,18 @@ def logprior(
 
 
 def loglikelihood(
-    params: dict[str, Array], data: Array, *, draw_fnc: Callable, background: float
+    params: dict[str, Array],
+    data: Array,
+    *,
+    draw_fnc: Callable,
+    background: float,
+    free_f: bool = True,
 ):
     # NOTE: draw_fnc should already contain `f` and `hlr` as constant arguments.
     _draw_params = {**{"g1": 0.0, "g2": 0.0}, **params}  # function is more general
+
+    if free_f:
+        _draw_params["f"] = 10 ** _draw_params.pop("lf")
     model = draw_fnc(**_draw_params)
 
     likelihood_pp = stats.norm.logpdf(data, loc=model, scale=jnp.sqrt(background))

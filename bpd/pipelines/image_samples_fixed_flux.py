@@ -33,7 +33,6 @@ def get_target_galaxy_params_simple(
     }
 
 
-# interim prior
 def logprior(
     params: dict[str, Array], *, sigma_e: float, sigma_x: float = 0.5
 ) -> Array:
