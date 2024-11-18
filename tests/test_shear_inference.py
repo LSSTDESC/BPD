@@ -6,7 +6,7 @@ from jax import random
 
 from bpd.pipelines.shear_inference import pipeline_shear_inference
 from bpd.pipelines.toy_ellips import pipeline_toy_ellips_samples
-from bpd.prior import sample_ellip_prior
+from bpd.prior import sample_ellip_prior, shear_transformation
 
 
 @pytest.mark.parametrize("seed", [1234, 4567])
@@ -60,7 +60,8 @@ def test_shape_noise_scaling(seed):
     n_gals = 1000
 
     # no observation noise, 1 sample.
-    e_post = sample_ellip_prior(k1, sigma=sigma_e, n=n_gals).reshape(n_gals, 1, 2)
+    e_unsheared = sample_ellip_prior(k1, sigma=sigma_e, n=n_gals)
+    e_post = shear_transformation(e_unsheared, (g1, g2)).reshape(n_gals, 1, 2)
 
     shear_samples = pipeline_shear_inference(
         k2,
