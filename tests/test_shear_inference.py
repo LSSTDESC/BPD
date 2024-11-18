@@ -48,7 +48,7 @@ def test_shear_inference_toy_ellipticities(seed):
 
 
 @pytest.mark.parametrize("seed", [1234, 4567])
-def check_shape_noise_scaling(seed):
+def test_shape_noise_scaling(seed):
     """No measure noise is added so scaling of shear scatter should be ~`shape_noise / sqrt(N)`."""
     key = random.key(seed)
     k1, k2 = random.split(key)
