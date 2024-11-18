@@ -44,8 +44,10 @@ def run_warmup_nuts(
         target_acceptance_rate=target_acceptance_rate,
     )
 
-    (init_states, tuned_params), _ = warmup.run(rng_key, init_positions, n_warmup_steps)
-    return init_states, tuned_params
+    (init_states, tuned_params), adapt_info = warmup.run(
+        rng_key, init_positions, n_warmup_steps
+    )
+    return init_states, tuned_params, adapt_info
 
 
 def run_sampling_nuts(
@@ -62,8 +64,10 @@ def run_sampling_nuts(
     kernel = blackjax.nuts(
         _logtarget, **tuned_params, max_num_doublings=max_num_doublings
     ).step
-    states, _ = inference_loop(rng_key, init_states, kernel=kernel, n_samples=n_samples)
-    return states.position
+    states, info = inference_loop(
+        rng_key, init_states, kernel=kernel, n_samples=n_samples
+    )
+    return states.position, info
 
 
 def run_inference_nuts(
