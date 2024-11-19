@@ -133,6 +133,7 @@ def main(
         t2 = time.time()
         t_sampling = t2 - t1
 
+        results[n_gals] = {}
         results[n_gals]["t_warmup"] = t_warmup
         results[n_gals]["t_sampling"] = t_sampling
         results[n_gals]["samples"] = samples
