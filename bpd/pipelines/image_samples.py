@@ -151,6 +151,7 @@ def pipeline_interim_samples_one_galaxy(
     rng_key: PRNGKeyArray,
     true_params: dict[str, float],
     target_image: Array,
+    fixed_draw_kwargs: dict,
     *,
     initialization_fnc: Callable,
     draw_fnc: Callable,
@@ -167,7 +168,8 @@ def pipeline_interim_samples_one_galaxy(
     k1, k2 = random.split(rng_key)
 
     init_position = initialization_fnc(k1, true_params=true_params, data=target_image)
-    _loglikelihood = partial(loglikelihood, draw_fnc=draw_fnc, background=background)
+    _draw_fnc = partial(draw_fnc, **fixed_draw_kwargs)
+    _loglikelihood = partial(loglikelihood, draw_fnc=_draw_fnc, background=background)
     _logprior = partial(logprior, sigma_e=sigma_e_int)
 
     _logtarget = partial(
