@@ -56,7 +56,7 @@ INIT_FNC = partial(init_with_prior, prior=_sample_prior_init)
 
 def main(
     seed: int,
-    n_samples: int = 100,
+    n_samples: int = 500,
     shape_noise: float = 0.3,
     sigma_e_int: float = 0.5,
     slen: int = 53,
@@ -71,6 +71,7 @@ def main(
     dirpath = DATA_DIR / "cache_chains" / f"test_image_sampling_{seed}"
     if not dirpath.exists():
         dirpath.mkdir(exist_ok=True)
+    fpath = dirpath / f"chain_results_{seed}.npy"
 
     draw_fnc = partial(draw_gaussian, slen=slen, fft_size=fft_size)
     _loglikelihood = partial(loglikelihood, draw_fnc=draw_fnc, background=background)
@@ -97,8 +98,8 @@ def main(
     _run_sampling = vmap(vmap(jjit(_run_sampling1), in_axes=(0, 0, 0, None)))
 
     results = {}
-    # for n_gals in (1, 1, 5, 10, 50, 100, 250):  # repeat 1 == compilation
-    for n_gals in (1, 5):
+    for n_gals in (1, 1, 5, 10, 50, 100, 250):  # repeat 1 == compilation
+        print("n_gals:", n_gals)
         # generate data and parameters
         pkeys = random.split(pkey, n_gals)
         galaxy_params = vmap(partial(sample_prior, shape_noise=shape_noise))(pkeys)
@@ -137,8 +138,9 @@ def main(
         results[n_gals]["t_warmup"] = t_warmup
         results[n_gals]["t_sampling"] = t_sampling
         results[n_gals]["samples"] = samples
+        results[n_gals]["truth"] = true_params
 
-    jnp.save(results)
+    jnp.save(fpath, results)
 
 
 if __name__ == "__main__":
