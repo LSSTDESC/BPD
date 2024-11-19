@@ -15,12 +15,12 @@ from bpd.chains import run_sampling_nuts, run_warmup_nuts
 from bpd.draw import draw_gaussian
 from bpd.initialization import init_with_prior
 from bpd.pipelines.image_samples import (
-    get_target_galaxy_params_simple,
     get_target_images,
     get_true_params_from_galaxy_params,
     loglikelihood,
     logprior,
     logtarget,
+    sample_target_galaxy_params_simple,
 )
 
 
@@ -38,7 +38,7 @@ def sample_prior(
     lf = random.uniform(k1, minval=flux_bds[0], maxval=flux_bds[1])
     hlr = random.uniform(k2, minval=hlr_bds[0], maxval=hlr_bds[1])
 
-    other_params = get_target_galaxy_params_simple(
+    other_params = sample_target_galaxy_params_simple(
         k3, shape_noise=shape_noise, g1=g1, g2=g2
     )
 
@@ -97,7 +97,8 @@ def main(
     _run_sampling = vmap(vmap(jjit(_run_sampling1), in_axes=(0, 0, 0, None)))
 
     results = {}
-    for n_gals in (1, 1, 5, 10, 50, 100, 250):  # repeat 1 == compilation
+    # for n_gals in (1, 1, 5, 10, 50, 100, 250):  # repeat 1 == compilation
+    for n_gals in (1, 5):
         # generate data and parameters
         pkeys = random.split(pkey, n_gals)
         galaxy_params = vmap(partial(sample_prior, shape_noise=shape_noise))(pkeys)
