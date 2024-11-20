@@ -13,6 +13,7 @@ import numpy as np
 from blackjax.diagnostics import effective_sample_size, potential_scale_reduction
 from jax import Array
 from matplotlib.backends.backend_pdf import PdfPages
+from tqdm import tqdm
 
 from bpd import DATA_DIR
 from bpd.diagnostics import get_contour_plot
@@ -28,7 +29,7 @@ def make_trace_plots(
     n_gals = samples_dict["lf"].shape[0]
 
     with PdfPages(fname) as pdf:
-        for _ in range(n_examples):
+        for _ in tqdm(range(n_examples), desc="Making traces"):
             idx = np.random.choice(np.arange(0, n_gals)).item()
             chains = {k: v[idx] for k, v in samples_dict.items()}
             tv = {p: q[idx].item() for p, q in truth.items()}
@@ -56,7 +57,7 @@ def make_contour_plots(
     n_gals = samples_dict["lf"].shape[0]
 
     with PdfPages(fname) as pdf:
-        for _ in range(n_examples):
+        for _ in tqdm(range(n_examples), desc="Making contours"):
             idx = np.random.choice(np.arange(0, n_gals)).item()
             true_params = {p: q[idx].item() for p, q in truth.items()}
 
@@ -70,26 +71,36 @@ def make_contour_plots(
 
 def make_convergence_histograms(samples_dict: dict[str, Array]) -> None:
     """One histogram of ESS and R-hat per parameter."""
+    print("INFO: Computing convergence plots...")
     fname = "figs/convergence_hist.pdf"
+
+    # compute convergence metrics
+    rhats = {p: [] for p in samples_dict}
+    ess = {p: [] for p in samples_dict}
+    for ii in tqdm(range(250), desc="Computing convergence metrics"):
+        for p in samples_dict:
+            chains = samples_dict[p][ii]
+            assert chains.shape == (4, 500)
+            rhats[p].append(potential_scale_reduction(chains))
+            ess[p].append(effective_sample_size(chains) / 2000)
 
     with PdfPages(fname) as pdf:
         for p in samples_dict:
-            chains = samples_dict[p]
-            assert chains.shape == (250, 4, 500)
-            rhats = [potential_scale_reduction(chains[ii]) for ii in range(250)]
-            essr = [effective_sample_size(chains[jj]) / 2000 for jj in range(250)]
+            rhat_p = rhats[p]
+            ess_p = ess[p]
 
             fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 6))
             fig.suptitle(p, fontsize=18)
 
-            ax1.hist(rhats, bins=25)
-            ax2.hist(essr, bins=25)
+            ax1.hist(rhat_p, bins=25)
+            ax2.hist(ess_p, bins=25)
 
             pdf.savefig(fig)
             plt.close(fig)
 
 
 def make_timing_plots(results_dict: dict) -> None:
+    print("INFO: Making timing plots...")
     fname = "figs/timing.pdf"
     all_n_gals = [int(n_gals) for n_gals in results_dict]
 
@@ -107,8 +118,10 @@ def make_timing_plots(results_dict: dict) -> None:
 
         t_per_obj_warmup = t_warmup / (4 * n_gals)
         t_per_obj_per_sample_sampling = t_sampling / (4 * n_gals * 500)
-        t_per_obj = t_per_obj_warmup + t_per_obj_per_sample_sampling * n_samples_array
-        t_per_obj_dict[n_gals] = t_per_obj
+        t_per_obj_arr = (
+            t_per_obj_warmup + t_per_obj_per_sample_sampling * n_samples_array
+        )
+        t_per_obj_dict[n_gals] = t_per_obj_arr
 
     with PdfPages(fname) as pdf:
         fig, ax = plt.subplots(1, 1, figsize=(7, 7))
@@ -116,7 +129,7 @@ def make_timing_plots(results_dict: dict) -> None:
         ax.set_ylabel("Time per obj per GPU core", fontsize=14)
         ax.set_xlabel("# samples", fontsize=14)
 
-        for n_gals, t_per_obj_array in t_per_obj_dict:
+        for n_gals, t_per_obj_array in t_per_obj_dict.items():
             n_chains = 4 * n_gals
             ax.plot(n_samples_array, t_per_obj_array, label=f"n_chains:{n_chains}")
 
