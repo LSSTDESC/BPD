@@ -163,13 +163,16 @@ def pipeline_interim_samples_one_galaxy(
     n_warmup_steps: int = 500,
     is_mass_matrix_diagonal: bool = True,
     background: float = 1.0,
+    free_flux: bool = True,
 ):
     # Flux and HLR are fixed to truth and not inferred in this function.
     k1, k2 = random.split(rng_key)
 
     init_position = initialization_fnc(k1, true_params=true_params, data=target_image)
     _draw_fnc = partial(draw_fnc, **fixed_draw_kwargs)
-    _loglikelihood = partial(loglikelihood, draw_fnc=_draw_fnc, background=background)
+    _loglikelihood = partial(
+        loglikelihood, draw_fnc=_draw_fnc, background=background, free_flux=free_flux
+    )
     _logprior = partial(logprior, sigma_e=sigma_e_int)
 
     _logtarget = partial(
