@@ -6,7 +6,6 @@ from jax import random
 
 from bpd.pipelines.shear_inference import pipeline_shear_inference
 from bpd.pipelines.toy_ellips import pipeline_toy_ellips_samples
-from bpd.prior import sample_ellip_prior, shear_transformation
 
 
 @pytest.mark.parametrize("seed", [1234, 4567])
