@@ -6,7 +6,7 @@
 #SBATCH --mail-user=imendoza@umich.edu
 #SBATCH -C gpu
 #SBATCH --output=/global/u2/i/imendoza/BPD/jobs_out/exp2_42_%j.out
-#SBATCH --time=01:00:00
+#SBATCH --time=02:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 
