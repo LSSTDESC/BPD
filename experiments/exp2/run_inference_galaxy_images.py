@@ -73,6 +73,7 @@ def main(
         dirpath.mkdir(exist_ok=True)
     fpath = dirpath / f"chain_results_{seed}.npy"
 
+    # setup target density
     draw_fnc = partial(draw_gaussian, slen=slen, fft_size=fft_size)
     _loglikelihood = partial(loglikelihood, draw_fnc=draw_fnc, background=background)
     _logprior = partial(logprior, sigma_e=sigma_e_int)
@@ -80,6 +81,7 @@ def main(
         logtarget, logprior_fnc=_logprior, loglikelihood_fnc=_loglikelihood
     )
 
+    # setup nuts functions
     _run_warmup1 = partial(
         run_warmup_nuts,
         logtarget=_logtarget,
@@ -100,11 +102,13 @@ def main(
     results = {}
     for n_gals in (1, 1, 5, 10, 20, 25, 50, 100, 250):  # repeat 1 == compilation
         print("n_gals:", n_gals)
+
         # generate data and parameters
         pkeys = random.split(pkey, n_gals)
         galaxy_params = vmap(partial(sample_prior, shape_noise=shape_noise))(pkeys)
         assert galaxy_params["x"].shape == (n_gals,)
 
+        # get images
         draw_params = {**galaxy_params}
         draw_params["f"] = 10 ** draw_params.pop("lf")
         target_images = get_target_images(
@@ -123,7 +127,9 @@ def main(
 
         # warmup
         t1 = time.time()
-        init_states, tuned_params, _ = _run_warmup(wkeys, init_positions, target_images)
+        init_states, tuned_params, adapt_info = _run_warmup(
+            wkeys, init_positions, target_images
+        )
         t2 = time.time()
         t_warmup = t2 - t1
         tuned_params.pop("max_num_doublings")  # set above, not jittable
@@ -139,6 +145,7 @@ def main(
         results[n_gals]["t_sampling"] = t_sampling
         results[n_gals]["samples"] = samples
         results[n_gals]["truth"] = true_params
+        results[n_gals]["adapt_info"] = adapt_info
 
     jnp.save(fpath, results)
 
