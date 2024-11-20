@@ -25,8 +25,7 @@ def make_trace_plots(
     """Make example figure showing example trace plots for each parameter."""
     # by default, we choose 10 random traces to plot in 1 PDF file.
     fname = "figs/traces.pdf"
-    assert samples_dict["lf"].shape == (250, 4, 500)
-    n_gals = samples_dict["lf"].shape[0]
+    n_gals, _, _ = samples_dict["lf"].shape
 
     with PdfPages(fname) as pdf:
         for _ in tqdm(range(n_examples), desc="Making traces"):
@@ -55,9 +54,7 @@ def make_contour_plots(
 ) -> None:
     """Make example figure showing example contour plots of galaxy properties"""
     fname = "figs/contours.pdf"
-    assert samples_dict["lf"].shape == (250, 4, 500)
-    n_gals = samples_dict["lf"].shape[0]
-
+    n_gals, _, _ = samples_dict["lf"].shape
     with PdfPages(fname) as pdf:
         for _ in tqdm(range(n_examples), desc="Making contours"):
             idx = np.random.choice(np.arange(0, n_gals)).item()
@@ -66,7 +63,7 @@ def make_contour_plots(
             # save one contour per galaxy for now
             samples_list = [{k: v[idx, 0] for k, v in samples_dict.items()}]
             names = ["post0"]
-            fig = get_contour_plot(samples_list, names, true_params, figsize=(10, 10))
+            fig = get_contour_plot(samples_list, names, true_params, figsize=(12, 12))
             pdf.savefig(fig)
             plt.close(fig)
 
@@ -75,16 +72,18 @@ def make_convergence_histograms(samples_dict: dict[str, Array]) -> None:
     """One histogram of ESS and R-hat per parameter."""
     print("INFO: Computing convergence plots...")
     fname = "figs/convergence_hist.pdf"
+    n_gals, n_chains_per_gal, n_samples = samples_dict["lf"].shape
 
     # compute convergence metrics
     rhats = {p: [] for p in samples_dict}
     ess = {p: [] for p in samples_dict}
-    for ii in tqdm(range(250), desc="Computing convergence metrics"):
+    for ii in tqdm(range(n_gals), desc="Computing convergence metrics"):
         for p in samples_dict:
             chains = samples_dict[p][ii]
-            assert chains.shape == (4, 500)
+            n_samples_total = n_samples * n_chains_per_gal
+            assert chains.shape == (n_chains_per_gal, n_samples)
             rhats[p].append(potential_scale_reduction(chains))
-            ess[p].append(effective_sample_size(chains) / 2000)
+            ess[p].append(effective_sample_size(chains) / n_samples_total)
 
     with PdfPages(fname) as pdf:
         for p in samples_dict:
@@ -94,7 +93,7 @@ def make_convergence_histograms(samples_dict: dict[str, Array]) -> None:
             fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 6))
             fig.suptitle(p, fontsize=18)
 
-            ax1.hist(rhat_p, bins=25, range=(1, 2))
+            ax1.hist(rhat_p, bins=25, range=(0.98, 1.1))
             ax2.hist(ess_p, bins=25)
 
             ax1.set_xlabel("R-hat")
@@ -116,12 +115,16 @@ def make_timing_plots(results_dict: dict) -> None:
     t_per_obj_dict = {}
     n_samples_array = jnp.arange(0, 1001, 1)
 
+    _, n_chains_per_gal, n_samples = results_dict[1]["lf"].shape
+
     for n_gals in all_n_gals:
         t_warmup = results_dict[n_gals]["t_warmup"]
         t_sampling = results_dict[n_gals]["t_sampling"]
 
-        t_per_obj_warmup = t_warmup / (4 * n_gals)
-        t_per_obj_per_sample_sampling = t_sampling / (4 * n_gals * 500)
+        n_chains = n_gals * n_chains_per_gal
+
+        t_per_obj_warmup = t_warmup / n_chains
+        t_per_obj_per_sample_sampling = t_sampling / (n_chains * n_samples)
         t_per_obj_arr = (
             t_per_obj_warmup + t_per_obj_per_sample_sampling * n_samples_array
         )
@@ -152,9 +155,6 @@ def main():
     results = jnp.load(fpath, allow_pickle=True).item()
     samples = results[250]["samples"]
     truth = results[250]["truth"]
-
-    assert samples["lf"].shape == (250, 4, 500)
-    assert truth["lf"].shape == (250,)
 
     # make plots
     make_trace_plots(samples, truth)
