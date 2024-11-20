@@ -44,6 +44,8 @@ def make_trace_plots(
                 for jj in range(4):
                     ax.plot(chains[p][jj])
 
+            fig.tight_layout()
+
             pdf.savefig(fig)
             plt.close(fig)
 
@@ -64,7 +66,7 @@ def make_contour_plots(
             # save one contour per galaxy for now
             samples_list = [{k: v[idx, 0] for k, v in samples_dict.items()}]
             names = ["post0"]
-            fig = get_contour_plot(samples_list, names, true_params, figsize=(8, 8))
+            fig = get_contour_plot(samples_list, names, true_params, figsize=(10, 10))
             pdf.savefig(fig)
             plt.close(fig)
 
@@ -92,8 +94,11 @@ def make_convergence_histograms(samples_dict: dict[str, Array]) -> None:
             fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 6))
             fig.suptitle(p, fontsize=18)
 
-            ax1.hist(rhat_p, bins=25)
+            ax1.hist(rhat_p, bins=25, range=(1, 2))
             ax2.hist(ess_p, bins=25)
+
+            ax1.set_xlabel("R-hat")
+            ax2.set_ylabel("ESS")
 
             pdf.savefig(fig)
             plt.close(fig)
@@ -107,7 +112,6 @@ def make_timing_plots(results_dict: dict) -> None:
     # cycler from blue to red
     color = plt.cm.coolwarm(np.linspace(0, 1, len(all_n_gals)))
     cycles = cycler.cycler("color", color)
-    plt.gca().set_prop_cycle(cycles)
 
     t_per_obj_dict = {}
     n_samples_array = jnp.arange(0, 1001, 1)
@@ -125,19 +129,19 @@ def make_timing_plots(results_dict: dict) -> None:
 
     with PdfPages(fname) as pdf:
         fig, ax = plt.subplots(1, 1, figsize=(7, 7))
+        ax.set_prop_cycle(cycles)
 
-        ax.set_ylabel("Time per obj per GPU core", fontsize=14)
+        ax.set_ylabel("Time per obj per GPU core (sec)", fontsize=14)
         ax.set_xlabel("# samples", fontsize=14)
 
         for n_gals, t_per_obj_array in t_per_obj_dict.items():
             n_chains = 4 * n_gals
             ax.plot(n_samples_array, t_per_obj_array, label=f"n_chains:{n_chains}")
 
+        ax.legend()
+
         pdf.savefig(fig)
         plt.close(fig)
-
-    # reset color cycle
-    plt.gca().set_prop_cycle(None)
 
 
 def main():
