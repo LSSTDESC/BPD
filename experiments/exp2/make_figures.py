@@ -18,6 +18,8 @@ from tqdm import tqdm
 from bpd import DATA_DIR
 from bpd.diagnostics import get_contour_plot
 
+np.random.seed(42)
+
 
 def make_trace_plots(
     samples_dict: dict[str, Array], truth: dict[str, Array], n_examples: int = 25
@@ -85,6 +87,11 @@ def make_convergence_histograms(samples_dict: dict[str, Array]) -> None:
             rhats[p].append(potential_scale_reduction(chains))
             ess[p].append(effective_sample_size(chains) / n_samples_total)
 
+    # print rhat outliers
+    for p in rhats:
+        rhat = np.array(rhats[p])
+        print(f"Number of R-hat outliers for {p}:", sum((rhat < 0.98) | (rhat > 1.1)))
+
     with PdfPages(fname) as pdf:
         for p in samples_dict:
             rhat_p = rhats[p]
@@ -115,7 +122,7 @@ def make_timing_plots(results_dict: dict) -> None:
     t_per_obj_dict = {}
     n_samples_array = jnp.arange(0, 1001, 1)
 
-    _, n_chains_per_gal, n_samples = results_dict[1]["lf"].shape
+    _, n_chains_per_gal, n_samples = results_dict[1]["samples"]["lf"].shape
 
     for n_gals in all_n_gals:
         t_warmup = results_dict[n_gals]["t_warmup"]
