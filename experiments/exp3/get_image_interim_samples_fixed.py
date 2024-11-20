@@ -29,7 +29,7 @@ def main(
     g2: float = 0.0,
     lf: float = 6.0,  # ~ SNR = 1000
     hlr: float = 1.0,
-    shape_noise: float = 1e-3,
+    shape_noise: float = 1e-4,
     sigma_e_int: float = 3e-2,
     slen: int = 53,
     fft_size: int = 256,
