@@ -6,6 +6,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = ""
 os.environ["JAX_PLATFORMS"] = "cpu"
 os.environ["JAX_ENABLE_X64"] = "True"
 
+import cycler
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
@@ -14,7 +15,7 @@ from jax import Array
 from matplotlib.backends.backend_pdf import PdfPages
 
 from bpd import DATA_DIR
-from bpd.diagnostics import get_contour_plot, get_gauss_pc_fig, get_pc_fig
+from bpd.diagnostics import get_contour_plot
 
 
 def make_trace_plots(
@@ -88,16 +89,42 @@ def make_convergence_histograms(samples_dict: dict[str, Array]) -> None:
             plt.close(fig)
 
 
-# def make_timing_plots(results_dict: dict) -> None:
-#     fname = "figs/multiplicative_bias_hist.pdf"
-#     with PdfPages(fname) as pdf:
-#         g1 = g_samples[:, :, 0]
-#         mbias = (g1.mean(axis=1) - 0.02) / 0.02
-#         fig, ax = plt.subplots(1, 1, figsize=(7, 7))
-#         ax.hist(mbias, bins=31, histtype="step")
+def make_timing_plots(results_dict: dict) -> None:
+    fname = "figs/timing.pdf"
+    all_n_gals = [int(n_gals) for n_gals in results_dict]
 
-#         pdf.savefig(fig)
-#         plt.close(fig)
+    # cycler from blue to red
+    color = plt.cm.coolwarm(np.linspace(0, 1, len(all_n_gals)))
+    cycles = cycler.cycler("color", color)
+    plt.gca().set_prop_cycle(cycles)
+
+    t_per_obj_dict = {}
+    n_samples_array = jnp.arange(0, 1001, 1)
+
+    for n_gals in all_n_gals:
+        t_warmup = results_dict[n_gals]["t_warmup"]
+        t_sampling = results_dict[n_gals]["t_sampling"]
+
+        t_per_obj_warmup = t_warmup / (4 * n_gals)
+        t_per_obj_per_sample_sampling = t_sampling / (4 * n_gals * 500)
+        t_per_obj = t_per_obj_warmup + t_per_obj_per_sample_sampling * n_samples_array
+        t_per_obj_dict[n_gals] = t_per_obj
+
+    with PdfPages(fname) as pdf:
+        fig, ax = plt.subplots(1, 1, figsize=(7, 7))
+
+        ax.set_ylabel("Time per obj per GPU core", fontsize=14)
+        ax.set_xlabel("# samples", fontsize=14)
+
+        for n_gals, t_per_obj_array in t_per_obj_dict:
+            n_chains = 4 * n_gals
+            ax.plot(n_samples_array, t_per_obj_array, label=f"n_chains:{n_chains}")
+
+        pdf.savefig(fig)
+        plt.close(fig)
+
+    # reset color cycle
+    plt.gca().set_prop_cycle(None)
 
 
 def main():
@@ -116,6 +143,7 @@ def main():
     make_trace_plots(samples, truth)
     make_contour_plots(samples, truth)
     make_convergence_histograms(samples)
+    make_timing_plots(results)
 
 
 if __name__ == "__main__":
