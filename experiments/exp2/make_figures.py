@@ -18,8 +18,6 @@ from tqdm import tqdm
 from bpd import DATA_DIR
 from bpd.diagnostics import get_contour_plot
 
-np.random.seed(42)
-
 
 def make_trace_plots(
     samples_dict: dict[str, Array], truth: dict[str, Array], n_examples: int = 25
@@ -155,6 +153,8 @@ def make_timing_plots(results_dict: dict) -> None:
 
 
 def main():
+    np.random.seed(42)
+
     fpath = (
         DATA_DIR / "cache_chains" / "test_image_sampling_42" / "chain_results_42.npy"
     )
