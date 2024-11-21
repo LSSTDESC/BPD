@@ -44,3 +44,5 @@ def test_shear_inference_toy_ellipticities(seed):
     assert shear_samples.shape == (1000, 2)
     assert jnp.abs((jnp.mean(shear_samples[:, 0]) - g1) / g1) <= 3e-3
     assert jnp.abs(jnp.mean(shear_samples[:, 1])) <= 3e-3
+    assert jnp.std(shear_samples[:, 0]) > 0
+    assert jnp.std(shear_samples[:, 1]) > 0

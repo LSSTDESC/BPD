@@ -29,7 +29,7 @@ def sample_ellip_prior(rng_key, sigma: float, n: int = 1):
     """Sample n ellipticities isotropic components with Gary's prior from magnitude."""
     key1, key2 = random.split(rng_key, 2)
     e_mag = sample_mag_ellip_prior(key1, sigma=sigma, n=n)
-    e_phi = random.uniform(key2, shape=(n,), minval=0, maxval=2 * jnp.pi)
+    e_phi = random.uniform(key2, shape=(n,), minval=0, maxval=jnp.pi)
     e1 = e_mag * jnp.cos(2 * e_phi)
     e2 = e_mag * jnp.sin(2 * e_phi)
     return jnp.stack((e1, e2), axis=1)

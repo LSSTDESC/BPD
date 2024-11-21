@@ -75,7 +75,6 @@ def main(
         fpath_ellip = dirpath / f"e_post_{seed}_{ii}.npy"
         fpath_shear = dirpath / f"g_samples_{seed}_{ii}.npy"
 
-        assert not fpath_shear.exists()
         jnp.save(fpath_ellip, e_post)
         jnp.save(fpath_shear, g_samples)
 
