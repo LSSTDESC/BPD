@@ -1,9 +1,11 @@
 import jax.numpy as jnp
 from jax import Array, random
+from jax._src.prng import PRNGKeyArray
 from jax.numpy.linalg import norm
+from jaxtyping import ArrayLike
 
 
-def ellip_mag_prior(e, sigma: float):
+def ellip_mag_prior(e: ArrayLike, sigma: float):
     """Unnormalized Prior for the magnitude of the ellipticity, domain is (0, 1)
 
     This distribution is taken from Gary's 2013 paper on Bayesian shear inference.
@@ -15,7 +17,9 @@ def ellip_mag_prior(e, sigma: float):
     return (1 - e**2) ** 2 * jnp.exp(-(e**2) / (2 * sigma**2))
 
 
-def sample_mag_ellip_prior(rng_key, sigma: float, n: int = 1, n_bins: int = 1_000_000):
+def sample_mag_ellip_prior(
+    rng_key: PRNGKeyArray, sigma: float, n: int = 1, n_bins: int = 1_000_000
+):
     """Sample n points from Gary's ellipticity magnitude prior."""
     # this part could be cached
     e_array = jnp.linspace(0, 1, n_bins)
@@ -25,7 +29,7 @@ def sample_mag_ellip_prior(rng_key, sigma: float, n: int = 1, n_bins: int = 1_00
     return random.choice(rng_key, e_array, shape=(n,), p=p_array)
 
 
-def sample_ellip_prior(rng_key, sigma: float, n: int = 1):
+def sample_ellip_prior(rng_key: PRNGKeyArray, sigma: float, n: int = 1):
     """Sample n ellipticities isotropic components with Gary's prior from magnitude."""
     key1, key2 = random.split(rng_key, 2)
     e_mag = sample_mag_ellip_prior(key1, sigma=sigma, n=n)
@@ -98,7 +102,7 @@ def inv_shear_transformation(e: Array, g: tuple[float, float]):
 
 # get synthetic measured sheared ellipticities
 def sample_synthetic_sheared_ellips_unclipped(
-    rng_key,
+    rng_key: PRNGKeyArray,
     g: tuple[float, float],
     n: int,
     sigma_m: float,
@@ -114,7 +118,7 @@ def sample_synthetic_sheared_ellips_unclipped(
 
 
 def sample_synthetic_sheared_ellips_clipped(
-    rng_key,
+    rng_key: PRNGKeyArray,
     g: tuple[float, float],
     sigma_m: float,
     sigma_e: float,
