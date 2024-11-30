@@ -105,7 +105,9 @@ def get_true_params_from_galaxy_params(galaxy_params: dict[str, Array]):
     e1, e2 = true_params.pop("e1"), true_params.pop("e2")
     g1, g2 = true_params.pop("g1"), true_params.pop("g2")
 
-    e1_prime, e2_prime = scalar_shear_transformation((e1, e2), (g1, g2))
+    e1_prime, e2_prime = scalar_shear_transformation(
+        jnp.array([e1, e2]), jnp.array([g1, g2])
+    )
     true_params["e1"] = e1_prime
     true_params["e2"] = e2_prime
 

@@ -13,7 +13,7 @@ _grad_fnc2 = vmap(vmap(grad(inv_shear_func2), in_axes=(0, None)), in_axes=(0, No
 
 
 def shear_loglikelihood_unreduced(
-    g: tuple[float, float], e_post: Array, prior: Callable, interim_prior: Callable
+    g: Array, e_post: Array, prior: Callable, interim_prior: Callable
 ) -> ArrayLike:
     # Given by the inference procedure in Schneider et al. 2014
     # assume single shear g
@@ -43,7 +43,7 @@ def shear_loglikelihood_unreduced(
 
 
 def shear_loglikelihood(
-    g: tuple[float, float], e_post, prior: Callable, interim_prior: Callable
+    g: Array, e_post: Array, prior: Callable, interim_prior: Callable
 ) -> float:
     """Reduce with sum"""
     return shear_loglikelihood_unreduced(g, e_post, prior, interim_prior).sum()

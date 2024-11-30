@@ -39,7 +39,7 @@ def sample_ellip_prior(rng_key: PRNGKeyArray, sigma: float, n: int = 1):
     return jnp.stack((e1, e2), axis=1)
 
 
-def scalar_shear_transformation(e: tuple[float, float], g: tuple[float, float]):
+def scalar_shear_transformation(e: Array, g: Array):
     """Transform elliptiticies by a fixed shear (scalar version).
 
     The transformation we used is equation 3.4b in Seitz & Schneider (1997).
@@ -56,7 +56,7 @@ def scalar_shear_transformation(e: tuple[float, float], g: tuple[float, float]):
     return e_prime.real, e_prime.imag
 
 
-def scalar_inv_shear_transformation(e: tuple[float, float], g: tuple[float, float]):
+def scalar_inv_shear_transformation(e: Array, g: Array):
     """Same as above but the inverse."""
     e1, e2 = e
     g1, g2 = g
@@ -68,12 +68,12 @@ def scalar_inv_shear_transformation(e: tuple[float, float], g: tuple[float, floa
     return e_prime.real, e_prime.imag
 
 
-# useful for jacobian later, only need 2 grads really
+# useful for jacobian later
 inv_shear_func1 = lambda e, g: scalar_inv_shear_transformation(e, g)[0]
 inv_shear_func2 = lambda e, g: scalar_inv_shear_transformation(e, g)[1]
 
 
-def shear_transformation(e: Array, g: tuple[float, float]):
+def shear_transformation(e: Array, g: Array):
     """Transform elliptiticies by a fixed shear.
 
     The transformation we used is equation 3.4b in Seitz & Schneider (1997).
@@ -88,7 +88,7 @@ def shear_transformation(e: Array, g: tuple[float, float]):
     return jnp.stack([e_prime.real, e_prime.imag], axis=-1)
 
 
-def inv_shear_transformation(e: Array, g: tuple[float, float]):
+def inv_shear_transformation(e: Array, g: Array):
     """Same as above but the inverse."""
     e1, e2 = e[..., 0], e[..., 1]
     g1, g2 = g
@@ -103,7 +103,7 @@ def inv_shear_transformation(e: Array, g: tuple[float, float]):
 # get synthetic measured sheared ellipticities
 def sample_synthetic_sheared_ellips_unclipped(
     rng_key: PRNGKeyArray,
-    g: tuple[float, float],
+    g: Array,
     n: int,
     sigma_m: float,
     sigma_e: float,
@@ -119,7 +119,7 @@ def sample_synthetic_sheared_ellips_unclipped(
 
 def sample_synthetic_sheared_ellips_clipped(
     rng_key: PRNGKeyArray,
-    g: tuple[float, float],
+    g: Array,
     sigma_m: float,
     sigma_e: float,
     n: int = 1,
@@ -140,7 +140,7 @@ def sample_synthetic_sheared_ellips_clipped(
 
     # clip magnitude to < 1
     # preserve angle after noise added when clipping
-    beta = jnp.arctan2(e_obs[:, :, 1], e_obs[:, :, 0]) / 2
+    beta = jnp.arctan2(e_obs[:, :, 1], e_obs[:, :, 0]) * 0.5
     e_obs_mag = norm(e_obs, axis=-1)
     e_obs_mag = jnp.clip(e_obs_mag, 0, e_tol)  # otherwise likelihood explodes
 
