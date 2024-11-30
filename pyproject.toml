@@ -10,7 +10,14 @@ description = "Bayesian Pixel Domain method for shear inference."
 version = "0.0.1"
 license = { file = "LICENSE" }
 readme = "README.md"
-dependencies = ["numpy >=1.18.0", "galsim >=2.3.0", "jax >=0.4.30", "jaxlib", "blackjax >=1.2.0"]
+dependencies = [
+    "numpy >=1.18.0",
+    "galsim >=2.3.0",
+    "jax >=0.4.30",
+    "jaxlib",
+    "blackjax >=1.2.0",
+    "numpyro >=0.13.0",
+]
 
 
 [project.optional-dependencies]
@@ -58,8 +65,8 @@ exclude = [
 line-length = 88
 indent-width = 4
 
-# Assume Python 3.8
-target-version = "py310"
+# Assume Python 3.12
+target-version = "py312"
 
 [tool.ruff.format]
 # Like Black, use double quotes for strings.

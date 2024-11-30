@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 from chainconsumer import Chain, ChainConsumer, Truth
-from jax import Array
 from matplotlib.figure import Figure
 from matplotlib.pyplot import Axes
 from numpyro.diagnostics import hpdi
@@ -9,7 +8,7 @@ from scipy import stats
 
 
 def get_contour_plot(
-    samples_list: list[dict[str, Array]],
+    samples_list: list[dict[str, np.ndarray]],
     names: list[str],
     truth: dict[str, float],
     figsize: tuple[float, float] = (7, 7),

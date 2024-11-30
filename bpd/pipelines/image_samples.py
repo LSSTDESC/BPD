@@ -78,16 +78,16 @@ def loglikelihood(
     background: float,
     free_flux: bool = True,
 ):
-    # NOTE: draw_fnc should already contain `f` and `hlr` as constant arguments.
-    _draw_params = {**{"g1": 0.0, "g2": 0.0}, **params}  # function is more general
+    # NOTE: draw_fnc should already contain `f` and `hlr` as constant arguments if fixed
+    _draw_params = {**{"g1": 0.0, "g2": 0.0}, **params}
 
+    # Convert log-flux to flux if provided
     if free_flux:
         _draw_params["f"] = 10 ** _draw_params.pop("lf")
-    model = draw_fnc(**_draw_params)
 
+    model = draw_fnc(**_draw_params)
     likelihood_pp = stats.norm.logpdf(data, loc=model, scale=jnp.sqrt(background))
-    likelihood = jnp.sum(likelihood_pp)
-    return likelihood
+    return jnp.sum(likelihood_pp)
 
 
 def logtarget(
