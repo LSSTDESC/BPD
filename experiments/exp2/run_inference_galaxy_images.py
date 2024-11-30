@@ -100,7 +100,7 @@ def main(
     _run_sampling = vmap(vmap(jjit(_run_sampling1), in_axes=(0, 0, 0, None)))
 
     results = {}
-    for n_gals in (1, 1, 5, 10, 20, 25, 50, 100, 250, 500):  # repeat 1 == compilation
+    for n_gals in (1, 1, 5, 10, 20, 25, 50, 100, 250):  # repeat 1 == compilation
         print("n_gals:", n_gals)
 
         # generate data and parameters
