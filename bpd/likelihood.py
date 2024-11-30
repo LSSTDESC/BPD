@@ -2,7 +2,7 @@ from typing import Callable
 
 import jax.numpy as jnp
 import jax.scipy as jsp
-from jax import grad, vmap
+from jax import Array, grad, vmap
 from jax.numpy.linalg import norm
 from jax.typing import ArrayLike
 
@@ -13,7 +13,7 @@ _grad_fnc2 = vmap(vmap(grad(inv_shear_func2), in_axes=(0, None)), in_axes=(0, No
 
 
 def shear_loglikelihood_unreduced(
-    g: tuple[float, float], e_post, prior: Callable, interim_prior: Callable
+    g: tuple[float, float], e_post: Array, prior: Callable, interim_prior: Callable
 ) -> ArrayLike:
     # Given by the inference procedure in Schneider et al. 2014
     # assume single shear g
