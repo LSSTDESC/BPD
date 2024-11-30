@@ -10,6 +10,7 @@ from bpd.prior import inv_shear_func1, inv_shear_func2, inv_shear_transformation
 
 _grad_fnc1 = vmap(vmap(grad(inv_shear_func1), in_axes=(0, None)), in_axes=(0, None))
 _grad_fnc2 = vmap(vmap(grad(inv_shear_func2), in_axes=(0, None)), in_axes=(0, None))
+_inv_shear_trans = vmap(inv_shear_transformation, in_axes=(0, None))
 
 
 def shear_loglikelihood_unreduced(
@@ -34,7 +35,7 @@ def shear_loglikelihood_unreduced(
     grad2 = _grad_fnc2(e_post, g)
     absjacdet = jnp.abs(grad1[..., 0] * grad2[..., 1] - grad1[..., 1] * grad2[..., 0])
 
-    e_post_unsheared = inv_shear_transformation(e_post, g)
+    e_post_unsheared = _inv_shear_trans(e_post, g)
     e_post_unsheared_mag = norm(e_post_unsheared, axis=-1)
     num = prior(e_post_unsheared_mag) * absjacdet  # (N, K)
 
