@@ -9,7 +9,7 @@ from scipy import stats
 
 
 def get_contour_plot(
-    samples_list: list[dict[str, Array]],
+    samples_list: list[dict[str, np.ndarray]],
     names: list[str],
     truth: dict[str, float],
     figsize: tuple[float, float] = (7, 7),
