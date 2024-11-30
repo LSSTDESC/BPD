@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 from chainconsumer import Chain, ChainConsumer, Truth
-from jax import Array
 from matplotlib.figure import Figure
 from matplotlib.pyplot import Axes
 from numpyro.diagnostics import hpdi
