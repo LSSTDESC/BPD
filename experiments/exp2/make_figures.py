@@ -88,7 +88,9 @@ def make_convergence_histograms(samples_dict: dict[str, Array]) -> None:
     # print rhat outliers
     for p in rhats:
         rhat = np.array(rhats[p])
-        print(f"Number of R-hat outliers for {p}:", sum((rhat < 0.98) | (rhat > 1.1)))
+        n_outliers = sum((rhat < 0.98) | (rhat > 1.1))
+        with open("figs/outliers.txt", "wb") as f:
+            print(f"Number of R-hat outliers for {p}:", n_outliers, file=f)
 
     with PdfPages(fname) as pdf:
         for p in samples_dict:
