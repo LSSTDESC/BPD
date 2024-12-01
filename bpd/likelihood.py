@@ -16,8 +16,8 @@ _inv_shear_trans = vmap(inv_shear_transformation, in_axes=(0, None))
 
 def shear_loglikelihood(
     g: Array,
-    e_post: Array,
     sigma_e: float,
+    e_post: Array,
     *,
     sigma_e_int: float,
     prior: Callable,
