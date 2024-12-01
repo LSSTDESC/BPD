@@ -2,7 +2,7 @@ import jax.numpy as jnp
 from jax import Array, random, vmap
 from jax._src.prng import PRNGKeyArray
 from jax.numpy.linalg import norm
-from jaxtyping import ArrayLike
+from jax.typing import ArrayLike
 
 
 def ellip_mag_prior(e: ArrayLike, sigma: float):
