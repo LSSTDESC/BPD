@@ -39,7 +39,7 @@ def shear_loglikelihood_unreduced(
     e_post_unsheared_mag = norm(e_post_unsheared, axis=-1)
     num = prior(e_post_unsheared_mag) * absjacdet  # (N, K)
 
-    ratio = jsp.special.logsumexp(jnp.log(num) - jnp.log(denom), axis=-1)
+    ratio = jsp.special.logsumexp(jnp.log(num) - jnp.log(denom), axis=-1)  # (N,)
     return ratio
 
 
