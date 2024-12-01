@@ -6,9 +6,12 @@ os.environ["CUDA_VISIBLE_DEVICES"] = ""
 os.environ["JAX_PLATFORMS"] = "cpu"
 os.environ["JAX_ENABLE_X64"] = "True"
 
+from math import sqrt
+
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
+import typer
 from jax import Array
 from matplotlib.backends.backend_pdf import PdfPages
 from tqdm import tqdm
@@ -17,7 +20,7 @@ from bpd import DATA_DIR
 from bpd.diagnostics import get_contour_plot, get_gauss_pc_fig, get_pc_fig
 
 
-def make_trace_plots(g_samples: Array, n_examples: int = 10) -> None:
+def make_trace_plots(g_samples: Array, n_examples: int = 25) -> None:
     """Make example figure showing example trace plots of shear posteriors."""
     # by default, we choose 10 random traces to plot in 1 PDF file.
     fname = "figs/traces.pdf"
@@ -39,7 +42,7 @@ def make_trace_plots(g_samples: Array, n_examples: int = 10) -> None:
             plt.close(fig)
 
 
-def make_contour_plots(g_samples: Array, n_examples=10) -> None:
+def make_contour_plots(g_samples: Array, n_examples: int = 25) -> None:
     """Make example figure showing example contour plots of shear posterios"""
     # by default, we choose 10 random contours to plot in 1 PDF file.
     fname = "figs/contours.pdf"
@@ -80,16 +83,38 @@ def make_histogram_mbias(g_samples: Array) -> None:
     fname = "figs/multiplicative_bias_hist.pdf"
     with PdfPages(fname) as pdf:
         g1 = g_samples[:, :, 0]
+
         mbias = (g1.mean(axis=1) - 0.02) / 0.02
         fig, ax = plt.subplots(1, 1, figsize=(7, 7))
         ax.hist(mbias, bins=31, histtype="step")
-
         pdf.savefig(fig)
         plt.close(fig)
 
 
-def main():
-    pdir = DATA_DIR / "cache_chains" / "toy_shear_42"
+def make_histogram_means_and_stds(g_samples: Array) -> None:
+    fname = "figs/mean_std_hist.pdf"
+    with PdfPages(fname) as pdf:
+        g1 = g_samples[:, :, 0]
+
+        means = g1.mean(axis=1)
+        stds = g1.std(axis=1)
+
+        fig, ax = plt.subplots(1, 1, figsize=(7, 7))
+        ax.hist(means, bins=31, histtype="step")
+        ax.set_title(f"Std: {means.std()}")
+        pdf.savefig(fig)
+        plt.close(fig)
+
+        fig, ax = plt.subplots(1, 1, figsize=(7, 7))
+        ax.hist(stds, bins=31, histtype="step")
+        ax.axvline(1e-3 / sqrt(1000), linestyle="--", color="k")
+        ax.axvline(1e-3 / sqrt(1000) / sqrt(2), linestyle="--", color="r")
+        pdf.savefig(fig)
+        plt.close(fig)
+
+
+def main(seed: int = 43):
+    pdir = DATA_DIR / "cache_chains" / f"toy_shear_{seed}"
     assert pdir.exists()
     all_g_samples = []
     for fpath in pdir.iterdir():
@@ -104,7 +129,8 @@ def main():
     make_contour_plots(g_samples)
     make_posterior_calibration(g_samples)
     make_histogram_mbias(g_samples)
+    make_histogram_means_and_stds(g_samples)
 
 
 if __name__ == "__main__":
-    main()
+    typer.run(main)
