@@ -19,9 +19,8 @@ def shear_loglikelihood(
     sigma_e: float,
     e_post: Array,
     *,
-    sigma_e_int: float,
     prior: Callable,
-    interim_prior: Callable,
+    interim_prior: Callable,  # fixed
 ) -> ArrayLike:
     # Given by the inference procedure in Schneider et al. 2014
     # assume single shear g
@@ -30,10 +29,9 @@ def shear_loglikelihood(
     # the interim_prior should have been used when obtaining e_obs from the chain (i.e. for now same sigma)
     _, _, _ = e_post.shape  # (N, K, 2)
     _prior = partial(prior, sigma=sigma_e)
-    _interim_prior = partial(interim_prior, sigma=sigma_e_int)
 
     e_post_mag = norm(e_post, axis=-1)
-    denom = _interim_prior(e_post_mag)  # (N, K), can ignore angle in prior as uniform
+    denom = interim_prior(e_post_mag)  # (N, K), can ignore angle in prior as uniform
 
     # for num, use trick
     # p(w_n' | g, alpha )  = p(w_n' \cross^{-1} g | alpha ) = p(w_n | alpha) * |jac(w_n / w_n')|
