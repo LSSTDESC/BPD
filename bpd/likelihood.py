@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Callable
 
 import jax.numpy as jnp
@@ -13,16 +14,21 @@ _grad_fnc2 = vmap(vmap(grad(inv_shear_func2), in_axes=(0, None)), in_axes=(0, No
 _inv_shear_trans = vmap(inv_shear_transformation, in_axes=(0, None))
 
 
-def shear_loglikelihood_unreduced(
-    g: Array, e_post: Array, prior: Callable, interim_prior: Callable
+def shear_loglikelihood(
+    g: Array,
+    sigma_e: float,
+    e_post: Array,
+    *,
+    prior: Callable,
+    interim_prior: Callable,  # fixed
 ) -> ArrayLike:
     # Given by the inference procedure in Schneider et al. 2014
     # assume single shear g
     # assume e_obs.shape == (N, K, 2) where N is number of galaxies, K is samples per galaxy
     # the priors are callables for now on only ellipticities
     # the interim_prior should have been used when obtaining e_obs from the chain (i.e. for now same sigma)
-    # normalization in priors can be ignored for now as alpha is fixed.
     _, _, _ = e_post.shape  # (N, K, 2)
+    _prior = partial(prior, sigma=sigma_e)
 
     e_post_mag = norm(e_post, axis=-1)
     denom = interim_prior(e_post_mag)  # (N, K), can ignore angle in prior as uniform
@@ -37,14 +43,7 @@ def shear_loglikelihood_unreduced(
 
     e_post_unsheared = _inv_shear_trans(e_post, g)
     e_post_unsheared_mag = norm(e_post_unsheared, axis=-1)
-    num = prior(e_post_unsheared_mag) * absjacdet  # (N, K)
+    num = _prior(e_post_unsheared_mag) * absjacdet  # (N, K)
 
     ratio = jsp.special.logsumexp(jnp.log(num) - jnp.log(denom), axis=-1)
-    return ratio
-
-
-def shear_loglikelihood(
-    g: Array, e_post: Array, prior: Callable, interim_prior: Callable
-) -> float:
-    """Reduce with sum"""
-    return shear_loglikelihood_unreduced(g, e_post, prior, interim_prior).sum()
+    return ratio.sum()
