@@ -17,6 +17,7 @@ dependencies = [
     "jaxlib",
     "blackjax >=1.2.0",
     "optax >=0.2.0",
+    "numpyro >=0.13.0",
 ]
 
 
@@ -65,8 +66,8 @@ exclude = [
 line-length = 88
 indent-width = 4
 
-# Assume Python 3.8
-target-version = "py310"
+# Assume Python 3.12
+target-version = "py312"
 
 [tool.ruff.format]
 # Like Black, use double quotes for strings.

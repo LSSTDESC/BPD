@@ -78,16 +78,16 @@ def loglikelihood(
     background: float,
     free_flux: bool = True,
 ):
-    # NOTE: draw_fnc should already contain `f` and `hlr` as constant arguments.
-    _draw_params = {**{"g1": 0.0, "g2": 0.0}, **params}  # function is more general
+    # NOTE: draw_fnc should already contain `f` and `hlr` as constant arguments if fixed
+    _draw_params = {**{"g1": 0.0, "g2": 0.0}, **params}
 
+    # Convert log-flux to flux if provided
     if free_flux:
         _draw_params["f"] = 10 ** _draw_params.pop("lf")
-    model = draw_fnc(**_draw_params)
 
+    model = draw_fnc(**_draw_params)
     likelihood_pp = stats.norm.logpdf(data, loc=model, scale=jnp.sqrt(background))
-    likelihood = jnp.sum(likelihood_pp)
-    return likelihood
+    return jnp.sum(likelihood_pp)
 
 
 def logtarget(
@@ -105,7 +105,9 @@ def get_true_params_from_galaxy_params(galaxy_params: dict[str, Array]):
     e1, e2 = true_params.pop("e1"), true_params.pop("e2")
     g1, g2 = true_params.pop("g1"), true_params.pop("g2")
 
-    e1_prime, e2_prime = scalar_shear_transformation((e1, e2), (g1, g2))
+    e1_prime, e2_prime = scalar_shear_transformation(
+        jnp.array([e1, e2]), jnp.array([g1, g2])
+    )
     true_params["e1"] = e1_prime
     true_params["e2"] = e2_prime
 

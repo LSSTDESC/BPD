@@ -3,13 +3,15 @@ from typing import Callable
 
 import blackjax
 import jax
-from jax import random
+from jax import Array, random
 from jax._src.prng import PRNGKeyArray
 from jax.typing import ArrayLike
 
 
-def inference_loop(rng_key, initial_state, kernel, n_samples: int):
-    """Function to run a single chain with a given kernel and obtain `n_samples`."""
+def inference_loop(
+    rng_key: PRNGKeyArray, initial_state: ArrayLike, kernel: Callable, n_samples: int
+):
+    """Function to run a single chain with a given kernel and obtain samples"""
 
     def one_step(state, rng_key):
         state, info = kernel(rng_key, state)
@@ -32,7 +34,7 @@ def run_warmup_nuts(
     n_warmup_steps: int = 500,
     is_mass_matrix_diagonal: bool = True,
     target_acceptance_rate: float = 0.8,
-):
+) -> tuple[ArrayLike, dict, dict]:
     _logtarget = partial(logtarget, data=data)
     warmup = blackjax.window_adaptation(
         blackjax.nuts,
@@ -82,7 +84,7 @@ def run_inference_nuts(
     n_warmup_steps: int = 500,
     target_acceptance_rate: float = 0.80,
     is_mass_matrix_diagonal: bool = True,
-):
+) -> Array | dict[str, Array]:
     key1, key2 = random.split(rng_key)
 
     _logtarget = partial(logtarget, data=data)
