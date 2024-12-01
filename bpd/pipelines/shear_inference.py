@@ -12,8 +12,7 @@ from bpd.prior import ellip_mag_prior
 
 
 def logtarget_density(g: Array, *, data: Array, loglikelihood: Callable):
-    e_post = data  # comptability with `do_inference_nuts`
-    loglike = loglikelihood(g, e_post)
+    loglike = loglikelihood(g, e_post=data)
     logprior = stats.uniform.logpdf(g, -0.1, 0.2).sum()
     return logprior + loglike
 
@@ -30,12 +29,16 @@ def pipeline_shear_inference(
     n_warmup_steps: int = 500,
     max_num_doublings: int = 2,
 ):
-    prior = partial(ellip_mag_prior, sigma=sigma_e)
     interim_prior = partial(ellip_mag_prior, sigma=sigma_e_int)
 
     # NOTE: jit must be applied without `e_post` in partial!
     _loglikelihood = jjit(
-        partial(shear_loglikelihood, prior=prior, interim_prior=interim_prior)
+        partial(
+            shear_loglikelihood,
+            sigma_e=sigma_e,
+            prior=ellip_mag_prior,
+            interim_prior=interim_prior,
+        )
     )
     _logtarget = partial(logtarget_density, loglikelihood=_loglikelihood)
 
