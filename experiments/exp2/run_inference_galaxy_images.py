@@ -56,7 +56,7 @@ INIT_FNC = partial(init_with_prior, prior=_sample_prior_init)
 
 def main(
     seed: int,
-    n_samples: int = 1000,
+    n_samples: int = 500,
     shape_noise: float = 0.3,
     sigma_e_int: float = 0.5,
     slen: int = 53,
@@ -100,7 +100,7 @@ def main(
     _run_sampling = vmap(vmap(jjit(_run_sampling1), in_axes=(0, 0, 0, None)))
 
     results = {}
-    for n_gals in (1, 1, 5, 10, 20, 25, 50, 100, 250):  # repeat 1 == compilation
+    for n_gals in (1, 1, 5, 10, 20, 25, 50, 100, 250, 500):  # repeat 1 == compilation
         print("n_gals:", n_gals)
 
         # generate data and parameters

@@ -6,6 +6,8 @@ os.environ["CUDA_VISIBLE_DEVICES"] = ""
 os.environ["JAX_PLATFORMS"] = "cpu"
 os.environ["JAX_ENABLE_X64"] = "True"
 
+from pathlib import Path
+
 import cycler
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
@@ -20,14 +22,16 @@ from bpd.diagnostics import get_contour_plot
 
 
 def make_trace_plots(
-    samples_dict: dict[str, Array], truth: dict[str, Array], n_examples: int = 25
+    samples_dict: dict[str, Array],
+    truth: dict[str, Array],
+    fpath: str,
+    n_examples: int = 25,
 ) -> None:
     """Make example figure showing example trace plots for each parameter."""
     # by default, we choose 10 random traces to plot in 1 PDF file.
-    fname = "figs/traces.pdf"
     n_gals, _, _ = samples_dict["lf"].shape
 
-    with PdfPages(fname) as pdf:
+    with PdfPages(fpath) as pdf:
         for _ in tqdm(range(n_examples), desc="Making traces"):
             idx = np.random.choice(np.arange(0, n_gals)).item()
             chains = {k: v[idx] for k, v in samples_dict.items()}
@@ -50,7 +54,7 @@ def make_trace_plots(
 
 
 def make_contour_plots(
-    samples_dict: dict[str, Array], truth: dict[str, Array], n_examples: int = 10
+    samples_dict: dict[str, Array], truth: dict[str, Array], n_examples: int = 25
 ) -> None:
     """Make example figure showing example contour plots of galaxy properties"""
     fname = "figs/contours.pdf"
@@ -74,6 +78,9 @@ def make_convergence_histograms(samples_dict: dict[str, Array]) -> None:
     fname = "figs/convergence_hist.pdf"
     n_gals, n_chains_per_gal, n_samples = samples_dict["lf"].shape
 
+    if Path("figs/outliers.txt").exists():
+        os.remove("figs/outliers.txt")
+
     # compute convergence metrics
     rhats = {p: [] for p in samples_dict}
     ess = {p: [] for p in samples_dict}
@@ -88,9 +95,10 @@ def make_convergence_histograms(samples_dict: dict[str, Array]) -> None:
     # print rhat outliers
     for p in rhats:
         rhat = np.array(rhats[p])
-        n_outliers = sum((rhat < 0.98) | (rhat > 1.1))
-        with open("figs/outliers.txt", "wb") as f:
-            print(f"Number of R-hat outliers for {p}:", n_outliers, file=f)
+        _ess = np.array(ess[p])
+        n_outliers = sum((rhat < 0.99) | (rhat > 1.05) | (_ess < 0.25))
+        with open("figs/outliers.txt", "a", encoding="utf-8") as f:
+            print(f"Number of R-hat outliers for {p}: {n_outliers}", file=f)
 
     with PdfPages(fname) as pdf:
         for p in samples_dict:
@@ -162,14 +170,19 @@ def main():
     )
     assert fpath.exists()
     results = jnp.load(fpath, allow_pickle=True).item()
-    samples = results[250]["samples"]
-    truth = results[250]["truth"]
+    max_n_gal = max(results.keys())
+    samples = results[max_n_gal]["samples"]
+    truth = results[max_n_gal]["truth"]
 
     # make plots
-    make_trace_plots(samples, truth)
+    make_trace_plots(samples, truth, fpath="figs/traces.pdf")
     make_contour_plots(samples, truth)
     make_convergence_histograms(samples)
     make_timing_plots(results)
+
+    # on adaption too
+    adapt_states = results[max_n_gal]["adapt_info"].state.position
+    make_trace_plots(adapt_states, truth, fpath="figs/traces_adapt.pdf", n_examples=50)
 
 
 if __name__ == "__main__":
