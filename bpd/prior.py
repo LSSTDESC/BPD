@@ -2,10 +2,11 @@ import jax.numpy as jnp
 from jax import Array, random, vmap
 from jax._src.prng import PRNGKeyArray
 from jax.numpy.linalg import norm
-from jaxtyping import ArrayLike
+from jax.scipy.special import erf
+from jax.typing import ArrayLike
 
 
-def ellip_mag_prior(e: ArrayLike, sigma: float):
+def ellip_mag_prior(e: ArrayLike, sigma: float) -> ArrayLike:
     """Unnormalized Prior for the magnitude of the ellipticity, domain is (0, 1)
 
     This distribution is taken from Gary's 2013 paper on Bayesian shear inference.
@@ -14,7 +15,13 @@ def ellip_mag_prior(e: ArrayLike, sigma: float):
 
     Gary uses 0.3 as a default level of shape noise.
     """
-    return (1 - e**2) ** 2 * jnp.exp(-(e**2) / (2 * sigma**2))
+
+    # norm from Mathematica
+    _norm1 = jnp.sqrt(jnp.pi / 2) * (3 * sigma**5 - 2 * sigma**3 + sigma)
+    _norm1 *= erf(1 / (jnp.sqrt(2) * sigma))
+    _norm2 = jnp.exp(-1 / (2 * sigma**2)) * (sigma**2 - 3 * sigma**4)
+    _norm = _norm1 + _norm2
+    return (1 - e**2) ** 2 * jnp.exp(-(e**2) / (2 * sigma**2)) / _norm
 
 
 def sample_mag_ellip_prior(
@@ -24,8 +31,7 @@ def sample_mag_ellip_prior(
     # this part could be cached
     e_array = jnp.linspace(0, 1, n_bins)
     p_array = ellip_mag_prior(e_array, sigma=sigma)
-    p_array /= jnp.sum(p_array)
-
+    p_array /= p_array.sum()
     return random.choice(rng_key, e_array, shape=(n,), p=p_array)
 
 
