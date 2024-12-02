@@ -101,19 +101,22 @@ def make_histogram_means_and_stds(g_samples: Array) -> None:
 
         fig, ax = plt.subplots(1, 1, figsize=(7, 7))
         ax.hist(means, bins=31, histtype="step")
-        ax.set_title(f"Std: {means.std()}")
+        ax.set_title(f"Std: {means.std():.5g}")
+        ax.axvline(means.mean(), linestyle="--", color="k", label="mean")
+        ax.legend()
         pdf.savefig(fig)
         plt.close(fig)
 
         fig, ax = plt.subplots(1, 1, figsize=(7, 7))
         ax.hist(stds, bins=31, histtype="step")
         ax.axvline(1e-3 / sqrt(1000), linestyle="--", color="k")
-        ax.axvline(1e-3 / sqrt(1000) / sqrt(2), linestyle="--", color="r")
+        ax.set_title(f"Std_correct: {1e-3 / sqrt(1000) / sqrt(2):.5g}")
         pdf.savefig(fig)
         plt.close(fig)
 
 
 def main(seed: int = 43):
+    np.random.seed(seed)
     pdir = DATA_DIR / "cache_chains" / f"toy_shear_{seed}"
     assert pdir.exists()
     all_g_samples = []
