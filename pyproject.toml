@@ -16,6 +16,7 @@ dependencies = [
     "jax >=0.4.30",
     "jaxlib",
     "blackjax >=1.2.0",
+    "optax >=0.2.0",
     "numpyro >=0.13.0",
 ]
 

@@ -6,7 +6,6 @@ os.environ["CUDA_VISIBLE_DEVICES"] = ""
 os.environ["JAX_PLATFORMS"] = "cpu"
 os.environ["JAX_ENABLE_X64"] = "True"
 
-from math import sqrt
 
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
@@ -36,6 +35,9 @@ def make_trace_plots(g_samples: Array, n_examples: int = 25) -> None:
 
             ax1.plot(g1)
             ax2.plot(g2)
+            ax1.set_ylabel("g1")
+            ax2.set_ylabel("g2")
+
             ax1.set_title(f"Index: {ii}")
 
             pdf.savefig(fig)
@@ -87,6 +89,7 @@ def make_histogram_mbias(g_samples: Array) -> None:
         mbias = (g1.mean(axis=1) - 0.02) / 0.02
         fig, ax = plt.subplots(1, 1, figsize=(7, 7))
         ax.hist(mbias, bins=31, histtype="step")
+        ax.set_xlabel("m")
         pdf.savefig(fig)
         plt.close(fig)
 
@@ -95,12 +98,54 @@ def make_histogram_means_and_stds(g_samples: Array) -> None:
     fname = "figs/mean_std_hist.pdf"
     with PdfPages(fname) as pdf:
         g1 = g_samples[:, :, 0]
+        g2 = g_samples[:, :, 1]
 
         means = g1.mean(axis=1)
         stds = g1.std(axis=1)
 
         fig, ax = plt.subplots(1, 1, figsize=(7, 7))
         ax.hist(means, bins=31, histtype="step")
+        ax.set_title(f"Std: {means.std():.5g}")
+        ax.set_xlabel("Mean of posterior of g1")
+        ax.axvline(means.mean(), linestyle="--", color="k", label="mean")
+        ax.legend()
+        pdf.savefig(fig)
+        plt.close(fig)
+
+        fig, ax = plt.subplots(1, 1, figsize=(7, 7))
+        ax.hist(stds, bins=31, histtype="step")
+        ax.set_xlabel("Std of posterior of g1")
+        ax.axvline(stds.mean(), linestyle="--", color="k", label="mean")
+        ax.legend()
+        pdf.savefig(fig)
+        plt.close(fig)
+
+        means = g2.mean(axis=1)
+        stds = g2.std(axis=1)
+
+        fig, ax = plt.subplots(1, 1, figsize=(7, 7))
+        ax.hist(means, bins=31, histtype="step")
+        ax.set_title(f"Std: {means.std():.5g}")
+        ax.set_xlabel("Mean of posterior of g2")
+        ax.axvline(means.mean(), linestyle="--", color="k", label="mean")
+        ax.legend()
+        pdf.savefig(fig)
+        plt.close(fig)
+
+        fig, ax = plt.subplots(1, 1, figsize=(7, 7))
+        ax.hist(stds, bins=31, histtype="step")
+        ax.set_xlabel("Std of posterior of g2")
+        ax.axvline(stds.mean(), linestyle="--", color="k", label="mean")
+        ax.legend()
+        pdf.savefig(fig)
+        plt.close(fig)
+
+        g_mag = jnp.sqrt(g1**2 + g2**2)
+        means = g_mag.mean(axis=1)
+        stds = g_mag.std(axis=1)
+        fig, ax = plt.subplots(1, 1, figsize=(7, 7))
+        ax.hist(means, bins=31, histtype="step")
+        ax.set_xlabel("Mean of posterior of |g|")
         ax.set_title(f"Std: {means.std():.5g}")
         ax.axvline(means.mean(), linestyle="--", color="k", label="mean")
         ax.legend()
@@ -109,8 +154,9 @@ def make_histogram_means_and_stds(g_samples: Array) -> None:
 
         fig, ax = plt.subplots(1, 1, figsize=(7, 7))
         ax.hist(stds, bins=31, histtype="step")
-        ax.axvline(1e-3 / sqrt(1000), linestyle="--", color="k")
-        ax.set_title(f"Std_correct: {1e-3 / sqrt(1000) / sqrt(2):.5g}")
+        ax.set_xlabel("Std of posterior of |g|")
+        ax.axvline(stds.mean(), linestyle="--", color="k", label="mean")
+        ax.legend()
         pdf.savefig(fig)
         plt.close(fig)
 

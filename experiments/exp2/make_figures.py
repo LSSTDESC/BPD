@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+from typing import Iterable
 
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
 os.environ["JAX_PLATFORMS"] = "cpu"
@@ -25,15 +26,22 @@ def make_trace_plots(
     samples_dict: dict[str, Array],
     truth: dict[str, Array],
     fpath: str,
-    n_examples: int = 25,
+    n_examples: int = 50,
 ) -> None:
     """Make example figure showing example trace plots for each parameter."""
-    # by default, we choose 10 random traces to plot in 1 PDF file.
     n_gals, _, _ = samples_dict["lf"].shape
+    indices = np.random.choice(np.arange(0, n_gals), size=(n_examples,), replace=False)
+    make_trace_at_indices(indices, samples_dict, truth, fpath)
 
+
+def make_trace_at_indices(
+    indices: Iterable,
+    samples_dict: dict[str, Array],
+    truth: dict[str, Array],
+    fpath: str,
+):
     with PdfPages(fpath) as pdf:
-        for _ in tqdm(range(n_examples), desc="Making traces"):
-            idx = np.random.choice(np.arange(0, n_gals)).item()
+        for idx in tqdm(indices, desc="Making traces"):
             chains = {k: v[idx] for k, v in samples_dict.items()}
             tv = {p: q[idx].item() for p, q in truth.items()}
 
@@ -93,12 +101,16 @@ def make_convergence_histograms(samples_dict: dict[str, Array]) -> None:
             ess[p].append(effective_sample_size(chains) / n_samples_total)
 
     # print rhat outliers
+    outliers_indices = set()
     for p in rhats:
         rhat = np.array(rhats[p])
         _ess = np.array(ess[p])
-        n_outliers = sum((rhat < 0.99) | (rhat > 1.05) | (_ess < 0.25))
+        outliers = (rhat < 0.99) | (rhat > 1.05) | (_ess < 0.25)
+        n_outliers = sum(outliers)
         with open("figs/outliers.txt", "a", encoding="utf-8") as f:
             print(f"Number of R-hat outliers for {p}: {n_outliers}", file=f)
+        indices = np.argwhere(outliers)
+        outliers_indices = outliers_indices.union(set(indices.ravel()))
 
     with PdfPages(fname) as pdf:
         for p in samples_dict:
@@ -116,6 +128,8 @@ def make_convergence_histograms(samples_dict: dict[str, Array]) -> None:
 
             pdf.savefig(fig)
             plt.close(fig)
+
+    return outliers_indices
 
 
 def make_timing_plots(results_dict: dict) -> None:
@@ -177,12 +191,19 @@ def main():
     # make plots
     make_trace_plots(samples, truth, fpath="figs/traces.pdf")
     make_contour_plots(samples, truth)
-    make_convergence_histograms(samples)
+    out_indices = make_convergence_histograms(samples)
     make_timing_plots(results)
 
     # on adaption too
     adapt_states = results[max_n_gal]["adapt_info"].state.position
-    make_trace_plots(adapt_states, truth, fpath="figs/traces_adapt.pdf", n_examples=50)
+    make_trace_plots(adapt_states, truth, fpath="figs/traces_adapt.pdf")
+
+    # outliers
+    if len(out_indices) > 0:
+        make_trace_at_indices(out_indices, samples, truth, fpath="figs/traces_out.pdf")
+    else:  # avoid confusion with previous
+        if Path("figs/traces_out.pdf").exists():
+            os.remove("figs/traces_out.pdf")
 
 
 if __name__ == "__main__":
