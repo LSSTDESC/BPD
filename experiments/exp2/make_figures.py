@@ -201,6 +201,9 @@ def main():
     # outliers
     if len(out_indices) > 0:
         make_trace_at_indices(out_indices, samples, truth, fpath="figs/traces_out.pdf")
+    else:  # avoid confusion with previous
+        if Path("figs/traces_out.pdf").exists():
+            os.remove("figs/traces_out.pdf")
 
 
 if __name__ == "__main__":
