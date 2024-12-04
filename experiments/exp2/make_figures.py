@@ -114,17 +114,19 @@ def make_convergence_histograms(samples_dict: dict[str, Array]) -> None:
 
     with PdfPages(fname) as pdf:
         for p in samples_dict:
-            rhat_p = rhats[p]
-            ess_p = ess[p]
+            rhat_p = np.array(rhats[p])
+            ess_p = np.array(ess[p])
 
             fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 6))
             fig.suptitle(p, fontsize=18)
 
             ax1.hist(rhat_p, bins=25, range=(0.98, 1.1))
             ax2.hist(ess_p, bins=25)
+            ax2.axvline(ess_p.mean(), linestyle="--", color="k", label="mean")
 
             ax1.set_xlabel("R-hat")
             ax2.set_ylabel("ESS")
+            ax2.legend()
 
             pdf.savefig(fig)
             plt.close(fig)
