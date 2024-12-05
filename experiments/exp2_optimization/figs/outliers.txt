@@ -1,0 +1,6 @@
+Number of R-hat outliers for e1: 0
+Number of R-hat outliers for e2: 0
+Number of R-hat outliers for hlr: 0
+Number of R-hat outliers for lf: 0
+Number of R-hat outliers for x: 4
+Number of R-hat outliers for y: 5
