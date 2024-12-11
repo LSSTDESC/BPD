@@ -30,12 +30,11 @@ def shear_loglikelihood(
     _, _, _ = e_post.shape  # (N, K, 2)
     _prior = partial(prior, sigma=sigma_e)
 
+    # denom
     e_post_mag = norm(e_post, axis=-1)
     denom = interim_prior(e_post_mag)  # (N, K), can ignore angle in prior as uniform
 
-    # for num, use trick
-    # p(w_n' | g, alpha )  = p(w_n' \cross^{-1} g | alpha ) = p(w_n | alpha) * |jac(w_n / w_n')|
-
+    # for num, need to include Jacobian of shear transoformation
     # shape = (N, K, 2)
     grad1 = _grad_fnc1(e_post, g)
     grad2 = _grad_fnc2(e_post, g)
