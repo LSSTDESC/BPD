@@ -2,26 +2,25 @@ import jax.numpy as jnp
 from jax import Array, random, vmap
 from jax._src.prng import PRNGKeyArray
 from jax.numpy.linalg import norm
-from jax.scipy.special import erf
 from jax.typing import ArrayLike
 
 
-def ellip_mag_prior(e: ArrayLike, sigma: float) -> ArrayLike:
-    """Unnormalized Prior for the magnitude of the ellipticity, domain is (0, 1)
+def ellip_mag_prior(e_mag: ArrayLike, sigma: float) -> ArrayLike:
+    """Prior for the magnitude of the ellipticity, domain is (0, 1)
 
     This distribution is taken from Gary's 2013 paper on Bayesian shear inference.
-    The additional factor on the truncated Gaussian guarantees differentiability
-    at e = 0 and e = 1.
 
-    Gary uses 0.3 as a default level of shape noise.
+    Importantly, the paper did not include an additional factor of |e| that is needed
+    make this the correct expression for a Gaussian in `polar` coordinates. We include
+    this factor in this equation. This blog post is helpful: https://andrewcharlesjones.github.io/journal/rayleigh.html
+
+    The additional factor of (1-e^2)^2 introduced by Gary guarantees differentiability
+    at e = 0 and e = 1.
     """
 
     # norm from Mathematica
-    _norm1 = jnp.sqrt(jnp.pi / 2) * (3 * sigma**5 - 2 * sigma**3 + sigma)
-    _norm1 *= erf(1 / (jnp.sqrt(2) * sigma))
-    _norm2 = jnp.exp(-1 / (2 * sigma**2)) * (sigma**2 - 3 * sigma**4)
-    _norm = _norm1 + _norm2
-    return (1 - e**2) ** 2 * jnp.exp(-(e**2) / (2 * sigma**2)) / _norm
+    _norm = -4 * sigma**4 + sigma**2 + 8 * sigma**6 * (1 - jnp.exp(-1 / (2 * sigma**2)))
+    return (1 - e_mag**2) ** 2 * e_mag * jnp.exp(-(e_mag**2) / (2 * sigma**2)) / _norm
 
 
 def sample_mag_ellip_prior(
@@ -29,20 +28,26 @@ def sample_mag_ellip_prior(
 ):
     """Sample n points from Gary's ellipticity magnitude prior."""
     # this part could be cached
-    e_array = jnp.linspace(0, 1, n_bins)
-    p_array = ellip_mag_prior(e_array, sigma=sigma)
+    emag_array = jnp.linspace(0, 1, n_bins)
+    p_array = ellip_mag_prior(emag_array, sigma=sigma)
     p_array /= p_array.sum()
-    return random.choice(rng_key, e_array, shape=(n,), p=p_array)
+    return random.choice(rng_key, emag_array, shape=(n,), p=p_array)
 
 
 def sample_ellip_prior(rng_key: PRNGKeyArray, sigma: float, n: int = 1):
-    """Sample n ellipticities isotropic components with Gary's prior from magnitude."""
+    """Sample n ellipticities isotropic components with Gary's prior for magnitude."""
     key1, key2 = random.split(rng_key, 2)
     e_mag = sample_mag_ellip_prior(key1, sigma=sigma, n=n)
     e_phi = random.uniform(key2, shape=(n,), minval=0, maxval=jnp.pi)
     e1 = e_mag * jnp.cos(2 * e_phi)
     e2 = e_mag * jnp.sin(2 * e_phi)
     return jnp.stack((e1, e2), axis=1)
+
+
+def ellip_prior_e1e2(e: Array, sigma: float) -> ArrayLike:
+    """Prior on e1, e2 using Gary's prior for magnitude. Includes Jacobian factor."""
+    e_mag = jnp.sqrt(e[..., 0] ** 2 + e[..., 1] ** 2)
+    return ellip_mag_prior(e_mag, sigma=sigma) / e_mag  # jacobian factor
 
 
 def scalar_shear_transformation(e: Array, g: Array):

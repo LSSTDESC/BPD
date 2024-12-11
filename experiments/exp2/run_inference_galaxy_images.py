@@ -72,6 +72,7 @@ def main(
     if not dirpath.exists():
         dirpath.mkdir(exist_ok=True)
     fpath = dirpath / f"chain_results_{seed}.npy"
+    assert not fpath.exists()
 
     # setup target density
     draw_fnc = partial(draw_gaussian, slen=slen, fft_size=fft_size)
@@ -100,7 +101,7 @@ def main(
     _run_sampling = vmap(vmap(jjit(_run_sampling1), in_axes=(0, 0, 0, None)))
 
     results = {}
-    for n_gals in (1, 1, 5, 10, 20, 25, 50, 100, 250, 500):  # repeat 1 == compilation
+    for n_gals in (1, 1, 5, 10, 20, 25, 50, 100, 250, 300):  # repeat 1 == compilation
         print("n_gals:", n_gals)
 
         # generate data and parameters
@@ -146,6 +147,7 @@ def main(
         results[n_gals]["samples"] = samples
         results[n_gals]["truth"] = true_params
         results[n_gals]["adapt_info"] = adapt_info
+        results[n_gals]["tuned_params"] = tuned_params
 
     jnp.save(fpath, results)
 
