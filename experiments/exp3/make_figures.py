@@ -20,8 +20,7 @@ from bpd.io import load_dataset
 
 
 def make_trace_plots(g_samples: Array) -> None:
-    """Make example figure showing example trace plots of shear posteriors."""
-    # by default, we choose 10 random traces to plot in 1 PDF file.
+    """Make trace plots of g1, g2."""
     fname = "figs/traces.pdf"
     with PdfPages(fname) as pdf:
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 5))
@@ -36,8 +35,7 @@ def make_trace_plots(g_samples: Array) -> None:
 
 
 def make_contour_plots(g_samples: Array, n_examples=10) -> None:
-    """Make example figure showing example contour plots of shear posterios"""
-    # by default, we choose 10 random contours to plot in 1 PDF file.
+    """Make figure of contour plot on g1, g2."""
     fname = "figs/contours.pdf"
     with PdfPages(fname) as pdf:
         truth = {"g1": 0.02, "g2": 0.0}
@@ -48,7 +46,7 @@ def make_contour_plots(g_samples: Array, n_examples=10) -> None:
 
 
 def make_scatter_shape_plots(e_post: Array, n_examples: int = 10) -> None:
-    """Output posterior calibration figure."""
+    """Show example scatter plots of interim posterior ellipticitites."""
     # make two types, assuming gaussianity and one not assuming gaussianity.
     fname = "figs/scatter_shapes.pdf"
 
@@ -81,6 +79,24 @@ def make_scatter_shape_plots(e_post: Array, n_examples: int = 10) -> None:
         plt.close(fig)
 
 
+def make_hists(g_samples: Array, e1_samples: Array) -> None:
+    """Make histograms of g1 along with std and expected std."""
+    fname = "figs/hists.pdf"
+    with PdfPages(fname) as pdf:
+        fig, ax = plt.subplots(1, 1, figsize=(7, 7))
+
+        g1 = g_samples[:, 0]
+        e1_std = e1_samples.std()
+        g1_exp_std = e1_std / jnp.sqrt(len(e1_samples))
+
+        ax.hist(g1, bins=25, histtype="step")
+        ax.axvline(g1.mean(), linestyle="--", color="k")
+        ax.set_title(f"Std g1: {g1.std():.4g}; Expected g1 std: {g1_exp_std:.4g}")
+
+        pdf.savefig(fig)
+        plt.close(fig)
+
+
 def main(seed: int = 43):
     # load data
     pdir = DATA_DIR / "cache_chains" / f"test_fixed_shear_inference_images_{seed}"
@@ -88,10 +104,13 @@ def main(seed: int = 43):
     e_post_samples = e_post_dict["e_post"]
     g_samples = jnp.load(pdir / f"g_samples_{seed}_{seed}.npy")
 
+    e1_samples = e_post_dict["e1"]
+
     # make plots
     make_scatter_shape_plots(e_post_samples)
     make_trace_plots(g_samples)
     make_contour_plots(g_samples)
+    make_hists(g_samples, e1_samples)
 
 
 if __name__ == "__main__":

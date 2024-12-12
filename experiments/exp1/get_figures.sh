@@ -1,2 +1,2 @@
 #!/bin/bash
-./make_figures.py 44
+./make_figures.py 43

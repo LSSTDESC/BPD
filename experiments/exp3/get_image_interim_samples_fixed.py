@@ -104,6 +104,8 @@ def main(
             "true_g": jnp.array([g1, g2]),
             "sigma_e": shape_noise,
             "sigma_e_int": sigma_e_int,
+            "e1": draw_params["e1"],
+            "e2": draw_params["e2"],
         },
         fpath,
         overwrite=True,
