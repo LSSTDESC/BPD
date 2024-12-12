@@ -3,7 +3,6 @@ from typing import Callable
 import jax.numpy as jnp
 import jax.scipy as jsp
 from jax import Array, grad, vmap
-from jax.numpy.linalg import norm
 from jax.typing import ArrayLike
 
 from bpd.prior import (
