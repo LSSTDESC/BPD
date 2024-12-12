@@ -2,7 +2,7 @@ from functools import partial
 from typing import Callable
 
 import jax.numpy as jnp
-from jax import Array, random
+from jax import Array, jit, random
 from jax._src.prng import PRNGKeyArray
 from jax.scipy import stats
 

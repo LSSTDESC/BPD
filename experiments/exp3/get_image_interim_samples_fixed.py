@@ -3,7 +3,7 @@ from functools import partial
 
 import jax.numpy as jnp
 import typer
-from jax import random, vmap
+from jax import jit, random, vmap
 
 from bpd import DATA_DIR
 from bpd.draw import draw_gaussian

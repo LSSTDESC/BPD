@@ -2,7 +2,7 @@ from functools import partial
 
 import jax.numpy as jnp
 import jax.scipy as jsp
-from jax import Array, random, vmap
+from jax import Array, jit, random, vmap
 from jax._src.prng import PRNGKeyArray
 
 from bpd.chains import run_inference_nuts

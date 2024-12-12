@@ -3,7 +3,7 @@ from functools import partial
 import jax.numpy as jnp
 import numpy as np
 import pytest
-from jax import random
+from jax import jit, random
 
 from bpd.draw import draw_gaussian
 from bpd.prior import (

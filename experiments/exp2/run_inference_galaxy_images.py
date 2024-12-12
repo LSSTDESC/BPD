@@ -6,7 +6,7 @@ from functools import partial
 
 import jax.numpy as jnp
 import typer
-from jax import random, vmap
+from jax import jit, random, vmap
 from jax._src.prng import PRNGKeyArray
 
 from bpd import DATA_DIR

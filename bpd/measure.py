@@ -1,5 +1,5 @@
 import jax.numpy as jnp
-from jaxtyping import ArrayLike
+from jax.typing import ArrayLike
 
 
 def get_snr(im: ArrayLike, background: float) -> float:
