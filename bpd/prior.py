@@ -40,8 +40,7 @@ def ellip_prior_e1e2(e: Array, sigma: float) -> ArrayLike:
 def sample_mag_ellip_prior(
     rng_key: PRNGKeyArray, sigma: float, n: int = 1, n_bins: int = 1_000_000
 ):
-    """Sample n points from Gary's ellipticity magnitude prior."""
-    # this part could be cached
+    """Sample n points from GB's ellipticity magnitude prior."""
     e_mag_array = jnp.linspace(0, 1, n_bins)
     p_array = ellip_mag_prior(e_mag_array, sigma=sigma)
     p_array /= p_array.sum()
