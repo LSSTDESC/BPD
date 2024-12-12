@@ -2,20 +2,21 @@
 
 import os
 
-from bpd.io import load_dataset
-
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
 os.environ["JAX_PLATFORMS"] = "cpu"
 os.environ["JAX_ENABLE_X64"] = "True"
 
+
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
+import typer
 from jax import Array
 from matplotlib.backends.backend_pdf import PdfPages
 
 from bpd import DATA_DIR
 from bpd.diagnostics import get_contour_plot
+from bpd.io import load_dataset
 
 
 def make_trace_plots(g_samples: Array) -> None:
@@ -80,11 +81,12 @@ def make_scatter_shape_plots(e_post: Array, n_examples: int = 10) -> None:
         plt.close(fig)
 
 
-def main():
-    pdir = DATA_DIR / "cache_chains" / "test_fixed_shear_inference_images_42"
-    e_post_dict = load_dataset(pdir / "e_post_42.npz")
+def main(seed: int = 43):
+    # load data
+    pdir = DATA_DIR / "cache_chains" / f"test_fixed_shear_inference_images_{seed}"
+    e_post_dict = load_dataset(pdir / f"e_post_{seed}.npz")
     e_post_samples = e_post_dict["e_post"]
-    g_samples = jnp.load(pdir / "g_samples_42_42.npy")
+    g_samples = jnp.load(pdir / f"g_samples_{seed}_{seed}.npy")
 
     # make plots
     make_scatter_shape_plots(e_post_samples)
@@ -93,4 +95,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    typer.run(main)

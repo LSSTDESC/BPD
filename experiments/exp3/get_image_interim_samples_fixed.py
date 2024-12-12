@@ -17,8 +17,6 @@ from bpd.pipelines.image_samples import (
     sample_target_galaxy_params_simple,
 )
 
-INIT_FNC = init_with_truth
-
 
 def main(
     seed: int,
@@ -29,7 +27,7 @@ def main(
     lf: float = 6.0,  # ~ SNR = 1000
     hlr: float = 1.0,
     shape_noise: float = 1e-4,
-    sigma_e_int: float = 3e-2,
+    sigma_e_int: float = 4e-2,
     slen: int = 53,
     fft_size: int = 256,
     background: float = 1.0,
@@ -78,7 +76,7 @@ def main(
     _draw_fnc = partial(draw_gaussian, slen=slen, fft_size=fft_size)
     pipe = partial(
         pipeline_interim_samples_one_galaxy,
-        initialization_fnc=INIT_FNC,
+        initialization_fnc=init_with_truth,
         draw_fnc=_draw_fnc,
         logprior=_logprior,
         n_samples=n_samples_per_gal,
