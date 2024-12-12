@@ -3,7 +3,6 @@ from typing import Callable
 
 import jax.numpy as jnp
 from jax import Array, random
-from jax import jit as jjit
 from jax._src.prng import PRNGKeyArray
 from jax.scipy import stats
 
@@ -190,7 +189,7 @@ def pipeline_interim_samples_one_galaxy(
         initial_step_size=initial_step_size,
         n_samples=n_samples,
     )
-    _run_inference = jjit(_inference_fnc)
+    _run_inference = jit(_inference_fnc)
 
     interim_samples = _run_inference(k2, init_position, target_image)
     return interim_samples

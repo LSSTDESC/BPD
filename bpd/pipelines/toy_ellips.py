@@ -3,7 +3,6 @@ from functools import partial
 import jax.numpy as jnp
 import jax.scipy as jsp
 from jax import Array, random, vmap
-from jax import jit as jjit
 from jax._src.prng import PRNGKeyArray
 
 from bpd.chains import run_inference_nuts
@@ -52,7 +51,7 @@ def pipeline_toy_ellips_samples(
     _logtarget = partial(logtarget, sigma_m=sigma_m, sigma_e_int=sigma_e_int)
 
     keys2 = random.split(k2, n_gals)
-    _do_inference_jitted = jjit(
+    _do_inference_jitted = jit(
         partial(
             run_inference_nuts,
             logtarget=_logtarget,

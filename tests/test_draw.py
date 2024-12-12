@@ -3,7 +3,6 @@
 from functools import partial
 
 import jax.numpy as jnp
-from jax import jit as jjit
 from jax import vmap
 
 from bpd.draw import draw_gaussian
@@ -11,7 +10,7 @@ from bpd.draw import draw_gaussian
 
 def test_jax_galsim():
     _draw_fnc1 = partial(draw_gaussian, slen=101, fft_size=512)
-    _draw_fnc = vmap(jjit(_draw_fnc1))
+    _draw_fnc = vmap(jit(_draw_fnc1))
 
     f = jnp.array([1000, 2000])
     hlr = jnp.array([0.9, 1.0])

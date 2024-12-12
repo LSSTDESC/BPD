@@ -3,7 +3,6 @@ from functools import partial
 
 import jax.numpy as jnp
 import typer
-from jax import jit as jjit
 from jax import random, vmap
 
 from bpd import DATA_DIR
@@ -88,7 +87,7 @@ def main(
         background=background,
         free_flux=False,
     )
-    vpipe = vmap(jjit(pipe))
+    vpipe = vmap(jit(pipe))
 
     # compilation on single target image
     _ = vpipe(
