@@ -5,14 +5,13 @@ from functools import partial
 import jax.numpy as jnp
 import pytest
 from blackjax.diagnostics import effective_sample_size, potential_scale_reduction
-from jax import jit as jjit
-from jax import random, vmap
+from jax import jit, random, vmap
 
 from bpd.chains import run_inference_nuts
-from bpd.pipelines.shear_inference import pipeline_shear_inference
+from bpd.pipelines.shear_inference import pipeline_shear_inference_ellipticities
 from bpd.pipelines.toy_ellips import logtarget as logtarget_toy_ellips
 from bpd.pipelines.toy_ellips import pipeline_toy_ellips_samples
-from bpd.prior import ellip_mag_prior, sample_synthetic_sheared_ellips_unclipped
+from bpd.prior import sample_noisy_ellipticities_unclipped
 
 
 @pytest.mark.parametrize("seed", [1234, 4567])
@@ -21,7 +20,7 @@ def test_interim_toy_convergence(seed):
     g1, g2 = 0.02, 0.0
     sigma_m = 1e-4
     sigma_e = 1e-3
-    sigma_e_int = 3e-2
+    sigma_e_int = 4e-2
     n_gals = 100
     n_samples_per_galaxy = 1_000  # enough to test convergence
     max_num_doublings = 2
@@ -31,18 +30,15 @@ def test_interim_toy_convergence(seed):
     key = random.key(seed)
     k1, k2 = random.split(key)
 
-    e_obs, e_sheared, _ = sample_synthetic_sheared_ellips_unclipped(
-        k1, true_g, n=n_gals, sigma_m=sigma_m, sigma_e=sigma_e
+    e_obs, e_sheared, _ = sample_noisy_ellipticities_unclipped(
+        k1, g=true_g, sigma_m=sigma_m, sigma_e=sigma_e, n=n_gals
     )
 
     # now we vectorize and run 4 chains over each observed ellipticity sample
     keys2 = random.split(k2, (n_gals, 4))
-    interim_prior = partial(ellip_mag_prior, sigma=sigma_e_int)
-    _logtarget = partial(
-        logtarget_toy_ellips, sigma_m=sigma_m, interim_prior=interim_prior
-    )
+    _logtarget = partial(logtarget_toy_ellips, sigma_m=sigma_m, sigma_e_int=sigma_e_int)
 
-    _do_inference_jitted = jjit(
+    _do_inference_jitted = jit(
         partial(
             run_inference_nuts,
             logtarget=_logtarget,
@@ -78,7 +74,7 @@ def test_toy_shear_convergence(seed):
     g1, g2 = 0.02, 0.0
     sigma_m = 1e-4
     sigma_e = 1e-3
-    sigma_e_int = 3e-2
+    sigma_e_int = 4e-2
     n_gals = 1000
     n_samples = 1000
     k = 10  # enough to test convergence
@@ -101,14 +97,14 @@ def test_toy_shear_convergence(seed):
 
     # run 4 shear chains over the given e_post
     _pipeline_shear1 = partial(
-        pipeline_shear_inference,
-        true_g=true_g,
+        pipeline_shear_inference_ellipticities,
+        init_g=true_g,
         sigma_e=sigma_e,
         sigma_e_int=sigma_e_int,
         n_samples=n_samples,
         initial_step_size=1e-2,
     )
-    _pipeline_shear1_jitted = jjit(_pipeline_shear1)
+    _pipeline_shear1_jitted = jit(_pipeline_shear1)
     _pipeline_shear = vmap(_pipeline_shear1_jitted, in_axes=(0, None))
 
     keys2 = random.split(k2, 4)

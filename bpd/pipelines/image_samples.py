@@ -2,8 +2,7 @@ from functools import partial
 from typing import Callable
 
 import jax.numpy as jnp
-from jax import Array, random
-from jax import jit as jjit
+from jax import Array, jit, random
 from jax._src.prng import PRNGKeyArray
 from jax.scipy import stats
 
@@ -158,7 +157,6 @@ def pipeline_interim_samples_one_galaxy(
     initialization_fnc: Callable,
     draw_fnc: Callable,
     logprior: Callable,
-    sigma_e_int: float,
     n_samples: int = 100,
     max_num_doublings: int = 5,
     initial_step_size: float = 1e-3,
@@ -175,10 +173,9 @@ def pipeline_interim_samples_one_galaxy(
     _loglikelihood = partial(
         loglikelihood, draw_fnc=_draw_fnc, background=background, free_flux=free_flux
     )
-    _logprior = partial(logprior, sigma_e=sigma_e_int)
 
     _logtarget = partial(
-        logtarget, logprior_fnc=_logprior, loglikelihood_fnc=_loglikelihood
+        logtarget, logprior_fnc=logprior, loglikelihood_fnc=_loglikelihood
     )
 
     _inference_fnc = partial(
@@ -190,7 +187,7 @@ def pipeline_interim_samples_one_galaxy(
         initial_step_size=initial_step_size,
         n_samples=n_samples,
     )
-    _run_inference = jjit(_inference_fnc)
+    _run_inference = jit(_inference_fnc)
 
     interim_samples = _run_inference(k2, init_position, target_image)
     return interim_samples

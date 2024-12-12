@@ -3,8 +3,7 @@ from functools import partial
 import jax.numpy as jnp
 import numpy as np
 import pytest
-from jax import jit as jjit
-from jax import random
+from jax import jit, random
 
 from bpd.draw import draw_gaussian
 from bpd.prior import (
@@ -56,7 +55,7 @@ def test_image_shear_commute():
     hlr = 0.9
     x, y = (1, 1)
 
-    draw_jitted = jjit(partial(draw_gaussian, slen=53, fft_size=256))
+    draw_jitted = jit(partial(draw_gaussian, slen=53, fft_size=256))
     for e1 in ellips:
         for e2 in ellips:
             for g1 in shears:

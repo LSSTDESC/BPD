@@ -6,8 +6,7 @@ from functools import partial
 
 import jax.numpy as jnp
 import typer
-from jax import jit as jjit
-from jax import random, vmap
+from jax import jit, random, vmap
 from jax._src.prng import PRNGKeyArray
 
 from bpd import DATA_DIR
@@ -89,7 +88,7 @@ def main(
         max_num_doublings=5,
         n_warmup_steps=500,
     )
-    _run_warmup = vmap(vmap(jjit(_run_warmup1), in_axes=(0, 0, None)))
+    _run_warmup = vmap(vmap(jit(_run_warmup1), in_axes=(0, 0, None)))
 
     _run_sampling1 = partial(
         run_sampling_nuts,
@@ -97,7 +96,7 @@ def main(
         n_samples=n_samples,
         max_num_doublings=5,
     )
-    _run_sampling = vmap(vmap(jjit(_run_sampling1), in_axes=(0, 0, 0, None)))
+    _run_sampling = vmap(vmap(jit(_run_sampling1), in_axes=(0, 0, 0, None)))
 
     results = {}
     for n_gals in (1, 1, 5, 10, 20, 25, 50, 100, 250, 500):  # repeat 1 == compilation

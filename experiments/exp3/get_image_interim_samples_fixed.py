@@ -3,8 +3,7 @@ from functools import partial
 
 import jax.numpy as jnp
 import typer
-from jax import jit as jjit
-from jax import random, vmap
+from jax import jit, random, vmap
 
 from bpd import DATA_DIR
 from bpd.draw import draw_gaussian
@@ -18,8 +17,6 @@ from bpd.pipelines.image_samples import (
     sample_target_galaxy_params_simple,
 )
 
-INIT_FNC = init_with_truth
-
 
 def main(
     seed: int,
@@ -30,7 +27,7 @@ def main(
     lf: float = 6.0,  # ~ SNR = 1000
     hlr: float = 1.0,
     shape_noise: float = 1e-4,
-    sigma_e_int: float = 3e-2,
+    sigma_e_int: float = 4e-2,
     slen: int = 53,
     fft_size: int = 256,
     background: float = 1.0,
@@ -79,16 +76,15 @@ def main(
     _draw_fnc = partial(draw_gaussian, slen=slen, fft_size=fft_size)
     pipe = partial(
         pipeline_interim_samples_one_galaxy,
-        initialization_fnc=INIT_FNC,
+        initialization_fnc=init_with_truth,
         draw_fnc=_draw_fnc,
         logprior=_logprior,
-        sigma_e_int=sigma_e_int,
         n_samples=n_samples_per_gal,
         initial_step_size=initial_step_size,
         background=background,
         free_flux=False,
     )
-    vpipe = vmap(jjit(pipe))
+    vpipe = vmap(jit(pipe))
 
     # compilation on single target image
     _ = vpipe(
@@ -108,6 +104,8 @@ def main(
             "true_g": jnp.array([g1, g2]),
             "sigma_e": shape_noise,
             "sigma_e_int": sigma_e_int,
+            "e1": draw_params["e1"],
+            "e2": draw_params["e2"],
         },
         fpath,
         overwrite=True,
