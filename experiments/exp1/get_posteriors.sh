@@ -1,2 +1,2 @@
 #!/bin/bash
-../../scripts/slurm_toy_shear_vectorized.py 43 toy_shear_43
+../../scripts/slurm_toy_shear_vectorized.py 44 toy_shear_44
