@@ -8,11 +8,11 @@ from jax.typing import ArrayLike
 def ellip_mag_prior(e_mag: ArrayLike, sigma: float) -> ArrayLike:
     """Prior for the magnitude of the ellipticity with domain (0, 1).
 
-    This distribution is slightly modified from Gary's 2013 paper on Bayesian shear inference.
+    This distribution corresponds to Gary's 2013 paper on Bayesian shear inference.
 
     Importantly, the paper did not include an additional factor of |e| that is needed
     make this the correct expression for a Gaussian in `polar` coordinates. We include
-    this factor in this equation. This blog post is helpful: https://andrewcharlesjones.github.io/journal/rayleigh.html
+    this factor in this equation. This blog post is helpful: https://andrewcharlesjones.github.io/journal/rayleigh.html.
 
     The additional factor of (1-e^2)^2 introduced by Gary guarantees differentiability
     at e = 0 and e = 1.
