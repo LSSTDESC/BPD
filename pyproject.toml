@@ -87,7 +87,7 @@ exclude = ["*.ipynb"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W", "B", "SIM", "PLE", "PLC", "PLW", "RUF"]
-ignore = ["C901", "E203", "E501", "E731", "PLC0206", "RUF027"]
+ignore = ["C901", "E203", "E501", "E731", "PLC0206", "RUF027", "RUF052"]
 preview = true
 exclude = ["*.ipynb", "scripts/one_galaxy_shear.py", "scripts/benchmarks/*.py"]
 
