@@ -12,7 +12,7 @@ from bpd.chains import run_inference_nuts
 from bpd.pipelines.shear_inference import pipeline_shear_inference
 from bpd.pipelines.toy_ellips import logtarget as logtarget_toy_ellips
 from bpd.pipelines.toy_ellips import pipeline_toy_ellips_samples
-from bpd.prior import ellip_mag_prior, sample_synthetic_sheared_ellips_unclipped
+from bpd.prior import ellip_mag_prior, sample_noisy_ellipticities_unclipped
 
 
 @pytest.mark.parametrize("seed", [1234, 4567])
@@ -31,8 +31,8 @@ def test_interim_toy_convergence(seed):
     key = random.key(seed)
     k1, k2 = random.split(key)
 
-    e_obs, e_sheared, _ = sample_synthetic_sheared_ellips_unclipped(
-        k1, true_g, n=n_gals, sigma_m=sigma_m, sigma_e=sigma_e
+    e_obs, e_sheared, _ = sample_noisy_ellipticities_unclipped(
+        k1, g=true_g, sigma_m=sigma_m, sigma_e=sigma_e, n=n_gals
     )
 
     # now we vectorize and run 4 chains over each observed ellipticity sample
