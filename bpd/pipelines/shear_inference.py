@@ -1,50 +1,62 @@
 from functools import partial
 from typing import Callable
 
-from jax import Array
-from jax import jit as jjit
+import jax.numpy as jnp
+from jax import Array, jit
 from jax._src.prng import PRNGKeyArray
 from jax.scipy import stats
 
 from bpd.chains import run_inference_nuts
-from bpd.likelihood import shear_loglikelihood
-from bpd.prior import ellip_mag_prior
+from bpd.likelihood import shear_loglikelihood, true_ellip_logprior
+from bpd.prior import ellip_prior_e1e2
 
 
-def logtarget_density(g: Array, *, data: Array, loglikelihood: Callable):
-    loglike = loglikelihood(g, e_post=data)
-    logprior = stats.uniform.logpdf(g, -0.1, 0.2).sum()
+def logtarget_density(
+    g: Array, *, data: Array, loglikelihood: Callable, sigma_g: float = 0.01
+):
+    loglike = loglikelihood(g, post_params=data)
+    logprior = stats.norm.logpdf(g, loc=0.0, scale=sigma_g).sum()
     return logprior + loglike
 
 
-def pipeline_shear_inference(
+def _logprior(post_params: dict[str, Array], g: Array, *, sigma_e: float):
+    e_post = post_params["e1e2"]
+    return true_ellip_logprior(e_post, g, sigma_e=sigma_e)
+
+
+def _interim_logprior(post_params: dict[str, Array], sigma_e_int: float):
+    e_post = post_params["e1e2"]
+    return jnp.log(ellip_prior_e1e2(e_post, sigma=sigma_e_int))
+
+
+def pipeline_shear_inference_ellipticities(
     rng_key: PRNGKeyArray,
     e_post: Array,
+    init_g: Array,
     *,
-    true_g: Array,
     sigma_e: float,
     sigma_e_int: float,
     n_samples: int,
     initial_step_size: float,
+    sigma_g: float = 0.01,
     n_warmup_steps: int = 500,
     max_num_doublings: int = 2,
 ):
-    interim_prior = partial(ellip_mag_prior, sigma=sigma_e_int)
-
     # NOTE: jit must be applied without `e_post` in partial!
-    _loglikelihood = jjit(
+    _loglikelihood = jit(
         partial(
             shear_loglikelihood,
-            sigma_e=sigma_e,
-            prior=ellip_mag_prior,
-            interim_prior=interim_prior,
+            logprior=partial(_logprior, sigma_e=sigma_e),
+            interim_logprior=partial(_interim_logprior, sigma_e_int=sigma_e_int),
         )
     )
-    _logtarget = partial(logtarget_density, loglikelihood=_loglikelihood)
+    _logtarget = partial(
+        logtarget_density, loglikelihood=_loglikelihood, sigma_g=sigma_g
+    )
 
     _do_inference = partial(
         run_inference_nuts,
-        data=e_post,
+        data={"e1e2": e_post},
         logtarget=_logtarget,
         n_samples=n_samples,
         n_warmup_steps=n_warmup_steps,
@@ -52,6 +64,6 @@ def pipeline_shear_inference(
         initial_step_size=initial_step_size,
     )
 
-    g_samples = _do_inference(rng_key, true_g)
+    g_samples = _do_inference(rng_key, init_g)
 
     return g_samples
