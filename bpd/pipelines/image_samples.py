@@ -157,7 +157,6 @@ def pipeline_interim_samples_one_galaxy(
     initialization_fnc: Callable,
     draw_fnc: Callable,
     logprior: Callable,
-    sigma_e_int: float,
     n_samples: int = 100,
     max_num_doublings: int = 5,
     initial_step_size: float = 1e-3,
@@ -174,10 +173,9 @@ def pipeline_interim_samples_one_galaxy(
     _loglikelihood = partial(
         loglikelihood, draw_fnc=_draw_fnc, background=background, free_flux=free_flux
     )
-    _logprior = partial(logprior, sigma_e=sigma_e_int)
 
     _logtarget = partial(
-        logtarget, logprior_fnc=_logprior, loglikelihood_fnc=_loglikelihood
+        logtarget, logprior_fnc=logprior, loglikelihood_fnc=_loglikelihood
     )
 
     _inference_fnc = partial(
