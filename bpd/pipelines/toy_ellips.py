@@ -1,15 +1,16 @@
 from functools import partial
-from typing import Callable
 
 import jax.numpy as jnp
 import jax.scipy as jsp
 from jax import Array, random, vmap
 from jax import jit as jjit
 from jax._src.prng import PRNGKeyArray
-from jax.numpy.linalg import norm
 
 from bpd.chains import run_inference_nuts
-from bpd.prior import ellip_mag_prior, sample_synthetic_sheared_ellips_unclipped
+from bpd.prior import (
+    ellip_prior_e1e2,
+    sample_noisy_ellipticities_unclipped,
+)
 
 
 def logtarget(
@@ -17,14 +18,12 @@ def logtarget(
     *,
     data: Array,  # renamed from `e_obs` for comptability with `do_inference_nuts`
     sigma_m: float,
-    interim_prior: Callable,
+    sigma_e_int: float,
 ):
     e_obs = data
     assert e_sheared.shape == (2,) and e_obs.shape == (2,)
 
-    # ignore angle prior assumed uniform
-    # prior enforces magnitude < 1.0 for posterior samples
-    prior = jnp.log(interim_prior(norm(e_sheared)))
+    prior = jnp.log(ellip_prior_e1e2(e_sheared, sigma=sigma_e_int))
     likelihood = jnp.sum(jsp.stats.norm.logpdf(e_obs, loc=e_sheared, scale=sigma_m))
     return prior + likelihood
 
@@ -46,13 +45,11 @@ def pipeline_toy_ellips_samples(
 
     true_g = jnp.array([g1, g2])
 
-    e_obs, e_sheared, _ = sample_synthetic_sheared_ellips_unclipped(
-        k1, true_g, n=n_gals, sigma_m=sigma_m, sigma_e=sigma_e
+    e_obs, e_sheared, _ = sample_noisy_ellipticities_unclipped(
+        k1, g=true_g, sigma_m=sigma_m, sigma_e=sigma_e, n=n_gals
     )
 
-    interim_prior = partial(ellip_mag_prior, sigma=sigma_e_int)
-
-    _logtarget = partial(logtarget, sigma_m=sigma_m, interim_prior=interim_prior)
+    _logtarget = partial(logtarget, sigma_m=sigma_m, sigma_e_int=sigma_e_int)
 
     keys2 = random.split(k2, n_gals)
     _do_inference_jitted = jjit(
