@@ -81,7 +81,6 @@ def main(
         initialization_fnc=INIT_FNC,
         draw_fnc=_draw_fnc,
         logprior=_logprior,
-        sigma_e_int=sigma_e_int,
         n_samples=n_samples_per_gal,
         initial_step_size=initial_step_size,
         background=background,
