@@ -68,7 +68,7 @@ def logprior(
         prior += stats.norm.logpdf(params["y"], loc=0.0, scale=sigma_x)
 
     e1e2 = jnp.stack((params["e1"], params["e2"]), axis=-1)
-    prior += jnp.log(ellip_prior_e1e2(e1e2), sigma=sigma_e)
+    prior += jnp.log(ellip_prior_e1e2(e1e2, sigma=sigma_e))
 
     return prior
 
