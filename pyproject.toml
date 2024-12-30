@@ -22,7 +22,7 @@ dependencies = [
 
 
 [project.optional-dependencies]
-dev = ["pytest", "typer", "ruff", "ChainConsumer", "ipython"]
+dev = ["pytest", "typer", "ruff", "ChainConsumer", "ipython", "ipykernel"]
 
 
 [project.urls]
