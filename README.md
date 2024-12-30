@@ -12,8 +12,8 @@ pip install --upgrade pip
 conda create -n bpd python=3.12
 conda activate bpd
 
-# Install JAX
-pip install -U "jax[cuda12]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html || pip install -U "jax[cpu]"
+# Install JAX (on GPU)
+pip install -U "jax[cuda12]"
 
 # Install JAX-Galsim
 pip install git+https://github.com/GalSim-developers/JAX-GalSim.git

@@ -23,9 +23,9 @@ def ellip_mag_prior(e_mag: ArrayLike, sigma: float) -> ArrayLike:
     return (1 - e_mag**2) ** 2 * e_mag * jnp.exp(-(e_mag**2) / (2 * sigma**2)) / _norm
 
 
-def ellip_prior_e1e2(e: Array, sigma: float) -> ArrayLike:
+def ellip_prior_e1e2(e1e2: Array, sigma: float) -> ArrayLike:
     """Prior on e1, e2 using Gary's prior for magnitude. Includes Jacobian factor: `|e|`"""
-    e_mag = norm(e, axis=-1)
+    e_mag = norm(e1e2, axis=-1)
 
     _norm1 = (
         -4 * sigma**4 + sigma**2 + 8 * sigma**6 * (1 - jnp.exp(-1 / (2 * sigma**2)))
