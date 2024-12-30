@@ -9,7 +9,11 @@ from jax.scipy import stats
 from bpd.chains import run_inference_nuts
 from bpd.draw import draw_gaussian_galsim
 from bpd.noise import add_noise
-from bpd.prior import ellip_mag_prior, sample_ellip_prior, scalar_shear_transformation
+from bpd.prior import (
+    ellip_prior_e1e2,
+    sample_ellip_prior,
+    scalar_shear_transformation,
+)
 
 
 def sample_target_galaxy_params_simple(
@@ -63,8 +67,8 @@ def logprior(
         prior += stats.norm.logpdf(params["x"], loc=0.0, scale=sigma_x)
         prior += stats.norm.logpdf(params["y"], loc=0.0, scale=sigma_x)
 
-    e_mag = jnp.sqrt(params["e1"] ** 2 + params["e2"] ** 2)
-    prior += jnp.log(ellip_mag_prior(e_mag, sigma=sigma_e))
+    e1e2 = jnp.stack((params["e1"], params["e2"]), axis=-1)
+    prior += jnp.log(ellip_prior_e1e2(e1e2, sigma=sigma_e))
 
     return prior
 
