@@ -37,7 +37,7 @@ def main(
     pkey, nkey, gkey = random.split(rng_key, 3)
 
     # directory structure
-    dirpath = DATA_DIR / "cache_chains" / f"exp4_{seed}"
+    dirpath = DATA_DIR / "cache_chains" / f"exp31_{seed}"
     if not dirpath.exists():
         dirpath.mkdir(exist_ok=True)
 

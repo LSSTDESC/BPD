@@ -1,4 +1,4 @@
-# Experiment 4 
+# Experiment 3.1
 
 Same as experiment 3 but we let deviations from true centroid `(dx, dy)` be free parameters in 
 the fit.
