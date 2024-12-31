@@ -69,7 +69,9 @@ def main(
     extra_params = {"x": x, "y": y, **extra_params}
 
     # more setup
-    _logprior = partial(logprior, sigma_e=sigma_e_int, all_free=False)
+    _logprior = partial(
+        logprior, sigma_e=sigma_e_int, free_flux_hlr=False, free_dxdy=False
+    )
 
     # prepare pipelines
     gkeys = random.split(gkey, n_gals)
