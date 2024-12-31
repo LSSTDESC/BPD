@@ -51,21 +51,21 @@ def logprior(
     sigma_x: float = 0.5,  # pixels
     flux_bds: tuple = (-1.0, 9.0),
     hlr_bds: tuple = (0.01, 5.0),
-    all_free: bool = True,
+    free_flux_hlr: bool = True,
+    free_dxdy: bool = True,
 ) -> Array:
     prior = jnp.array(0.0)
 
-    if all_free:
+    if free_flux_hlr:
         f1, f2 = flux_bds
         prior += stats.uniform.logpdf(params["lf"], f1, f2 - f1)
 
         h1, h2 = hlr_bds
         prior += stats.uniform.logpdf(params["hlr"], h1, h2 - h1)
 
-        # NOTE: hard-coded assumption that galaxy is in center-pixel within odd-size image.
-        # sigma_x in units of pixels.
-        prior += stats.norm.logpdf(params["x"], loc=0.0, scale=sigma_x)
-        prior += stats.norm.logpdf(params["y"], loc=0.0, scale=sigma_x)
+    if free_dxdy:
+        prior += stats.norm.logpdf(params["dx"], loc=0.0, scale=sigma_x)
+        prior += stats.norm.logpdf(params["dy"], loc=0.0, scale=sigma_x)
 
     e1e2 = jnp.stack((params["e1"], params["e2"]), axis=-1)
     prior += jnp.log(ellip_prior_e1e2(e1e2, sigma=sigma_e))
