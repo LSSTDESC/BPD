@@ -50,7 +50,7 @@ def logprior(
     sigma_e: float,
     sigma_x: float = 0.5,  # pixels
     flux_bds: tuple = (-1.0, 9.0),
-    hlr_bds: tuple = (0.01, 5.0),
+    hlr_bds: tuple = (-2.0, 1.0),
     free_flux_hlr: bool = True,
     free_dxdy: bool = True,
 ) -> Array:
@@ -61,7 +61,7 @@ def logprior(
         prior += stats.uniform.logpdf(params["lf"], f1, f2 - f1)
 
         h1, h2 = hlr_bds
-        prior += stats.uniform.logpdf(params["hlr"], h1, h2 - h1)
+        prior += stats.uniform.logpdf(params["lhlr"], h1, h2 - h1)
 
     if free_dxdy:
         prior += stats.norm.logpdf(params["dx"], loc=0.0, scale=sigma_x)
@@ -79,14 +79,15 @@ def loglikelihood(
     *,
     draw_fnc: Callable,
     background: float,
-    free_flux: bool = True,
+    free_flux_hlr: bool = True,
 ):
     # NOTE: draw_fnc should already contain `f` and `hlr` as constant arguments if fixed
     _draw_params = {**{"g1": 0.0, "g2": 0.0}, **params}
 
     # Convert log-flux to flux if provided
-    if free_flux:
+    if free_flux_hlr:
         _draw_params["f"] = 10 ** _draw_params.pop("lf")
+        _draw_params["hlr"] = 10 ** _draw_params.pop("lhlr")
 
     model = draw_fnc(**_draw_params)
     likelihood_pp = stats.norm.logpdf(data, loc=model, scale=jnp.sqrt(background))
@@ -167,7 +168,7 @@ def pipeline_interim_samples_one_galaxy(
     n_warmup_steps: int = 500,
     is_mass_matrix_diagonal: bool = True,
     background: float = 1.0,
-    free_flux: bool = True,
+    free_flux_hlr: bool = True,
 ):
     # Flux and HLR are fixed to truth and not inferred in this function.
     k1, k2 = random.split(rng_key)
@@ -175,7 +176,10 @@ def pipeline_interim_samples_one_galaxy(
     init_position = initialization_fnc(k1, true_params=true_params, data=target_image)
     _draw_fnc = partial(draw_fnc, **fixed_draw_kwargs)
     _loglikelihood = partial(
-        loglikelihood, draw_fnc=_draw_fnc, background=background, free_flux=free_flux
+        loglikelihood,
+        draw_fnc=_draw_fnc,
+        background=background,
+        free_flux_hlr=free_flux_hlr,
     )
 
     _logtarget = partial(
