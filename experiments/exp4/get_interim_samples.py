@@ -37,7 +37,7 @@ def main(
     pkey, nkey, gkey = random.split(rng_key, 3)
 
     # directory structure
-    dirpath = DATA_DIR / "cache_chains" / f"test_fixed_shear_inference_images_{seed}"
+    dirpath = DATA_DIR / "cache_chains" / f"exp4_{seed}"
     if not dirpath.exists():
         dirpath.mkdir(exist_ok=True)
 
@@ -53,7 +53,6 @@ def main(
     extra_params = {"f": 10 ** jnp.full((n_gals,), lf), "hlr": jnp.full((n_gals,), hlr)}
 
     # now get corresponding target images
-    # we use the same flux and hlr for every galaxy in this experiment (and fix them in sampling)
     draw_params = {**galaxy_params, **extra_params}
     target_images = get_target_images(
         nkey, draw_params, background=background, slen=slen
@@ -63,14 +62,17 @@ def main(
     # interim samples are on 'sheared ellipticity'
     true_params = vmap(get_true_params_from_galaxy_params)(galaxy_params)
 
-    # x and y are dithered in the true images but fixed
+    # we pass in x,y as fixed parameters for drawing
+    # and initialize the function with deviations (dx, dy) = (0, 0)
     x = true_params.pop("x")
     y = true_params.pop("y")
+    true_params["dx"] = jnp.zeros_like(x)
+    true_params["dy"] = jnp.zeros_like(y)
     extra_params = {"x": x, "y": y, **extra_params}
 
     # more setup
     _logprior = partial(
-        logprior, sigma_e=sigma_e_int, free_flux_hlr=False, free_dxdy=False
+        logprior, sigma_e=sigma_e_int, free_flux_hlr=False, free_dxdy=True
     )
 
     # prepare pipelines
@@ -104,6 +106,8 @@ def main(
         {
             "e_post": e_post,
             "true_g": jnp.array([g1, g2]),
+            "dx": samples["dx"],
+            "dy": samples["dy"],
             "sigma_e": shape_noise,
             "sigma_e_int": sigma_e_int,
             "e1": draw_params["e1"],

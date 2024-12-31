@@ -17,6 +17,8 @@ def draw_gaussian(
     fft_size: int,  # rule of thumb: at least 4 times `slen`
     psf_hlr: float = 0.7,
     pixel_scale: float = 0.2,
+    dx=0.0,  # additional offset from true centroid
+    dy=0.0,
 ):
     gsparams = GSParams(minimum_fft_size=fft_size, maximum_fft_size=fft_size)
 
@@ -27,7 +29,9 @@ def draw_gaussian(
 
     psf = xgalsim.Gaussian(flux=1.0, half_light_radius=psf_hlr)
     gal_conv = xgalsim.Convolve([gal, psf]).withGSParams(gsparams)
-    image = gal_conv.drawImage(nx=slen, ny=slen, scale=pixel_scale, offset=(x, y))
+    image = gal_conv.drawImage(
+        nx=slen, ny=slen, scale=pixel_scale, offset=(x + dx, y + dy)
+    )
     return image.array
 
 

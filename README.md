@@ -23,4 +23,7 @@ git clone git@github.com:LSSTDESC/BPD.git
 cd BPD
 pip install -e .
 pip install -e ".[dev]"
+
+# Might be necessary
+conda install -c nvidia cuda-nvcc
 ```
