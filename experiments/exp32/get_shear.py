@@ -17,7 +17,6 @@ from bpd.chains import run_inference_nuts
 from bpd.io import load_dataset
 from bpd.likelihood import shear_loglikelihood, true_ellip_logprior
 from bpd.pipelines.image_samples import logprior
-from bpd.prior import ellip_prior_e1e2
 
 
 def logtarget_density(
@@ -43,14 +42,26 @@ def _logprior(
     e_post = post_params["e1e2"]
 
     prior = jnp.array(0.0)
-    prior += stats.norm.logpdf(lf, loc=mean_logflux, scale=sigma_logflux)
-    prior += stats.norm.logpdf(lhlr, loc=mean_loghlr, scale=sigma_loghlr)
+
+    # both flux and HLR get magnified by WL so we need to transform them
+    mu = (1 - g[0] ** 2 - g[1] ** 2) ** -1
+    lf_unsheared = lf - jnp.log(mu)
+    lhlr_unsheared = lhlr - 0.5 * jnp.log(mu)
+
+    # we also pickup a jacobian in the corresponding probability densities
+    prior += stats.norm.logpdf(lf_unsheared, loc=mean_logflux, scale=sigma_logflux)
+    prior -= jnp.log(mu)  # jacobian (flux)
+    prior += stats.norm.logpdf(lhlr_unsheared, loc=mean_loghlr, scale=sigma_loghlr)
+    prior -= jnp.log(mu) * 0.5  # jacobian (hlr)
+
+    # elliptcity
     prior += true_ellip_logprior(e_post, g, sigma_e=sigma_e)
 
     return prior
 
 
 def _interim_logprior(post_params: dict[str, Array], sigma_e_int: float):
+    # we do not evaluate dxdy as we assume it's the same as the true prior and they cancel
     return logprior(post_params, sigma_e=sigma_e_int, free_dxdy=False)
 
 
@@ -129,7 +140,7 @@ def main(
     sigma_e_int = samples_dataset["sigma_e_int"]
 
     rng_key = jax.random.key(seed)
-    g_samples = pipeline_shear_inference_ellipticities(
+    g_samples = pipeline_shear_inference(
         rng_key,
         e_post,
         init_g=true_g,
