@@ -133,7 +133,7 @@ def make_hists(g_samples: Array, e1_samples: Array) -> None:
 
 def main(seed: int = 43):
     # load data
-    pdir = DATA_DIR / "cache_chains" / f"exp4_{seed}"
+    pdir = DATA_DIR / "cache_chains" / f"exp31_{seed}"
     e_post_dict = load_dataset(pdir / f"e_post_{seed}.npz")
     e_post_samples = e_post_dict["e_post"]
     g_samples = jnp.load(pdir / f"g_samples_{seed}_{seed}.npy")
