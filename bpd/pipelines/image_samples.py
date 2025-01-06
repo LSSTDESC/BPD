@@ -110,6 +110,7 @@ def loglikelihood(
     if free_flux_hlr:
         _draw_params["f"] = 10 ** params["lf"]
         _draw_params["hlr"] = 10 ** params["lhlr"]
+
     else:
         _draw_params["f"] = fixed_params["f"]
         _draw_params["hlr"] = fixed_params["hlr"]
