@@ -92,7 +92,6 @@ def main(
         loglikelihood=_loglikelihood,
         n_samples=n_samples_per_gal,
         initial_step_size=initial_step_size,
-        background=background,
     )
     vpipe = vmap(jit(pipe))
 
