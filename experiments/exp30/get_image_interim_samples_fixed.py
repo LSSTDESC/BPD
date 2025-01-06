@@ -38,7 +38,7 @@ def main(
     pkey, nkey, gkey = random.split(rng_key, 3)
 
     # directory structure
-    dirpath = DATA_DIR / "cache_chains" / f"test_fixed_shear_inference_images_{seed}"
+    dirpath = DATA_DIR / "cache_chains" / f"exp30_{seed}"
     if not dirpath.exists():
         dirpath.mkdir(exist_ok=True)
 
