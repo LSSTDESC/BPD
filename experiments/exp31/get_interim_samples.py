@@ -68,7 +68,7 @@ def main(
     true_params["dy"] = jnp.zeros_like(y)
     fixed_params = {"x": x, "y": y, **fixed_params}
 
-    # more setup
+    # setup prior and likelihood
     _logprior = partial(
         logprior, sigma_e=sigma_e_int, free_flux_hlr=False, free_dxdy=True
     )
