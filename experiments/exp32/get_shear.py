@@ -38,7 +38,7 @@ def _logprior(
 ):
     lf = post_params["lf"]
     lhlr = post_params["lhlr"]
-    e_post = post_params["e1e2"]
+    e_post = jnp.stack((post_params["e1"], post_params["e2"]), axis=-1)
 
     prior = jnp.array(0.0)
 
@@ -115,7 +115,7 @@ def main(
     interim_samples_fpath = dirpath / f"interim_samples_{seed}.npz"
     assert interim_samples_fpath.exists(), "ellipticity samples file does not exist"
     assert dirpath.exists()
-    fpath = DATA_DIR / "cache_chains" / f"g_samples_{seed}.npy"
+    fpath = dirpath / f"g_samples_{seed}.npy"
 
     if fpath.exists() and not overwrite:
         raise IOError("overwriting...")
@@ -135,7 +135,8 @@ def main(
     post_params = {
         "lf": samples_dataset["lf"],
         "lhlr": samples_dataset["lhlr"],
-        "e1e2": samples_dataset["e_post"],
+        "e1": samples_dataset["e_post"][..., 0],
+        "e2": samples_dataset["e_post"][..., 1],
     }
 
     # setup priors
