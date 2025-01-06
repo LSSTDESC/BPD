@@ -43,6 +43,20 @@ def sample_target_galaxy_params_simple(
     }
 
 
+def get_true_params_from_galaxy_params(galaxy_params: dict[str, Array]):
+    true_params = {**galaxy_params}
+    e1, e2 = true_params.pop("e1"), true_params.pop("e2")
+    g1, g2 = true_params.pop("g1"), true_params.pop("g2")
+
+    e1_prime, e2_prime = scalar_shear_transformation(
+        jnp.array([e1, e2]), jnp.array([g1, g2])
+    )
+    true_params["e1"] = e1_prime
+    true_params["e2"] = e2_prime
+
+    return true_params  # don't add back g1,g2 as we are not inferring those in interim posterior
+
+
 # interim prior
 def logprior(
     params: dict[str, Array],
@@ -76,18 +90,32 @@ def logprior(
 def loglikelihood(
     params: dict[str, Array],
     data: Array,
+    fixed_params: dict[str, Array],
     *,
     draw_fnc: Callable,
     background: float,
     free_flux_hlr: bool = True,
+    free_dxdy: bool = True,
 ):
-    # NOTE: draw_fnc should already contain `f` and `hlr` as constant arguments if fixed
-    _draw_params = {**{"g1": 0.0, "g2": 0.0}, **params}
+    _draw_params = {}
 
-    # Convert log-flux to flux if provided
+    if free_dxdy:
+        _draw_params["x"] = params["dx"] + fixed_params["x"]
+        _draw_params["y"] = params["dy"] + fixed_params["y"]
+
+    else:
+        _draw_params["x"] = fixed_params["x"]
+        _draw_params["y"] = fixed_params["y"]
+
     if free_flux_hlr:
-        _draw_params["f"] = 10 ** _draw_params.pop("lf")
-        _draw_params["hlr"] = 10 ** _draw_params.pop("lhlr")
+        _draw_params["f"] = 10 ** params["lf"]
+        _draw_params["hlr"] = 10 ** params["lhlr"]
+    else:
+        _draw_params["f"] = fixed_params["f"]
+        _draw_params["hlr"] = fixed_params["hlr"]
+
+    _draw_params["e1"] = params["e1"]
+    _draw_params["e2"] = params["e2"]
 
     model = draw_fnc(**_draw_params)
     likelihood_pp = stats.norm.logpdf(data, loc=model, scale=jnp.sqrt(background))
@@ -98,24 +126,11 @@ def logtarget(
     params: dict[str, Array],
     data: Array,
     *,
+    fixed_params: dict[str, Array],
     logprior_fnc: Callable,
     loglikelihood_fnc: Callable,
 ):
-    return logprior_fnc(params) + loglikelihood_fnc(params, data)
-
-
-def get_true_params_from_galaxy_params(galaxy_params: dict[str, Array]):
-    true_params = {**galaxy_params}
-    e1, e2 = true_params.pop("e1"), true_params.pop("e2")
-    g1, g2 = true_params.pop("g1"), true_params.pop("g2")
-
-    e1_prime, e2_prime = scalar_shear_transformation(
-        jnp.array([e1, e2]), jnp.array([g1, g2])
-    )
-    true_params["e1"] = e1_prime
-    true_params["e2"] = e2_prime
-
-    return true_params  # don't add g1,g2 back as we are not inferring those in interim posterior
+    return logprior_fnc(params) + loglikelihood_fnc(params, data, fixed_params)
 
 
 def get_target_images_single(
@@ -157,33 +172,27 @@ def pipeline_interim_samples_one_galaxy(
     rng_key: PRNGKeyArray,
     true_params: dict[str, float],
     target_image: Array,
-    fixed_draw_kwargs: dict,
+    fixed_params: dict[str, float],
     *,
     initialization_fnc: Callable,
-    draw_fnc: Callable,
     logprior: Callable,
+    loglikelihood: Callable,
     n_samples: int = 100,
     max_num_doublings: int = 5,
     initial_step_size: float = 1e-3,
     n_warmup_steps: int = 500,
     is_mass_matrix_diagonal: bool = True,
-    background: float = 1.0,
-    free_flux_hlr: bool = True,
 ):
     # Flux and HLR are fixed to truth and not inferred in this function.
     k1, k2 = random.split(rng_key)
 
     init_position = initialization_fnc(k1, true_params=true_params, data=target_image)
-    _draw_fnc = partial(draw_fnc, **fixed_draw_kwargs)
-    _loglikelihood = partial(
-        loglikelihood,
-        draw_fnc=_draw_fnc,
-        background=background,
-        free_flux_hlr=free_flux_hlr,
-    )
 
     _logtarget = partial(
-        logtarget, logprior_fnc=logprior, loglikelihood_fnc=_loglikelihood
+        logtarget,
+        logprior_fnc=logprior,
+        loglikelihood_fnc=loglikelihood,
+        fixed_params=fixed_params,
     )
 
     _inference_fnc = partial(
