@@ -12,8 +12,6 @@ def draw_gaussian(
     e2: float,
     x: float,  # pixels
     y: float,
-    dx: float,  # additional offset from true centroid
-    dy: float,
     slen: int,
     fft_size: int,  # rule of thumb: at least 4 times `slen`
     psf_hlr: float = 0.7,
@@ -26,9 +24,7 @@ def draw_gaussian(
 
     psf = xgalsim.Gaussian(flux=1.0, half_light_radius=psf_hlr)
     gal_conv = xgalsim.Convolve([gal, psf]).withGSParams(gsparams)
-    image = gal_conv.drawImage(
-        nx=slen, ny=slen, scale=pixel_scale, offset=(x + dx, y + dy)
-    )
+    image = gal_conv.drawImage(nx=slen, ny=slen, scale=pixel_scale, offset=(x, y))
     return image.array
 
 
@@ -49,9 +45,9 @@ def draw_gaussian_galsim(
     gal = galsim.Gaussian(flux=f, half_light_radius=hlr)
     gal = gal.shear(g1=e1, g2=e2)  # intrinsic ellipticity
 
-    # actual shear, the correct weak lensing effect includes magnification
+    # the correct weak lensing effect includes magnification
     # see: https://galsim-developers.github.io/GalSim/_build/html/shear.html
-    mu = (1 - g1**2 - g2**2) ** -1  # converge kappa = 0
+    mu = (1 - g1**2 - g2**2) ** -1  # convergence kappa = 0
     gal = gal.lens(g1=g1, g2=g2, mu=mu)
 
     psf = galsim.Gaussian(flux=1.0, half_light_radius=psf_hlr)
