@@ -50,11 +50,11 @@ def main(
     assert galaxy_params["x"].shape == (n_gals,)
     assert galaxy_params["e1"].shape == (n_gals,)
     assert "lf" not in galaxy_params
-    extra_params = {"f": 10 ** jnp.full((n_gals,), lf), "hlr": jnp.full((n_gals,), hlr)}
+    fixed_params = {"f": 10 ** jnp.full((n_gals,), lf), "hlr": jnp.full((n_gals,), hlr)}
 
     # now get corresponding target images
     # we use the same flux and hlr for every galaxy in this experiment (and fix them in sampling)
-    draw_params = {**galaxy_params, **extra_params}
+    draw_params = {**galaxy_params, **fixed_params}
     target_images = get_target_images(
         nkey, draw_params, background=background, slen=slen
     )
@@ -66,7 +66,7 @@ def main(
     # x and y are dithered in the true images but fixed
     x = true_params.pop("x")
     y = true_params.pop("y")
-    extra_params = {"x": x, "y": y, **extra_params}
+    fixed_params = {"x": x, "y": y, **fixed_params}
 
     # more setup
     _logprior = partial(
