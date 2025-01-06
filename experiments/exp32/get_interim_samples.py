@@ -13,6 +13,7 @@ from bpd.io import save_dataset
 from bpd.pipelines.image_samples import (
     get_target_images,
     get_true_params_from_galaxy_params,
+    loglikelihood,
     logprior,
     pipeline_interim_samples_one_galaxy,
     sample_target_galaxy_params_simple,
@@ -22,11 +23,11 @@ from bpd.pipelines.image_samples import (
 def sample_prior(
     rng_key: PRNGKeyArray,
     *,
-    mean_logflux: float = 6.0,
-    sigma_logflux: float = 0.1,
-    mean_loghlr: float = 1.0,
-    sigma_loghlr: float = 0.05,
-    shape_noise: float = 1e-4,
+    mean_logflux: float,
+    sigma_logflux: float,
+    mean_loghlr: float,
+    sigma_loghlr: float,
+    shape_noise: float,
     g1: float = 0.02,
     g2: float = 0.0,
 ) -> dict[str, float]:
@@ -48,13 +49,13 @@ def main(
     n_samples_per_gal: int = 100,
     mean_logflux: float = 6.0,
     sigma_logflux: float = 0.1,
-    mean_loghlr: float = 1.0,
-    sigma_loghlr: float = 0.05,
+    mean_loghlr: float = 0.8,
+    sigma_loghlr: float = 0.025,
     g1: float = 0.02,
     g2: float = 0.0,
     shape_noise: float = 1e-4,
     sigma_e_int: float = 4e-2,
-    slen: int = 53,
+    slen: int = 63,
     fft_size: int = 256,
     background: float = 1.0,
     initial_step_size: float = 1e-3,
@@ -85,8 +86,8 @@ def main(
 
     # now get corresponding target images
     draw_params = {**galaxy_params}
-    draw_params["f"] = 10 ** galaxy_params.pop("lf")
-    draw_params["hlr"] = 10 ** galaxy_params.pop("lhlr")
+    draw_params["f"] = 10 ** draw_params.pop("lf")
+    draw_params["hlr"] = 10 ** draw_params.pop("lhlr")
     target_images = get_target_images(
         nkey, draw_params, background=background, slen=slen
     )
@@ -101,25 +102,30 @@ def main(
     y = true_params.pop("y")
     true_params["dx"] = jnp.zeros_like(x)
     true_params["dy"] = jnp.zeros_like(y)
-    extra_params = {"x": x, "y": y}
+    fixed_params = {"x": x, "y": y}
 
-    # more setup
+    # setup prior and likelihood
     _logprior = partial(
         logprior, sigma_e=sigma_e_int, free_flux_hlr=True, free_dxdy=True
+    )
+    _draw_fnc = partial(draw_gaussian, slen=slen, fft_size=fft_size)
+    _loglikelihood = partial(
+        loglikelihood,
+        draw_fnc=_draw_fnc,
+        background=background,
+        free_flux_hlr=True,
+        free_dxdy=True,
     )
 
     # prepare pipelines
     gkeys = random.split(gkey, n_gals)
-    _draw_fnc = partial(draw_gaussian, slen=slen, fft_size=fft_size)
     pipe = partial(
         pipeline_interim_samples_one_galaxy,
         initialization_fnc=init_with_truth,
-        draw_fnc=_draw_fnc,
         logprior=_logprior,
+        loglikelihood=_loglikelihood,
         n_samples=n_samples_per_gal,
         initial_step_size=initial_step_size,
-        background=background,
-        free_flux_hlr=True,
     )
     vpipe = vmap(jit(pipe))
 
@@ -128,25 +134,25 @@ def main(
         gkeys[0, None],
         {k: v[0, None] for k, v in true_params.items()},
         target_images[0, None],
-        {k: v[0, None] for k, v in extra_params.items()},
+        {k: v[0, None] for k, v in fixed_params.items()},
     )
 
-    samples = vpipe(gkeys, true_params, target_images, extra_params)
+    samples = vpipe(gkeys, true_params, target_images, fixed_params)
     e_post = jnp.stack([samples["e1"], samples["e2"]], axis=-1)
-    fpath = dirpath / f"e_post_{seed}.npz"
+    fpath = dirpath / f"interim_samples_{seed}.npz"
 
     save_dataset(
         {
             "e_post": e_post,
-            "true_g": jnp.array([g1, g2]),
             "dx": samples["dx"],
             "dy": samples["dy"],
             "lf": samples["lf"],
             "lhlr": samples["lhlr"],
-            "sigma_e": shape_noise,
-            "sigma_e_int": sigma_e_int,
             "e1": draw_params["e1"],
             "e2": draw_params["e2"],
+            "true_g": jnp.array([g1, g2]),
+            "sigma_e": shape_noise,
+            "sigma_e_int": sigma_e_int,
             "mean_logflux": mean_logflux,
             "sigma_logflux": sigma_logflux,
             "mean_loghlr": mean_loghlr,

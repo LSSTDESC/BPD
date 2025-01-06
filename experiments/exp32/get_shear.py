@@ -2,7 +2,6 @@
 """This file creates toy samples of ellipticities and saves them to .hdf5 file."""
 
 from functools import partial
-from pathlib import Path
 from typing import Callable
 
 import jax
@@ -62,16 +61,18 @@ def _logprior(
 
 def _interim_logprior(post_params: dict[str, Array], sigma_e_int: float):
     # we do not evaluate dxdy as we assume it's the same as the true prior and they cancel
-    return logprior(post_params, sigma_e=sigma_e_int, free_dxdy=False)
+    return logprior(
+        post_params, sigma_e=sigma_e_int, free_flux_hlr=True, free_dxdy=False
+    )
 
 
 def pipeline_shear_inference(
     rng_key: PRNGKeyArray,
-    e_post: Array,
+    post_params: Array,
     init_g: Array,
     *,
-    sigma_e: float,
-    sigma_e_int: float,
+    logprior: Callable,
+    interim_logprior: Callable,
     n_samples: int,
     initial_step_size: float,
     sigma_g: float = 0.01,
@@ -81,9 +82,7 @@ def pipeline_shear_inference(
     # NOTE: jit must be applied without `e_post` in partial!
     _loglikelihood = jit(
         partial(
-            shear_loglikelihood,
-            logprior=partial(_logprior, sigma_e=sigma_e),
-            interim_logprior=partial(_interim_logprior, sigma_e_int=sigma_e_int),
+            shear_loglikelihood, logprior=logprior, interim_logprior=interim_logprior
         )
     )
     _logtarget = partial(
@@ -92,7 +91,7 @@ def pipeline_shear_inference(
 
     _do_inference = partial(
         run_inference_nuts,
-        data={"e1e2": e_post},
+        data=post_params,
         logtarget=_logtarget,
         n_samples=n_samples,
         n_warmup_steps=n_warmup_steps,
@@ -105,47 +104,58 @@ def pipeline_shear_inference(
     return g_samples
 
 
-def _extract_seed(fpath: str) -> int:
-    name = Path(fpath).name
-    first = name.find("_")
-    second = name.find("_", first + 1)
-    third = name.find(".")
-    return int(name[second + 1 : third])
-
-
 def main(
     seed: int,
-    tag: str,
-    interim_samples_fname: str,
     initial_step_size: float = 1e-3,
     n_samples: int = 3000,
-    trim: int = 1,
     overwrite: bool = False,
 ):
     # directory structure
-    dirpath = DATA_DIR / "cache_chains" / tag
-    assert dirpath.exists()
-    interim_samples_fpath = DATA_DIR / "cache_chains" / tag / interim_samples_fname
+    dirpath = DATA_DIR / "cache_chains" / f"exp32_{seed}"
+    interim_samples_fpath = dirpath / f"interim_samples_{seed}.npz"
     assert interim_samples_fpath.exists(), "ellipticity samples file does not exist"
-    old_seed = _extract_seed(interim_samples_fpath)
-    fpath = DATA_DIR / "cache_chains" / tag / f"g_samples_{old_seed}_{seed}.npy"
+    assert dirpath.exists()
+    fpath = DATA_DIR / "cache_chains" / f"g_samples_{seed}.npy"
 
     if fpath.exists() and not overwrite:
         raise IOError("overwriting...")
 
     samples_dataset = load_dataset(interim_samples_fpath)
-    e_post = samples_dataset["e_post"][:, ::trim, :]
     true_g = samples_dataset["true_g"]
+
+    # prior parameters
     sigma_e = samples_dataset["sigma_e"]
     sigma_e_int = samples_dataset["sigma_e_int"]
+    mean_logflux = samples_dataset["mean_logflux"]
+    sigma_logflux = samples_dataset["sigma_logflux"]
+    mean_loghlr = samples_dataset["mean_loghlr"]
+    sigma_loghlr = samples_dataset["sigma_loghlr"]
+
+    # data
+    post_params = {
+        "lf": samples_dataset["lf"],
+        "lhlr": samples_dataset["lhlr"],
+        "e1e2": samples_dataset["e_post"],
+    }
+
+    # setup priors
+    logprior_fnc = partial(
+        _logprior,
+        sigma_e=sigma_e,
+        mean_logflux=mean_logflux,
+        sigma_logflux=sigma_logflux,
+        mean_loghlr=mean_loghlr,
+        sigma_loghlr=sigma_loghlr,
+    )
+    interim_logprior_fnc = partial(_interim_logprior, sigma_e_int=sigma_e_int)
 
     rng_key = jax.random.key(seed)
     g_samples = pipeline_shear_inference(
         rng_key,
-        e_post,
+        post_params,
+        logprior=logprior_fnc,
+        interim_logprior=interim_logprior_fnc,
         init_g=true_g,
-        sigma_e=sigma_e,
-        sigma_e_int=sigma_e_int,
         n_samples=n_samples,
         initial_step_size=initial_step_size,
     )
