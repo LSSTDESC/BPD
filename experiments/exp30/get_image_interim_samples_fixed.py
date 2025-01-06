@@ -12,6 +12,7 @@ from bpd.io import save_dataset
 from bpd.pipelines.image_samples import (
     get_target_images,
     get_true_params_from_galaxy_params,
+    loglikelihood,
     logprior,
     pipeline_interim_samples_one_galaxy,
     sample_target_galaxy_params_simple,
@@ -25,10 +26,10 @@ def main(
     g1: float = 0.02,
     g2: float = 0.0,
     lf: float = 6.0,  # ~ SNR = 1000
-    hlr: float = 1.0,
+    hlr: float = 0.8,
     shape_noise: float = 1e-4,
     sigma_e_int: float = 4e-2,
-    slen: int = 53,
+    slen: int = 63,
     fft_size: int = 256,
     background: float = 1.0,
     initial_step_size: float = 1e-3,
@@ -68,23 +69,30 @@ def main(
     y = true_params.pop("y")
     fixed_params = {"x": x, "y": y, **fixed_params}
 
-    # more setup
+    # setup prior and likelihood
     _logprior = partial(
         logprior, sigma_e=sigma_e_int, free_flux_hlr=False, free_dxdy=False
     )
 
+    _draw_fnc = partial(draw_gaussian, slen=slen, fft_size=fft_size)
+    _loglikelihood = partial(
+        loglikelihood,
+        draw_fnc=_draw_fnc,
+        background=background,
+        free_flux_hlr=False,
+        free_dxdy=False,
+    )
+
     # prepare pipelines
     gkeys = random.split(gkey, n_gals)
-    _draw_fnc = partial(draw_gaussian, slen=slen, fft_size=fft_size)
     pipe = partial(
         pipeline_interim_samples_one_galaxy,
         initialization_fnc=init_with_truth,
-        draw_fnc=_draw_fnc,
         logprior=_logprior,
+        loglikelihood=_loglikelihood,
         n_samples=n_samples_per_gal,
         initial_step_size=initial_step_size,
         background=background,
-        free_flux=False,
     )
     vpipe = vmap(jit(pipe))
 
@@ -93,10 +101,10 @@ def main(
         gkeys[0, None],
         {k: v[0, None] for k, v in true_params.items()},
         target_images[0, None],
-        {k: v[0, None] for k, v in extra_params.items()},
+        {k: v[0, None] for k, v in fixed_params.items()},
     )
 
-    samples = vpipe(gkeys, true_params, target_images, extra_params)
+    samples = vpipe(gkeys, true_params, target_images, fixed_params)
     e_post = jnp.stack([samples["e1"], samples["e2"]], axis=-1)
     fpath = dirpath / f"e_post_{seed}.npz"
 
