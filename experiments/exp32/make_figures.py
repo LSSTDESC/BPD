@@ -45,6 +45,25 @@ def make_contour_plots(g_samples: Array, n_examples=10) -> None:
         plt.close(fig)
 
 
+def make_scatter_flux_hlr(lf: Array, lhlr: Array, n_examples=10) -> None:
+    """Make figure of contour plot on g1, g2."""
+    fname = "figs/hists_flux_hlr.pdf"
+
+    n_gals, _ = lf.shape
+
+    with PdfPages(fname) as pdf:
+        # individual
+        for _ in range(n_examples):
+            idx = np.random.choice(np.arange(0, n_gals))
+            fig, ax = plt.subplots(1, 1, figsize=(7, 7))
+            ax.scatter(lf[idx, :], lhlr[idx, :], marker="x")
+            ax.set_title(f"Sample index: {idx}")
+            ax.set_xlabel("lf", fontsize=14)
+            ax.set_ylabel("lhlr", fontsize=14)
+            pdf.savefig(fig)
+            plt.close(fig)
+
+
 def make_scatter_shape_plots(e_post: Array, n_examples: int = 10) -> None:
     """Show example scatter plots of interim posterior ellipticitites."""
     # make two types, assuming gaussianity and one not assuming gaussianity.
@@ -79,6 +98,40 @@ def make_scatter_shape_plots(e_post: Array, n_examples: int = 10) -> None:
         plt.close(fig)
 
 
+def make_scatter_dxdy_plots(dx: Array, dy: Array, n_examples: int = 10) -> None:
+    """Show example scatter plots of interim posterior ellipticitites."""
+    # make two types, assuming gaussianity and one not assuming gaussianity.
+    fname = "figs/scatter_dxdy.pdf"
+
+    n_gals, _ = dx.shape
+
+    with PdfPages(fname) as pdf:
+        # individual
+        for _ in range(n_examples):
+            idx = np.random.choice(np.arange(0, n_gals))
+            dx1, dy1 = dx[idx, :], dy[idx, :]
+            fig, ax = plt.subplots(1, 1, figsize=(7, 7))
+            ax.scatter(dx1, dy1, marker="x")
+            ax.set_title(f"Samples ellipticity index: {idx}")
+            ax.set_xlabel("dx", fontsize=14)
+            ax.set_ylabel("dy", fontsize=14)
+            pdf.savefig(fig)
+            plt.close(fig)
+
+        # clusters
+        n_clusters = 50
+        fig, ax = plt.subplots(1, 1, figsize=(7, 7))
+        ax.set_xlabel("dx", fontsize=14)
+        ax.set_ylabel("dy", fontsize=14)
+        fig.suptitle(f"{n_clusters} galaxies plotted")
+        for _ in range(n_clusters):
+            idx = np.random.choice(np.arange(0, n_gals))
+            dx1, dy1 = dx[idx, :], dy[idx, :]
+            ax.scatter(dx1, dy1, marker="x")
+        pdf.savefig(fig)
+        plt.close(fig)
+
+
 def make_hists(g_samples: Array, e1_samples: Array) -> None:
     """Make histograms of g1 along with std and expected std."""
     fname = "figs/hists.pdf"
@@ -98,16 +151,23 @@ def make_hists(g_samples: Array, e1_samples: Array) -> None:
 
 
 def main(seed: int = 43):
-    # load data
-    pdir = DATA_DIR / "cache_chains" / f"test_fixed_shear_inference_images_{seed}"
-    e_post_dict = load_dataset(pdir / f"e_post_{seed}.npz")
-    e_post_samples = e_post_dict["e_post"]
-    g_samples = jnp.load(pdir / f"g_samples_{seed}_{seed}.npy")
+    np.random.seed(seed)
 
-    e1_samples = e_post_dict["e1"]
+    pdir = DATA_DIR / "cache_chains" / f"exp32_{seed}"
+    e_post_dict = load_dataset(pdir / f"interim_samples_{seed}.npz")
+    e_post_samples = e_post_dict["e_post"]
+    g_samples = jnp.load(pdir / f"g_samples_{seed}.npy")
+
+    e1_samples = e_post_dict["e1_true"]
+    dx = e_post_dict["dx"]
+    dy = e_post_dict["dy"]
+    lf = e_post_dict["lf"]
+    lhlr = e_post_dict["lhlr"]
 
     # make plots
     make_scatter_shape_plots(e_post_samples)
+    make_scatter_dxdy_plots(dx, dy)
+    make_scatter_flux_hlr(lf, lhlr)
     make_trace_plots(g_samples)
     make_contour_plots(g_samples)
     make_hists(g_samples, e1_samples)

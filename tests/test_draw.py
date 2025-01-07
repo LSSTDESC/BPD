@@ -16,11 +16,9 @@ def test_jax_galsim():
     hlr = jnp.array([0.9, 1.0])
     e1 = jnp.array([0.2, -0.1])
     e2 = jnp.array([0.0, 0.2])
-    g1 = jnp.array([0.02, 0.0])
-    g2 = jnp.array([0.0, 0.02])
     x = jnp.array([1.0, 0.0])
     y = jnp.array([0.0, 1.0])
 
-    a = _draw_fnc(f=f, hlr=hlr, e1=e1, e2=e2, g1=g1, g2=g2, x=x, y=y)
+    a = _draw_fnc(f=f, hlr=hlr, e1=e1, e2=e2, x=x, y=y)
     assert a.ndim == 3
     assert a.shape == (2, 101, 101)

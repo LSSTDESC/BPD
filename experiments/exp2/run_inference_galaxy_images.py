@@ -3,11 +3,13 @@
 
 import time
 from functools import partial
+from typing import Callable
 
 import jax.numpy as jnp
 import typer
-from jax import jit, random, vmap
+from jax import Array, jit, random, vmap
 from jax._src.prng import PRNGKeyArray
+from jax.scipy import stats
 
 from bpd import DATA_DIR
 from bpd.chains import run_sampling_nuts, run_warmup_nuts
@@ -16,11 +18,58 @@ from bpd.initialization import init_with_prior
 from bpd.pipelines.image_samples import (
     get_target_images,
     get_true_params_from_galaxy_params,
-    loglikelihood,
-    logprior,
-    logtarget,
     sample_target_galaxy_params_simple,
 )
+from bpd.prior import ellip_prior_e1e2
+
+
+def logprior(
+    params: dict[str, Array],
+    *,
+    sigma_e: float,
+    sigma_x: float = 0.5,  # pixels
+    flux_bds: tuple = (-1.0, 9.0),
+    hlr_bds: tuple = (0.01, 5.0),
+) -> Array:
+    prior = jnp.array(0.0)
+
+    f1, f2 = flux_bds
+    prior += stats.uniform.logpdf(params["lf"], f1, f2 - f1)
+
+    h1, h2 = hlr_bds
+    prior += stats.uniform.logpdf(params["hlr"], h1, h2 - h1)
+
+    prior += stats.norm.logpdf(params["x"], loc=0.0, scale=sigma_x)
+    prior += stats.norm.logpdf(params["y"], loc=0.0, scale=sigma_x)
+
+    e1e2 = jnp.stack((params["e1"], params["e2"]), axis=-1)
+    prior += jnp.log(ellip_prior_e1e2(e1e2, sigma=sigma_e))
+
+    return prior
+
+
+def loglikelihood(
+    params: dict[str, Array],
+    data: Array,
+    *,
+    draw_fnc: Callable,
+    background: float,
+):
+    _draw_params = {**params}
+    _draw_params["f"] = 10 ** _draw_params.pop("lf")
+    model = draw_fnc(**_draw_params)
+    likelihood_pp = stats.norm.logpdf(data, loc=model, scale=jnp.sqrt(background))
+    return jnp.sum(likelihood_pp)
+
+
+def logtarget(
+    params: dict[str, Array],
+    data: Array,
+    *,
+    logprior_fnc: Callable,
+    loglikelihood_fnc: Callable,
+):
+    return logprior_fnc(params) + loglikelihood_fnc(params, data)
 
 
 def sample_prior(
@@ -67,7 +116,7 @@ def main(
     pkey, nkey, ikey, rkey = random.split(rng_key, 4)
 
     # directory structure
-    dirpath = DATA_DIR / "cache_chains" / f"test_image_sampling_{seed}"
+    dirpath = DATA_DIR / "cache_chains" / f"exp2_{seed}"
     if not dirpath.exists():
         dirpath.mkdir(exist_ok=True)
     fpath = dirpath / f"chain_results_{seed}.npy"
