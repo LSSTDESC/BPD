@@ -45,7 +45,7 @@ def draw_gaussian_galsim(
     gal = galsim.Gaussian(flux=f, half_light_radius=hlr)
     gal = gal.shear(g1=e1, g2=e2)  # intrinsic ellipticity
 
-    # the correct weak lensing effect includes magnification
+    # the correct weak lensing effect includes magnification even if kappa=0!
     # see: https://galsim-developers.github.io/GalSim/_build/html/shear.html
     mu = (1 - g1**2 - g2**2) ** -1  # convergence kappa = 0
     gal = gal.lens(g1=g1, g2=g2, mu=mu)
