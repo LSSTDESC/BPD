@@ -119,10 +119,15 @@ def test_image_shear_commute():
 
                     # rtol is 0 because image contains lots of 0s
                     np.testing.assert_allclose(im2, im3, rtol=0, atol=1e-10)
-                    np.testing.assert_allclose(im4, im5, rtol=0, atol=1e-6)
+                    np.testing.assert_allclose(im4, im5, rtol=0, atol=5e-7)
 
                     if not (g1 == 0 and g2 == 0):
-                        not np.allclose(im1, im2, rtol=0, atol=1e-10)
-                        not np.allclose(im1, im3, rtol=0, atol=1e-10)
-                        not np.allclose(im1, im4, rtol=0, atol=1e-6)
-                        not np.allclose(im1, im5, rtol=0, atol=1e-6)
+                        assert not np.allclose(im1, im2, rtol=0, atol=1e-6)
+                        assert not np.allclose(im1, im3, rtol=0, atol=1e-6)
+                        assert not np.allclose(im1, im4, rtol=0, atol=1e-6)
+                        assert not np.allclose(im1, im5, rtol=0, atol=1e-6)
+
+                        assert not np.allclose(im2, im4, rtol=0, atol=1e-6)
+                        assert not np.allclose(im2, im5, rtol=0, atol=1e-6)
+                        assert not np.allclose(im3, im5, rtol=0, atol=1e-6)
+                        assert not np.allclose(im3, im5, rtol=0, atol=1e-6)
