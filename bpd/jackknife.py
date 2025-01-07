@@ -6,7 +6,7 @@ from jax import Array, random
 from tqdm import tqdm
 
 
-def run_shape_cancellation_shear_pipeline(
+def run_jackknife_shear_pipeline(
     rng_key,
     init_g: Array,
     post_params_pos: dict,
@@ -15,7 +15,7 @@ def run_shape_cancellation_shear_pipeline(
     n_jacks: int = 10,
     disable_bar: bool = True,
 ):
-    """Use Jackknife to estimate the mean and std of the shear posterior.
+    """Use jackknife+shape noise cancellationto estimate the mean and std of the shear posterior.
 
     Args:
         rng_key: Random jax key.
