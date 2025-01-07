@@ -3,6 +3,7 @@
 
 import time
 from functools import partial
+from typing import Callable
 
 import jax.numpy as jnp
 import typer
@@ -17,8 +18,6 @@ from bpd.initialization import init_with_prior
 from bpd.pipelines.image_samples import (
     get_target_images,
     get_true_params_from_galaxy_params,
-    loglikelihood,
-    logtarget,
     sample_target_galaxy_params_simple,
 )
 from bpd.prior import ellip_prior_e1e2
@@ -47,6 +46,30 @@ def logprior(
     prior += jnp.log(ellip_prior_e1e2(e1e2, sigma=sigma_e))
 
     return prior
+
+
+def loglikelihood(
+    params: dict[str, Array],
+    data: Array,
+    *,
+    draw_fnc: Callable,
+    background: float,
+):
+    _draw_params = {**params}
+    _draw_params["f"] = 10 ** _draw_params.pop["lf"]
+    model = draw_fnc(**_draw_params)
+    likelihood_pp = stats.norm.logpdf(data, loc=model, scale=jnp.sqrt(background))
+    return jnp.sum(likelihood_pp)
+
+
+def logtarget(
+    params: dict[str, Array],
+    data: Array,
+    *,
+    logprior_fnc: Callable,
+    loglikelihood_fnc: Callable,
+):
+    return logprior_fnc(params) + loglikelihood_fnc(params, data)
 
 
 def sample_prior(
@@ -93,7 +116,7 @@ def main(
     pkey, nkey, ikey, rkey = random.split(rng_key, 4)
 
     # directory structure
-    dirpath = DATA_DIR / "cache_chains" / f"test_image_sampling_{seed}"
+    dirpath = DATA_DIR / "cache_chains" / f"exp2_{seed}"
     if not dirpath.exists():
         dirpath.mkdir(exist_ok=True)
     fpath = dirpath / f"chain_results_{seed}.npy"
