@@ -6,7 +6,7 @@ from jax import Array, random
 from tqdm import tqdm
 
 
-def run_jackknife_shear_pipeline(
+def run_shape_cancellation_shear_pipeline(
     rng_key,
     init_g: Array,
     post_params_pos: dict,
