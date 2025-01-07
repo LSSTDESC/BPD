@@ -56,7 +56,7 @@ def loglikelihood(
     background: float,
 ):
     _draw_params = {**params}
-    _draw_params["f"] = 10 ** _draw_params.pop["lf"]
+    _draw_params["f"] = 10 ** _draw_params.pop("lf")
     model = draw_fnc(**_draw_params)
     likelihood_pp = stats.norm.logpdf(data, loc=model, scale=jnp.sqrt(background))
     return jnp.sum(likelihood_pp)
