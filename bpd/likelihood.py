@@ -40,11 +40,7 @@ def shear_loglikelihood(
     interim_logprior: Callable,  # fixed
 ) -> ArrayLike:
     """Shear Likelihood implementation of Schneider et al. 2014."""
-    e_post = post_params["e1e2"]
-    _, _, _ = e_post.shape  # (N, K, 2)
-
     denom = interim_logprior(post_params)
     num = logprior(post_params, g)
-
     ratio = jsp.special.logsumexp(num - denom, axis=-1)
     return ratio.sum()

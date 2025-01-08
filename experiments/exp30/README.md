@@ -1,4 +1,4 @@
-# Experiment 3
+# Experiment 3.0
 
 This folder contains scripts to reproduce results on fitting galaxy images in the low noise setting
 and inferring shear from them. Details: 

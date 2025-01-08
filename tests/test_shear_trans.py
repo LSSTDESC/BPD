@@ -1,11 +1,12 @@
 from functools import partial
 
 import jax.numpy as jnp
+import jax_galsim as xgalsim
 import numpy as np
 import pytest
 from jax import jit, random
+from jax_galsim import GSParams
 
-from bpd.draw import draw_gaussian
 from bpd.prior import (
     inv_shear_transformation,
     sample_ellip_prior,
@@ -13,6 +14,36 @@ from bpd.prior import (
     scalar_shear_transformation,
     shear_transformation,
 )
+
+
+# different from our `draw.py` functions as those are for forward model
+# but will still demonstrate the test
+def _draw_gaussian(
+    *,
+    f: float,
+    hlr: float,
+    e1: float,
+    e2: float,
+    x: float,
+    y: float,
+    g1: float,
+    g2: float,
+    mu: float,
+    slen: int,
+    fft_size: int,
+    psf_hlr: float = 0.7,
+    pixel_scale: float = 0.2,
+):
+    gsparams = GSParams(minimum_fft_size=fft_size, maximum_fft_size=fft_size)
+
+    gal = xgalsim.Gaussian(flux=f, half_light_radius=hlr)
+    gal = gal.shear(g1=e1, g2=e2)
+    gal = gal.lens(g1=g1, g2=g2, mu=mu)
+
+    psf = xgalsim.Gaussian(flux=1.0, half_light_radius=psf_hlr)
+    gal_conv = xgalsim.Convolve([gal, psf]).withGSParams(gsparams)
+    image = gal_conv.drawImage(nx=slen, ny=slen, scale=pixel_scale, offset=(x, y))
+    return image.array
 
 
 def test_scalar_inverse():
@@ -55,26 +86,48 @@ def test_image_shear_commute():
     hlr = 0.9
     x, y = (1, 1)
 
-    draw_jitted = jit(partial(draw_gaussian, slen=53, fft_size=256))
+    draw_jitted = jit(partial(_draw_gaussian, slen=53, fft_size=256))
     for e1 in ellips:
         for e2 in ellips:
             for g1 in shears:
                 for g2 in shears:
+                    # shear
                     e = jnp.array([e1, e2])
                     g = jnp.array([g1, g2])
                     (e1_p, e2_p) = scalar_shear_transformation(e, g)
+
+                    # magnification
+                    mu = (1 - g1**2 - g2**2) ** -1
+                    f_p = f * mu
+                    hlr_p = hlr * mu ** (0.5)
+
                     im1 = draw_jitted(
-                        f=f, hlr=hlr, e1=e1, e2=e2, g1=g1, g2=g2, x=x, y=y
+                        f=f, hlr=hlr, e1=e1, e2=e2, g1=0, g2=0, mu=1.0, x=x, y=y
                     )
                     im2 = draw_jitted(
-                        f=f, hlr=hlr, e1=e1_p, e2=e2_p, g1=0.0, g2=0.0, x=x, y=y
+                        f=f, hlr=hlr, e1=e1, e2=e2, g1=g1, g2=g2, mu=1.0, x=x, y=y
                     )
                     im3 = draw_jitted(
-                        f=f, hlr=hlr, e1=e1, e2=e2, g1=0.0, g2=0.0, x=x, y=y
+                        f=f, hlr=hlr, e1=e1_p, e2=e2_p, g1=0, g2=0, mu=1.0, x=x, y=y
+                    )
+                    im4 = draw_jitted(
+                        f=f, hlr=hlr, e1=e1, e2=e2, g1=g1, g2=g2, mu=mu, x=x, y=y
+                    )
+                    im5 = draw_jitted(
+                        f=f_p, hlr=hlr_p, e1=e1_p, e2=e2_p, g1=0, g2=0, mu=1.0, x=x, y=y
                     )
 
                     # rtol is 0 because image contains lots of 0s
-                    np.testing.assert_allclose(im1, im2, rtol=0, atol=1e-10)
+                    np.testing.assert_allclose(im2, im3, rtol=0, atol=1e-10)
+                    np.testing.assert_allclose(im4, im5, rtol=0, atol=5e-7)
 
                     if not (g1 == 0 and g2 == 0):
-                        assert not np.allclose(im3, im1, rtol=0, atol=1e-10)
+                        assert not np.allclose(im1, im2, rtol=0, atol=1e-6)
+                        assert not np.allclose(im1, im3, rtol=0, atol=1e-6)
+                        assert not np.allclose(im1, im4, rtol=0, atol=1e-6)
+                        assert not np.allclose(im1, im5, rtol=0, atol=1e-6)
+
+                        assert not np.allclose(im2, im4, rtol=0, atol=1e-6)
+                        assert not np.allclose(im2, im5, rtol=0, atol=1e-6)
+                        assert not np.allclose(im3, im5, rtol=0, atol=1e-6)
+                        assert not np.allclose(im3, im5, rtol=0, atol=1e-6)
