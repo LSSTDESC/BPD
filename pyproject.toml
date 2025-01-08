@@ -87,7 +87,14 @@ exclude = ["*.ipynb"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W", "B", "SIM", "PLE", "PLC", "PLW", "RUF"]
-ignore = ["C901", "E203", "E501", "E731", "PLC0206", "RUF027", "RUF052"]
+ignore = [
+    "C901",    # I want to decide what is 'too' complex
+    "E501",    # I don't care about formatting docstrings
+    "E731",    # I like lambda's sometimes
+    "PLC0206", # too picky, not always useful
+    "RUF027",  # does not account for shell scripts correctly
+    "RUF052",  # I find underscore variables useful
+]
 preview = true
 exclude = ["*.ipynb", "scripts/one_galaxy_shear.py", "scripts/benchmarks/*.py"]
 

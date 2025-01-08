@@ -15,7 +15,7 @@ def run_jackknife_shear_pipeline(
     n_jacks: int = 10,
     disable_bar: bool = True,
 ):
-    """Use Jackknife to estimate the mean and std of the shear posterior.
+    """Use jackknife+shape noise cancellation to estimate the mean and std of the shear posterior.
 
     Args:
         rng_key: Random jax key.
