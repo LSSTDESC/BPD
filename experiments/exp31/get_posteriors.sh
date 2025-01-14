@@ -4,4 +4,4 @@ export JAX_ENABLE_X64="True"
 SEED="43"
  
 ./get_interim_samples.py $SEED
-../../scripts/get_shear_from_interim_samples.py $SEED exp31_$SEED "e_post_${SEED}.npz" --overwrite
+../../scripts/get_shear_from_shapes.py $SEED exp31_$SEED "e_post_${SEED}.npz" --overwrite

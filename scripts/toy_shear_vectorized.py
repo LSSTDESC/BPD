@@ -7,8 +7,7 @@ import typer
 from jax import random, vmap
 
 from bpd import DATA_DIR
-from bpd.pipelines.shear_inference import pipeline_shear_inference_ellipticities
-from bpd.pipelines.toy_ellips import pipeline_toy_ellips_samples
+from bpd.pipelines import pipeline_shear_inference_simple, pipeline_toy_ellips
 
 
 def main(
@@ -40,7 +39,7 @@ def main(
     n_batch = ceil(len(keys) / n_vec)
 
     pipe1 = partial(
-        pipeline_toy_ellips_samples,
+        pipeline_toy_ellips,
         g1=g1,
         g2=g2,
         sigma_e=shape_noise,
@@ -50,7 +49,7 @@ def main(
         n_samples_per_gal=n_samples_per_gal,
     )
     pipe2 = partial(
-        pipeline_shear_inference_ellipticities,
+        pipeline_shear_inference_simple,
         init_g=jnp.array([g1, g2]),
         sigma_e=shape_noise,
         sigma_e_int=sigma_e_int,

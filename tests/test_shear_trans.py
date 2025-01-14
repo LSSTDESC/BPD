@@ -7,9 +7,9 @@ import pytest
 from jax import jit, random
 from jax_galsim import GSParams
 
-from bpd.prior import (
+from bpd.sample import sample_ellip_prior
+from bpd.shear import (
     inv_shear_transformation,
-    sample_ellip_prior,
     scalar_inv_shear_transformation,
     scalar_shear_transformation,
     shear_transformation,
