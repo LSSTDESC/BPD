@@ -2,9 +2,9 @@
 import subprocess
 
 import typer
+from slurm_job import setup_sbatch_job_gpu
 
 from bpd import DATA_DIR
-from scripts.slurm_job import setup_sbatch_job_gpu
 
 
 def main(

@@ -9,7 +9,7 @@ import typer
 
 from bpd import DATA_DIR
 from bpd.io import load_dataset
-from bpd.pipelines.shear_inference import pipeline_shear_inference_ellipticities
+from bpd.pipelines import pipeline_shear_inference_simple
 
 
 def _extract_seed(fpath: str) -> int:
@@ -47,7 +47,7 @@ def main(
     sigma_e_int = samples_dataset["sigma_e_int"]
 
     rng_key = jax.random.key(seed)
-    g_samples = pipeline_shear_inference_ellipticities(
+    g_samples = pipeline_shear_inference_simple(
         rng_key,
         e_post,
         init_g=true_g,
