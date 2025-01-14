@@ -9,7 +9,7 @@ from jax.typing import ArrayLike
 
 def shear_loglikelihood(
     g: Array,
-    post_params: dict[str, Array],
+    post_params: dict[str, Array] | Array,
     *,
     logprior: Callable,
     interim_logprior: Callable,  # fixed
