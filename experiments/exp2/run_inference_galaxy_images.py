@@ -15,12 +15,12 @@ from bpd import DATA_DIR
 from bpd.chains import run_sampling_nuts, run_warmup_nuts
 from bpd.draw import draw_gaussian
 from bpd.initialization import init_with_prior
-from bpd.pipelines.image_samples import (
+from bpd.prior import ellip_prior_e1e2
+from bpd.sample import (
     get_target_images,
     get_true_params_from_galaxy_params,
     sample_target_galaxy_params_simple,
 )
-from bpd.prior import ellip_prior_e1e2
 
 
 def logprior(

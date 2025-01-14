@@ -9,12 +9,12 @@ from bpd import DATA_DIR
 from bpd.draw import draw_gaussian
 from bpd.initialization import init_with_truth
 from bpd.io import save_dataset
-from bpd.pipelines.image_samples import (
+from bpd.likelihood import gaussian_image_loglikelihood
+from bpd.pipelines import pipeline_interim_samples_one_galaxy
+from bpd.prior import interim_gprops_logprior
+from bpd.sample import (
     get_target_images,
     get_true_params_from_galaxy_params,
-    loglikelihood,
-    logprior,
-    pipeline_interim_samples_one_galaxy,
     sample_target_galaxy_params_simple,
 )
 
@@ -71,12 +71,15 @@ def main(
 
     # setup prior and likelihood
     _logprior = partial(
-        logprior, sigma_e=sigma_e_int, free_flux_hlr=False, free_dxdy=False
+        interim_gprops_logprior,
+        sigma_e=sigma_e_int,
+        free_flux_hlr=False,
+        free_dxdy=False,
     )
 
     _draw_fnc = partial(draw_gaussian, slen=slen, fft_size=fft_size)
     _loglikelihood = partial(
-        loglikelihood,
+        gaussian_image_loglikelihood,
         draw_fnc=_draw_fnc,
         background=background,
         free_flux_hlr=False,
