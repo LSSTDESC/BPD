@@ -2,34 +2,9 @@ from typing import Callable
 
 import jax.numpy as jnp
 import jax.scipy as jsp
-from jax import Array, grad, vmap
+from jax import Array
+from jax.scipy import stats
 from jax.typing import ArrayLike
-
-from bpd.prior import (
-    ellip_prior_e1e2,
-    inv_shear_func1,
-    inv_shear_func2,
-    inv_shear_transformation,
-)
-
-_grad_fnc1 = vmap(vmap(grad(inv_shear_func1), in_axes=(0, None)), in_axes=(0, None))
-_grad_fnc2 = vmap(vmap(grad(inv_shear_func2), in_axes=(0, None)), in_axes=(0, None))
-_inv_shear_trans = vmap(inv_shear_transformation, in_axes=(0, None))
-
-
-def true_ellip_logprior(e_post: Array, g: Array, *, sigma_e: float):
-    """Implementation of GB's true prior on interim posterior samples of ellipticities."""
-
-    # jacobian of inverse shear transformation
-    grad1 = _grad_fnc1(e_post, g)
-    grad2 = _grad_fnc2(e_post, g)
-    absjacdet = jnp.abs(grad1[..., 0] * grad2[..., 1] - grad1[..., 1] * grad2[..., 0])
-
-    # true prior on unsheared ellipticity
-    e_post_unsheared = _inv_shear_trans(e_post, g)
-    prior_val = ellip_prior_e1e2(e_post_unsheared, sigma=sigma_e)
-
-    return jnp.log(prior_val) + jnp.log(absjacdet)
 
 
 def shear_loglikelihood(
@@ -44,3 +19,39 @@ def shear_loglikelihood(
     num = logprior(post_params, g)
     ratio = jsp.special.logsumexp(num - denom, axis=-1)
     return ratio.sum()
+
+
+def gaussian_image_loglikelihood(
+    params: dict[str, Array],
+    data: Array,
+    fixed_params: dict[str, Array],
+    *,
+    draw_fnc: Callable,
+    background: float,
+    free_flux_hlr: bool = True,
+    free_dxdy: bool = True,
+):
+    _draw_params = {}
+
+    if free_dxdy:
+        _draw_params["x"] = params["dx"] + fixed_params["x"]
+        _draw_params["y"] = params["dy"] + fixed_params["y"]
+
+    else:
+        _draw_params["x"] = fixed_params["x"]
+        _draw_params["y"] = fixed_params["y"]
+
+    if free_flux_hlr:
+        _draw_params["f"] = 10 ** params["lf"]
+        _draw_params["hlr"] = 10 ** params["lhlr"]
+
+    else:
+        _draw_params["f"] = fixed_params["f"]
+        _draw_params["hlr"] = fixed_params["hlr"]
+
+    _draw_params["e1"] = params["e1"]
+    _draw_params["e2"] = params["e2"]
+
+    model = draw_fnc(**_draw_params)
+    likelihood_pp = stats.norm.logpdf(data, loc=model, scale=jnp.sqrt(background))
+    return jnp.sum(likelihood_pp)

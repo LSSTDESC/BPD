@@ -1,8 +1,14 @@
 import jax.numpy as jnp
-from jax import Array, random, vmap
-from jax._src.prng import PRNGKeyArray
+from jax import Array, grad, vmap
 from jax.numpy.linalg import norm
+from jax.scipy import stats
 from jax.typing import ArrayLike
+
+from bpd.shear import (
+    inv_shear_func1,
+    inv_shear_func2,
+    inv_shear_transformation,
+)
 
 
 def ellip_mag_prior(e_mag: ArrayLike, sigma: float) -> ArrayLike:
@@ -37,79 +43,50 @@ def ellip_prior_e1e2(e1e2: Array, sigma: float) -> ArrayLike:
     return (1 - e_mag**2) ** 2 * jnp.exp(-(e_mag**2) / (2 * sigma**2)) / _norm
 
 
-def sample_mag_ellip_prior(
-    rng_key: PRNGKeyArray, sigma: float, n: int = 1, n_bins: int = 1_000_000
-):
-    """Sample n points from GB's ellipticity magnitude prior."""
-    e_mag_array = jnp.linspace(0, 1, n_bins)
-    p_array = ellip_mag_prior(e_mag_array, sigma=sigma)
-    p_array /= p_array.sum()
-    return random.choice(rng_key, e_mag_array, shape=(n,), p=p_array)
+_grad_fnc1 = vmap(vmap(grad(inv_shear_func1), in_axes=(0, None)), in_axes=(0, None))
+_grad_fnc2 = vmap(vmap(grad(inv_shear_func2), in_axes=(0, None)), in_axes=(0, None))
+_inv_shear_trans = vmap(inv_shear_transformation, in_axes=(0, None))
 
 
-def sample_ellip_prior(rng_key: PRNGKeyArray, sigma: float, n: int = 1):
-    """Sample n ellipticities isotropic components with Gary's prior for magnitude."""
-    key1, key2 = random.split(rng_key, 2)
-    e_mag = sample_mag_ellip_prior(key1, sigma=sigma, n=n)
-    e_phi = random.uniform(key2, shape=(n,), minval=0, maxval=jnp.pi)
-    e1 = e_mag * jnp.cos(2 * e_phi)
-    e2 = e_mag * jnp.sin(2 * e_phi)
-    return jnp.stack((e1, e2), axis=1)
+def true_ellip_logprior(e_post: Array, g: Array, *, sigma_e: float):
+    """Implementation of GB's true prior on interim posterior samples of ellipticities."""
+
+    # jacobian of inverse shear transformation
+    grad1 = _grad_fnc1(e_post, g)
+    grad2 = _grad_fnc2(e_post, g)
+    absjacdet = jnp.abs(grad1[..., 0] * grad2[..., 1] - grad1[..., 1] * grad2[..., 0])
+
+    # true prior on unsheared ellipticity
+    e_post_unsheared = _inv_shear_trans(e_post, g)
+    prior_val = ellip_prior_e1e2(e_post_unsheared, sigma=sigma_e)
+
+    return jnp.log(prior_val) + jnp.log(absjacdet)
 
 
-def scalar_shear_transformation(e: Array, g: Array):
-    """Transform elliptiticies by a fixed shear (scalar version).
-
-    The transformation we used is equation 3.4b in Seitz & Schneider (1997).
-
-    NOTE: This function is meant to be vmapped later.
-    """
-    assert e.shape == (2,) and g.shape == (2,)
-
-    e1, e2 = e
-    g1, g2 = g
-
-    e_comp = e1 + e2 * 1j
-    g_comp = g1 + g2 * 1j
-
-    e_prime = (e_comp + g_comp) / (1 + g_comp.conjugate() * e_comp)
-    return jnp.array([e_prime.real, e_prime.imag])
-
-
-def scalar_inv_shear_transformation(e: Array, g: Array):
-    """Same as above but the inverse."""
-    assert e.shape == (2,) and g.shape == (2,)
-    e1, e2 = e
-    g1, g2 = g
-
-    e_comp = e1 + e2 * 1j
-    g_comp = g1 + g2 * 1j
-
-    e_prime = (e_comp - g_comp) / (1 - g_comp.conjugate() * e_comp)
-    return jnp.array([e_prime.real, e_prime.imag])
-
-
-# batched
-shear_transformation = vmap(scalar_shear_transformation, in_axes=(0, None))
-inv_shear_transformation = vmap(scalar_inv_shear_transformation, in_axes=(0, None))
-
-# useful for jacobian later
-inv_shear_func1 = lambda e, g: scalar_inv_shear_transformation(e, g)[0]
-inv_shear_func2 = lambda e, g: scalar_inv_shear_transformation(e, g)[1]
-
-
-def sample_noisy_ellipticities_unclipped(
-    rng_key: PRNGKeyArray,
+def interim_gprops_logprior(
+    params: dict[str, Array],
     *,
-    g: Array,
-    sigma_m: float,
     sigma_e: float,
-    n: int = 1,
-):
-    """We sample noisy sheared ellipticities from N(e_int + g, sigma_m^2)"""
-    key1, key2 = random.split(rng_key, 2)
+    sigma_x: float = 0.5,  # pixels
+    flux_bds: tuple = (-1.0, 9.0),
+    hlr_bds: tuple = (-2.0, 1.0),
+    free_flux_hlr: bool = True,
+    free_dxdy: bool = True,
+) -> Array:
+    prior = jnp.array(0.0)
 
-    e_int = sample_ellip_prior(key1, sigma=sigma_e, n=n)
-    e_sheared = shear_transformation(e_int, g)
-    e_obs = random.normal(key2, shape=(n, 2)) * sigma_m + e_sheared.reshape(n, 2)
-    return e_obs, e_sheared, e_int
+    if free_flux_hlr:
+        f1, f2 = flux_bds
+        prior += stats.uniform.logpdf(params["lf"], f1, f2 - f1)
+
+        h1, h2 = hlr_bds
+        prior += stats.uniform.logpdf(params["lhlr"], h1, h2 - h1)
+
+    if free_dxdy:
+        prior += stats.norm.logpdf(params["dx"], loc=0.0, scale=sigma_x)
+        prior += stats.norm.logpdf(params["dy"], loc=0.0, scale=sigma_x)
+
+    e1e2 = jnp.stack((params["e1"], params["e2"]), axis=-1)
+    prior += jnp.log(ellip_prior_e1e2(e1e2, sigma=sigma_e))
+
+    return prior
