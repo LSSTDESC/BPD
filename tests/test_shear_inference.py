@@ -5,8 +5,7 @@ import numpy as np
 import pytest
 from jax import random
 
-from bpd.pipelines.shear_inference import pipeline_shear_inference_ellipticities
-from bpd.pipelines.toy_ellips import pipeline_toy_ellips_samples
+from bpd.pipelines import pipeline_shear_inference_simple, pipeline_toy_ellips
 
 
 @pytest.mark.parametrize("seed", [1234, 4567])
@@ -22,7 +21,7 @@ def test_shear_inference_toy_ellipticities(seed):
     true_g = jnp.array([g1, g2])
     n_gals = 1000
 
-    e_post, _, e_sheared = pipeline_toy_ellips_samples(
+    e_post, _, e_sheared = pipeline_toy_ellips(
         k1,
         g1=g1,
         g2=g2,
@@ -35,7 +34,7 @@ def test_shear_inference_toy_ellipticities(seed):
     assert e_post.shape == (n_gals, 100, 2)
     e_post_trimmed = e_post[:, ::10, :]
 
-    shear_samples = pipeline_shear_inference_ellipticities(
+    shear_samples = pipeline_shear_inference_simple(
         k2,
         e_post_trimmed,
         init_g=true_g,
