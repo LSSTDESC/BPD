@@ -42,16 +42,9 @@ def _logprior(
 
     prior = jnp.array(0.0)
 
-    # both flux and HLR get magnified by WL so we need to transform them
-    mu = (1 - g[0] ** 2 - g[1] ** 2) ** -1
-    lf_unsheared = lf - jnp.log(mu)
-    lhlr_unsheared = lhlr - 0.5 * jnp.log(mu)
-
     # we also pickup a jacobian in the corresponding probability densities
-    prior += stats.norm.logpdf(lf_unsheared, loc=mean_logflux, scale=sigma_logflux)
-    prior -= jnp.log(mu)  # jacobian (flux)
-    prior += stats.norm.logpdf(lhlr_unsheared, loc=mean_loghlr, scale=sigma_loghlr)
-    prior -= jnp.log(mu) * 0.5  # jacobian (hlr)
+    prior += stats.norm.logpdf(lf, loc=mean_logflux, scale=sigma_logflux)
+    prior += stats.norm.logpdf(lhlr, loc=mean_loghlr, scale=sigma_loghlr)
 
     # elliptcity
     prior += true_ellip_logprior(e_post, g, sigma_e=sigma_e)
