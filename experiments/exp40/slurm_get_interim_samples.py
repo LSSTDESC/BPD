@@ -8,18 +8,25 @@ from bpd.slurm import setup_sbatch_job_gpu
 
 def main(
     seed: int,
-    time: str = "00:29",  # HH:MM
-    mem_per_gpu: str = "25G",
+    time: str = "00:25",  # HH:MM
+    mem_per_gpu: str = "15G",
     qos: str = "debug",  # debug (< 30 min), regular
+    g1: float = 0.02,
+    g2: float = 0.0,
+    mode: str = "",
 ):
     jobname = f"exp40_{seed}"
 
     jobfile = setup_sbatch_job_gpu(jobname, time, nodes=1, n_tasks_per_node=4, qos=qos)
 
     run_path = "/global/u2/i/imendoza/BPD/experiments/exp40/get_interim_samples.py"
-    template_cmd = "python {run_path} {{seed}} {jobname}"
+    template_cmd = (
+        "python {run_path} {{seed}} {jobname} --mode {mode} --g1 {g1} --g2 {g2}"
+    )
 
-    base_cmd = template_cmd.format(run_path=run_path, jobname=jobname)
+    base_cmd = template_cmd.format(
+        run_path=run_path, jobname=jobname, mode=mode, g1=g1, g2=g2
+    )
 
     # append to jobfile the  commands.
     with open(jobfile, "a", encoding="utf-8") as f:
