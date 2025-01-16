@@ -8,11 +8,13 @@ from tqdm import tqdm
 
 def run_jackknife_shear_pipeline(
     rng_key,
+    *,
     init_g: Array,
     post_params_pos: dict,
     post_params_neg: dict,
     shear_pipeline: Callable,
-    n_jacks: int = 10,
+    n_gals: int,
+    n_jacks: int = 50,
     disable_bar: bool = True,
 ):
     """Use jackknife+shape noise cancellation to estimate the mean and std of the shear posterior.
@@ -28,11 +30,9 @@ def run_jackknife_shear_pipeline(
         n_jacks: Number of jackknife batches.
 
     Returns:
-        Jackknife
-
+        Jackknife samples of shear posterior mean combined with shape noise cancellation trick.
     """
-    N, _ = post_params_pos["e1"].shape  # N = n_gals, K = n_samples_per_gal
-    batch_size = ceil(N / n_jacks)
+    batch_size = ceil(n_gals / n_jacks)
 
     g_best_list = []
     keys = random.split(rng_key, n_jacks)
