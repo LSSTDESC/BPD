@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """This file creates toy samples of ellipticities and saves them to .hdf5 file."""
 
-from pathlib import Path
-
 import jax
 import jax.numpy as jnp
 import typer
@@ -12,18 +10,11 @@ from bpd.io import load_dataset
 from bpd.pipelines import pipeline_shear_inference_simple
 
 
-def _extract_seed(fpath: str) -> int:
-    name = Path(fpath).name
-    first = name.find("_")
-    second = name.find("_", first + 1)
-    third = name.find(".")
-    return int(name[second + 1 : third])
-
-
 def main(
     seed: int,
-    tag: str,
-    interim_samples_fname: str,
+    old_seed: int = typer.Option(),
+    interim_samples_fname: str = typer.Option(),
+    tag: str = typer.Option(),
     initial_step_size: float = 1e-3,
     n_samples: int = 3000,
     trim: int = 1,
@@ -34,7 +25,6 @@ def main(
     assert dirpath.exists()
     interim_samples_fpath = DATA_DIR / "cache_chains" / tag / interim_samples_fname
     assert interim_samples_fpath.exists(), "ellipticity samples file does not exist"
-    old_seed = _extract_seed(interim_samples_fpath)
     fpath = DATA_DIR / "cache_chains" / tag / f"g_samples_{old_seed}_{seed}.npy"
 
     if fpath.exists() and not overwrite:
