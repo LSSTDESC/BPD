@@ -143,6 +143,7 @@ def main(
             "e1_true": draw_params["e1"],
             "e2_true": draw_params["e2"],
             "true_g": jnp.array([g1, g2]),
+            "f": draw_params["f"],
             "sigma_e": shape_noise,
             "sigma_e_int": sigma_e_int,
             "mean_logflux": mean_logflux,
