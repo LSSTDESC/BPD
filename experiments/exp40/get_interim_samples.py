@@ -45,6 +45,7 @@ def sample_prior(
 def main(
     seed: int,
     tag: str,
+    mode: str = "",
     n_gals: int = 2500,
     n_samples_per_gal: int = 150,
     mean_logflux: float = 2.6,
@@ -58,6 +59,7 @@ def main(
     background: float = 1.0,
     initial_step_size: float = 1e-3,
 ):
+    assert mode in ("plus", "minus", "")
     rng_key = random.key(seed)
     pkey, nkey, gkey = random.split(rng_key, 3)
 
@@ -135,7 +137,9 @@ def main(
 
     samples = vpipe(gkeys, true_params, target_images, fixed_params)
     e_post = jnp.stack([samples["e1"], samples["e2"]], axis=-1)
-    fpath = dirpath / f"interim_samples_{seed}.npz"
+
+    extra_tag = f"_{mode}" if mode else ""
+    fpath = dirpath / f"interim_samples_{seed}{extra_tag}.npz"
 
     save_dataset(
         {
