@@ -19,13 +19,17 @@ def main(
     n_samples: int = 3000,
     trim: int = 1,
     overwrite: bool = False,
+    extra_tag: str = "",
 ):
+    extra_txt = f"_{extra_tag}" if extra_tag else ""
     # directory structure
     dirpath = DATA_DIR / "cache_chains" / tag
     assert dirpath.exists()
     interim_samples_fpath = DATA_DIR / "cache_chains" / tag / interim_samples_fname
     assert interim_samples_fpath.exists(), "ellipticity samples file does not exist"
-    fpath = DATA_DIR / "cache_chains" / tag / f"g_samples_{old_seed}_{seed}.npy"
+    fpath = (
+        DATA_DIR / "cache_chains" / tag / f"g_samples_{old_seed}_{seed}{extra_txt}.npy"
+    )
 
     if fpath.exists() and not overwrite:
         raise IOError("overwriting...")
