@@ -2,7 +2,7 @@ from math import ceil
 from typing import Callable
 
 import jax.numpy as jnp
-from jax import Array, random
+from jax import Array, random, vmap
 from tqdm import tqdm
 
 
@@ -57,3 +57,43 @@ def run_jackknife_shear_pipeline(
 
     g_best_means = jnp.array(g_best_list)
     return g_best_means
+
+
+def run_jackknife_vectorized(
+    rng_key,
+    *,
+    init_g: Array,
+    post_params_pos: dict,
+    post_params_neg: dict,
+    shear_pipeline: Callable,
+    n_gals: int,
+    n_jacks: int = 50,
+):
+    batch_size = ceil(n_gals / n_jacks)
+    keys = random.split(rng_key, n_jacks)
+
+    # prepare dictionaries of jackknife samples
+    params_jack_pos = {}
+    params_jack_neg = {}
+    for k in post_params_pos:
+        v1 = post_params_pos[k]
+        v2 = post_params_neg[k]
+        all_jack_params_pos = []
+        all_jack_params_neg = []
+        for ii in range(n_jacks):
+            start, end = ii * batch_size, (ii + 1) * batch_size
+            all_jack_params_pos.append(jnp.concatenate([v1[:start], v1[end:]]))
+            all_jack_params_neg.append(jnp.concatenate([v2[:start], v2[end:]]))
+
+        params_jack_pos[k] = jnp.stack(all_jack_params_pos, axis=0)
+        params_jack_neg[k] = jnp.stack(all_jack_params_neg, axis=0)
+
+    g_pos_samples = vmap(shear_pipeline, in_axes=(0, 0, None))(
+        keys, params_jack_pos, init_g
+    )
+    g_neg_samples = vmap(shear_pipeline, in_axes=(0, 0, None))(
+        keys, params_jack_neg, init_g
+    )
+    g_best_samples = (g_pos_samples - g_neg_samples) * 0.5
+    assert g_best_samples.ndim == 3
+    return g_best_samples.mean(axis=1)
