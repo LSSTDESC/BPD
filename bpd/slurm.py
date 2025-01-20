@@ -24,8 +24,7 @@ def setup_sbatch_job_gpu(
 
     # prepare files and directories
     jobfile_name = f"{jobname}_{JOB_SEED}.sbatch"
-    job_dir = Path(JOB_DIR)
-    jobfile = job_dir.joinpath(jobfile_name)
+    jobfile = JOB_DIR.joinpath(jobfile_name)
 
     with open(jobfile, "w", encoding="utf-8") as f:
         f.writelines(
