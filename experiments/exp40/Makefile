@@ -12,11 +12,11 @@ contours_bias.pdf: figs g_samples_${SEED}_${SEED}_plus.npy g_samples_${SEED}_${S
 figs: 
 	mkdir figs
 
-g_samples_${SEED}_${SEED}_plus.npy:
+g_samples_${SEED}_${SEED}_plus.npy: interim_samples_${SEED}_plus.npz
 	test -f ${DIR}/interim_samples_${SEED}_plus.npz
 	../../scripts/get_shear_from_shapes.py ${SEED} --old-seed ${SEED} --interim-samples-fname "interim_samples_${SEED}_plus.npz" --tag exp40_${SEED} --overwrite --extra-tag "plus"
 
-g_samples_${SEED}_${SEED}_minus.npy: interim_samples_${SEED}_minus.npz
+g_samples_${SEED}_${SEED}_minus.npy:
 	test -f ${DIR}/interim_samples_${SEED}_plus.npz
 	../../scripts/get_shear_from_shapes.py ${SEED} --old-seed ${SEED} --interim-samples-fname "interim_samples_${SEED}_minus.npz" --tag exp40_${SEED} --overwrite --extra-tag "minus"
 
