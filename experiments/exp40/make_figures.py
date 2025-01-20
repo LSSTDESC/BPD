@@ -19,9 +19,9 @@ from bpd.diagnostics import get_contour_plot
 from bpd.io import load_dataset
 
 
-def make_trace_plots(g_samples: Array) -> None:
+def make_trace_plots(g_samples: Array, mode: str) -> None:
     """Make trace plots of g1, g2."""
-    fname = "figs/traces.pdf"
+    fname = f"figs/traces_{mode}.pdf"
     with PdfPages(fname) as pdf:
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 5))
         g1 = g_samples[:, 0]
@@ -30,17 +30,6 @@ def make_trace_plots(g_samples: Array) -> None:
         ax1.plot(g1)
         ax2.plot(g2)
 
-        pdf.savefig(fig)
-        plt.close(fig)
-
-
-def make_contour_plots(g_samples: Array, n_examples=10) -> None:
-    """Make figure of contour plot on g1, g2."""
-    fname = "figs/contours.pdf"
-    with PdfPages(fname) as pdf:
-        truth = {"g1": -0.02, "g2": 0.0}
-        g_dict = {"g1": g_samples[:, 0], "g2": g_samples[:, 1]}
-        fig = get_contour_plot([g_dict], ["post"], truth)
         pdf.savefig(fig)
         plt.close(fig)
 
@@ -79,9 +68,9 @@ def make_scatter_shape_plots(e_post: Array, n_examples: int = 10) -> None:
         plt.close(fig)
 
 
-def make_hists(g_samples: Array) -> None:
+def make_hists(g_samples: Array, mode: str) -> None:
     """Make histograms of g1 along with std and expected std."""
-    fname = "figs/hists.pdf"
+    fname = f"figs/hists_{mode}.pdf"
     with PdfPages(fname) as pdf:
         fig, ax = plt.subplots(1, 1, figsize=(7, 7))
 
@@ -95,20 +84,55 @@ def make_hists(g_samples: Array) -> None:
         plt.close(fig)
 
 
+def make_contour_plots(
+    g_samples: Array, mode: str, g1_true: float, g2_true: float, n_examples: int = 10
+) -> None:
+    """Make figure of contour plot on g1, g2."""
+    fname = f"figs/contours_{mode}.pdf"
+    with PdfPages(fname) as pdf:
+        truth = {"g1": g1_true, "g2": g2_true}
+        g_dict = {"g1": g_samples[:, 0], "g2": g_samples[:, 1]}
+        fig = get_contour_plot([g_dict], ["post"], truth)
+        pdf.savefig(fig)
+        plt.close(fig)
+
+
 def main(seed: int = 42):
     np.random.seed(seed)
 
     # load data
     pdir = DATA_DIR / "cache_chains" / f"exp40_{seed}"
-    e_post_dict = load_dataset(pdir / f"interim_samples_{seed}_minus.npz")
-    e_post_samples = e_post_dict["e_post"]
-    g_samples = jnp.load(pdir / f"g_samples_{seed}_{seed}_minus.npy")
+    interim_dict = load_dataset(pdir / f"interim_samples_{seed}_plus.npz")
+    e_post_samples = interim_dict["e_post"]
+    g1, g2 = interim_dict["true_g"]
+
+    g_samples_plus = jnp.load(pdir / f"g_samples_{seed}_{seed}_plus.npy")
+    g_samples_minus = jnp.load(pdir / f"g_samples_{seed}_{seed}_minus.npy")
 
     # make plots
     make_scatter_shape_plots(e_post_samples)
-    make_trace_plots(g_samples)
-    make_contour_plots(g_samples)
-    make_hists(g_samples)
+
+    # plus
+    make_trace_plots(g_samples_plus, "plus")
+    make_hists(g_samples_plus, "plus")
+    make_contour_plots(g_samples_plus, "plus", g1_true=g1, g2_true=g2)
+
+    # minus
+    make_trace_plots(g_samples_minus, "minus")
+    make_hists(g_samples_minus, "minus")
+    make_contour_plots(g_samples_minus, "minus", g1_true=-g1, g2_true=g2)
+
+    # bias
+    m_samples = (g_samples_plus[:, 0] - g_samples_minus[:, 0]) * 0.5 / g1 - 1
+    c_samples = (g_samples_plus[:, 1] + g_samples_minus[:, 1]) * 0.5
+
+    fname = "figs/contours_bias.pdf"
+    with PdfPages(fname) as pdf:
+        ct_fig = get_contour_plot(
+            [{"m": m_samples, "c": c_samples}], ["m", "c"], {"m": 0.0, "c": 0.0}
+        )
+        pdf.savefig(ct_fig)
+        plt.close(ct_fig)
 
 
 if __name__ == "__main__":
