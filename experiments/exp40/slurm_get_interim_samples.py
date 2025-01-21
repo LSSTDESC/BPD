@@ -14,6 +14,12 @@ def main(
     qos: str = "debug",  # debug (< 30 min), regular
     g1: float = 0.02,
     g2: float = 0.0,
+    n_gals: int = 2500,
+    n_samples_per_gal: int = 150,
+    mean_logflux: float = 2.6,
+    sigma_logflux: float = 0.4,
+    shape_noise: float = 0.1,
+    sigma_e_int: float = 0.15,
     mode: str = "",
 ):
     mode_txt = f"_{mode}" if mode else ""
@@ -23,9 +29,21 @@ def main(
     )
 
     run_path = "/global/u2/i/imendoza/BPD/experiments/exp40/get_interim_samples.py"
-    template_cmd = "python {run_path} {{seed}} {tag} --mode {mode} --g1 {g1} --g2 {g2}"
+    template_cmd = "python {run_path} {{seed}} {tag} --mode {mode} --g1 {g1} --g2 {g2} --n-gals {n_gals} --n-samples-per-gal {n_samples_per_gal} --mean-logflux {mean_logflux} --sigma-logflux {sigma_logflux} --shape-noise {shape_noise} --sigma-e-int {sigma_e_int}"
 
-    base_cmd = template_cmd.format(run_path=run_path, tag=tag, mode=mode, g1=g1, g2=g2)
+    base_cmd = template_cmd.format(
+        run_path=run_path,
+        tag=tag,
+        mode=mode,
+        g1=g1,
+        g2=g2,
+        n_gals=n_gals,
+        n_samples_per_gal=n_samples_per_gal,
+        mean_logflux=mean_logflux,
+        sigma_logflux=sigma_logflux,
+        shape_noise=shape_noise,
+        sigma_e_int=sigma_e_int,
+    )
 
     # append to jobfile the  commands.
     with open(jobfile, "a", encoding="utf-8") as f:
