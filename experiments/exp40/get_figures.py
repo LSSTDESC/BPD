@@ -143,6 +143,59 @@ def main(seed: int, tag: str = typer.Option()):
         pdf.savefig(ct_fig)
         plt.close(ct_fig)
 
+    # summary of multiplicative/additive bias results (both JK and not)
+    # save to a text file
+
+    summary_fpath = f"figs/{seed}/summary.txt"
+    with open(summary_fpath, "w", encoding="utf-8") as f:
+        txt = (
+            "#### Full results ####\n"
+            "Units: 1e-3\n"
+            "\n"
+            f"m_mean: {m_samples.mean() * 1e3:.4g}\n"
+            f"m_std: {m_samples.std() * 1e3:.4g}\n"
+            "\n"
+            f"c_mean: {c_samples.mean() * 1e3:.4g}\n"
+            f"c_std: {c_samples.std() * 1e3:.4g}\n"
+            ""
+        )
+        print(txt, file=f)
+
+    jack_fpath = pdir / f"g_samples_jack_{seed}_{seed}.npz"
+    if jack_fpath.exists():
+        jack_ds = load_dataset(jack_fpath)
+        g_plus_jack = jack_ds["g_plus"]
+        g_minus_jack = jack_ds["g_minus"]
+        assert g_plus_jack.ndim == 3
+        assert g_plus_jack.shape[-1] == 2
+        n_jack = g_plus_jack.shape[0]
+
+        m_jack = (
+            g_plus_jack[..., 0].mean(axis=1) - g_minus_jack[..., 0].mean(axis=1)
+        ) * 0.5 / g1 - 1
+        c_jack = (
+            g_plus_jack[..., 1].mean(axis=1) + g_minus_jack[..., 1].mean(axis=1)
+        ) * 0.5
+
+        m_jack_mean = m_jack.mean().item()
+        m_jack_std = jnp.sqrt(m_jack.var() * (n_jack - 1)).item()
+
+        c_jack_mean = c_jack.mean().item()
+        c_jack_std = jnp.sqrt(c_jack.var() * (n_jack - 1)).item()
+
+        with open(summary_fpath, "a", encoding="utf-8") as f:
+            txt = (
+                "#### Jackknife results ####\n"
+                "Units: 1e-3\n"
+                "\n"
+                f"m_mean: {m_jack_mean * 1e3:.4g}\n"
+                f"m_std: {m_jack_std * 1e3:.4g}\n"
+                "\n"
+                f"c_mean: {c_jack_mean * 1e3:.4g}\n"
+                f"c_std: {c_jack_std * 1e3:.4g}\n"
+            )
+            print(txt, file=f)
+
 
 if __name__ == "__main__":
     typer.run(main)
