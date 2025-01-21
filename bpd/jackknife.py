@@ -94,6 +94,4 @@ def run_jackknife_vectorized(
     g_neg_samples = vmap(shear_pipeline, in_axes=(0, 0, None))(
         keys, params_jack_neg, init_g
     )
-    g_best_samples = (g_pos_samples - g_neg_samples) * 0.5
-    assert g_best_samples.ndim == 3
-    return g_best_samples.mean(axis=1)
+    return g_pos_samples, g_neg_samples
