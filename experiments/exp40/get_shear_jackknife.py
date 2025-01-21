@@ -9,8 +9,8 @@ import typer
 from jax import jit
 
 from bpd import DATA_DIR
-from bpd.io import load_dataset
-from bpd.jackknife import run_jackknife_shear_pipeline
+from bpd.io import load_dataset, save_dataset
+from bpd.jackknife import run_jackknife_vectorized
 from bpd.pipelines import pipeline_shear_inference_simple
 
 
@@ -30,7 +30,7 @@ def main(
     samples_plus_fpath = dirpath / samples_plus_fname
     samples_minus_fpath = dirpath / samples_minus_fname
     assert samples_plus_fpath.exists() and samples_minus_fpath.exists()
-    fpath = dirpath / f"g_samples_jack_{old_seed}_{seed}.npy"
+    fpath = dirpath / f"g_samples_jack_{old_seed}_{seed}.npz"
 
     if fpath.exists() and not overwrite:
         raise IOError("overwriting...")
@@ -61,7 +61,7 @@ def main(
     raw_pipeline_jitted = jit(raw_pipeline)
     pipeline = lambda k, d, g: raw_pipeline_jitted(k, d["e1e2"], g)
 
-    g_best_means = run_jackknife_shear_pipeline(
+    g_plus, g_minus = run_jackknife_vectorized(
         rng_key,
         init_g=true_g,
         post_params_pos={"e1e2": e_post_plus},
@@ -69,10 +69,12 @@ def main(
         shear_pipeline=pipeline,
         n_gals=e_post_plus.shape[0],
         n_jacks=n_jacks,
-        disable_bar=False,
     )
 
-    jnp.save(fpath, g_best_means)
+    assert g_plus.shape == (n_jacks, n_samples, 2)
+    assert g_minus.shape == (n_jacks, n_samples, 2)
+
+    save_dataset({"g_plus": g_plus, "g_minus": g_minus}, fpath, overwrite=True)
 
 
 if __name__ == "__main__":
