@@ -8,11 +8,13 @@ from bpd import DATA_DIR
 from bpd.io import load_dataset, save_dataset
 
 
-def main(seed: int = 42, mode: str = typer.Option(), n_files: int = 4):
+def main(
+    seed: int, tag: str = typer.Option(), mode: str = typer.Option(), n_files: int = 4
+):
     assert mode in ("plus", "minus", "")
     mode_txt = f"_{mode}" if mode else ""
-    dirpath = DATA_DIR / "cache_chains" / f"exp40_{seed}"
-    newpath = dirpath / f"interim_samples_42{mode_txt}.npz"
+    dirpath = DATA_DIR / "cache_chains" / tag
+    newpath = dirpath / f"interim_samples_{seed}{mode_txt}.npz"
 
     if newpath.exists():
         os.remove(newpath)
