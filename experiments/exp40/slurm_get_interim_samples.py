@@ -8,6 +8,7 @@ from bpd.slurm import setup_sbatch_job_gpu
 
 def main(
     seed: int,
+    tag: str = typer.Option(),
     time: str = "00:25",  # HH:MM
     mem_per_gpu: str = "10G",
     qos: str = "debug",  # debug (< 30 min), regular
@@ -16,7 +17,6 @@ def main(
     mode: str = "",
 ):
     mode_txt = f"_{mode}" if mode else ""
-    tag = f"exp40_{seed}"
 
     jobfile = setup_sbatch_job_gpu(
         f"{tag}{mode_txt}", time=time, nodes=1, n_tasks_per_node=4, qos=qos
