@@ -5,7 +5,7 @@ TAG := exp40_${SEED}
 export JAX_ENABLE_X64=True
 
 figures:
-	./get_figures.py ${SEED}
+	./get_figures.py ${SEED} --tag ${TAG}
 
 shear: 
 	export CUDA_VISIBLE_DEVICES=0
