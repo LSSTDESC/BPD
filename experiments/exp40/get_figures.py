@@ -102,14 +102,15 @@ def make_contour_plots(
         plt.close(fig)
 
 
-def main(seed: int):
+def main(seed: int, tag: str = typer.Option()):
     np.random.seed(seed)
 
-    if not Path("figs/{seed}").exists():
-        Path("figs/{seed}").mkdir(exist_ok=True)
+    fig_path = Path(f"figs/{seed}")
+    if not fig_path.exists():
+        Path(fig_path).mkdir(exist_ok=True)
 
     # load data
-    pdir = DATA_DIR / "cache_chains" / f"exp40_{seed}"
+    pdir = DATA_DIR / "cache_chains" / tag
     interim_dict = load_dataset(pdir / f"interim_samples_{seed}_plus.npz")
     e_post_samples = interim_dict["e_post"]
     g1, g2 = interim_dict["true_g"]
