@@ -132,8 +132,8 @@ def main(seed: int, tag: str = typer.Option()):
     make_contour_plots(g_samples_minus, "minus", g1_true=-g1, g2_true=g2, seed=seed)
 
     # bias
-    m_samples = (g_samples_plus[:, 0] - g_samples_minus[:, 0]) * 0.5 / g1 - 1
-    c_samples = (g_samples_plus[:, 1] + g_samples_minus[:, 1]) * 0.5
+    m_samples = (g_samples_plus[:, 0] - g_samples_minus[:, 0]) / 2 / g1 - 1
+    c_samples = (g_samples_plus[:, 1] + g_samples_minus[:, 1]) / 2
 
     fname = f"figs/{seed}/contours_bias.pdf"
     with PdfPages(fname) as pdf:
