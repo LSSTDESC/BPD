@@ -24,8 +24,8 @@ collate:
 	../exp40/collate_samples.py ${SEED} --tag ${TAG} --mode "minus" --n-files 4
 
 samples: 
-	../exp40/slurm_get_interim_samples.py ${SEED} --tag ${TAG} --g1 0.02 --g2 0.0 --n-gals 250 --n-samples-per-gal 150 --mean-logflux 6.0 --sigma-logflux 0.1 --shape-noise 1e-3 --sigma-e-int 0.04 --time "00:05" --mode "plus" --mem-per-gpu "1G"
-	../exp40/slurm_get_interim_samples.py ${SEED} --tag ${TAG} --g1 -0.02 --g2 0.0 --n-gals 250 --n-samples-per-gal 150 --mean-logflux 6.0 --sigma-logflux 0.1 --shape-noise 1e-3 --sigma-e-int 0.04 --time "00:05" --mode "minus" --mem-per-gpu "1G"
+	../exp40/slurm_get_interim_samples.py ${SEED} --tag ${TAG} --g1 0.02 --g2 0.0 --n-gals 250 --n-samples-per-gal 150 --mean-logflux 6.0 --sigma-logflux 0.1 --shape-noise 1e-3 --sigma-e-int 0.04 --time "00:05" --mode "plus" --mem-per-gpu "5G"
+	../exp40/slurm_get_interim_samples.py ${SEED} --tag ${TAG} --g1 -0.02 --g2 0.0 --n-gals 250 --n-samples-per-gal 150 --mean-logflux 6.0 --sigma-logflux 0.1 --shape-noise 1e-3 --sigma-e-int 0.04 --time "00:05" --mode "minus" --mem-per-gpu "5G"
 
 clean: 
 	rm -f ${DIR}/g_samples_*.npy ${DIR}/interim_samples_*.npz
