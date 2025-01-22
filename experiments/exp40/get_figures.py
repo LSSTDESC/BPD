@@ -172,10 +172,10 @@ def main(seed: int, tag: str = typer.Option()):
 
         m_jack = (
             g_plus_jack[..., 0].mean(axis=1) - g_minus_jack[..., 0].mean(axis=1)
-        ) * 0.5 / g1 - 1
+        ) / 2 / g1 - 1
         c_jack = (
             g_plus_jack[..., 1].mean(axis=1) + g_minus_jack[..., 1].mean(axis=1)
-        ) * 0.5
+        ) / 2
 
         m_jack_mean = m_jack.mean().item()
         m_jack_std = jnp.sqrt(m_jack.var() * (n_jack - 1)).item()
