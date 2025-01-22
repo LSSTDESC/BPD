@@ -1,0 +1,18 @@
+#### Full results ####
+Units: 1e-3
+
+m_mean: -0.005904
+m_std: 0.1721
+
+c_mean: -0.07802
+c_std: 0.03128
+
+#### Jackknife results ####
+Units: 1e-3
+
+m_mean: -0.008884
+m_std: 0.06164
+
+c_mean: -0.07788
+c_std: 0.03256
+
