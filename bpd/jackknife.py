@@ -92,6 +92,6 @@ def run_jackknife_vectorized(
         keys, params_jack_pos, init_g
     )
     g_neg_samples = vmap(shear_pipeline, in_axes=(0, 0, None))(
-        keys, params_jack_neg, init_g
+        keys, params_jack_neg, -init_g
     )
     return g_pos_samples, g_neg_samples
