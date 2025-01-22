@@ -2,7 +2,7 @@ from math import ceil
 from typing import Callable
 
 import jax.numpy as jnp
-from jax import Array, random, vmap
+from jax import Array, jit, random, vmap
 from tqdm import tqdm
 
 
@@ -88,10 +88,14 @@ def run_jackknife_vectorized(
         params_jack_pos[k] = jnp.stack(all_jack_params_pos, axis=0)
         params_jack_neg[k] = jnp.stack(all_jack_params_neg, axis=0)
 
-    g_pos_samples = vmap(shear_pipeline, in_axes=(0, 0, None))(
-        keys, params_jack_pos, init_g
+    # run on a single example for compilation purposes
+    vec_shear_pipeline = jit(vmap(shear_pipeline, in_axes=(0, 0, None)))
+    _ = vec_shear_pipeline(
+        keys[0, None], {k: v[0, None] for k, v in params_jack_pos.items()}, init_g
     )
-    g_neg_samples = vmap(shear_pipeline, in_axes=(0, 0, None))(
-        keys, params_jack_neg, -init_g
-    )
+
+    # run on full dataset
+    g_pos_samples = vec_shear_pipeline(keys, params_jack_pos, init_g)
+    g_neg_samples = vec_shear_pipeline(keys, params_jack_neg, -init_g)
+
     return g_pos_samples, g_neg_samples
