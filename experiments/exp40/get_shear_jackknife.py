@@ -21,7 +21,7 @@ def main(
     samples_minus_fname: str = typer.Option(),
     tag: str = typer.Option(),
     initial_step_size: float = 1e-3,
-    n_samples: int = 1000,
+    n_samples: int = 3000,
     trim: int = 1,
     overwrite: bool = False,
     n_jacks: int = 50,
