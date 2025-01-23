@@ -3,6 +3,7 @@ Submit sbatch job with default settings. To be used in other scripts specifying 
 """
 
 import secrets
+import subprocess
 from pathlib import Path
 
 JOB_DIR = Path(__file__).parent.parent.joinpath("jobs_out")
@@ -42,3 +43,40 @@ def setup_sbatch_job_gpu(
         )
 
     return jobfile
+
+
+def run_multi_gpu_job(
+    base_cmd: str,
+    *,
+    jobname: str,
+    base_seed: int,
+    time: str = "00:25",  # HH:MM
+    mem_per_gpu: str = "10G",
+    qos: str = "debug",  # debug (< 30 min), regular
+    nodes: int = 1,
+    n_tasks_per_node: int = 4,
+):
+    jobfile = setup_sbatch_job_gpu(
+        jobname, time=time, nodes=nodes, n_tasks_per_node=n_tasks_per_node, qos=qos
+    )
+    assert "{seed}" in base_cmd
+
+    # append to jobfile the  commands.
+    with open(jobfile, "a", encoding="utf-8") as f:
+        f.write("\n")
+
+    for ii in range(n_tasks_per_node):
+        cmd_seed = int(f"{base_seed}{ii}")
+        cmd = base_cmd.format(seed=cmd_seed)
+        srun_cmd = (
+            f"srun --exact -u -n 1 -c 1 --gpus-per-task 1 "
+            f"--mem-per-gpu={mem_per_gpu} {cmd}  &\n"
+        )
+
+        with open(jobfile, "a", encoding="utf-8") as f:
+            f.write(srun_cmd)
+
+    with open(jobfile, "a", encoding="utf-8") as f:
+        f.write("\nwait")
+
+    subprocess.run(f"sbatch {jobfile.as_posix()}", shell=True, check=False)

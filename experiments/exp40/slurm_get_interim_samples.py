@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-import subprocess
 
 import typer
 
-from bpd.slurm import setup_sbatch_job_gpu
+from bpd.slurm import run_multi_gpu_job
 
 
 def main(
@@ -23,18 +22,20 @@ def main(
     mode: str = "",
 ):
     mode_txt = f"_{mode}" if mode else ""
+    jobname = f"{tag}{mode_txt}"
 
-    jobfile = setup_sbatch_job_gpu(
-        f"{tag}{mode_txt}", time=time, nodes=1, n_tasks_per_node=4, qos=qos
-    )
-
-    run_path = "/global/u2/i/imendoza/BPD/experiments/exp40/get_interim_samples.py"
-    template_cmd = "python {run_path} {{seed}} {tag} --mode {mode} --g1 {g1} --g2 {g2} --n-gals {n_gals} --n-samples-per-gal {n_samples_per_gal} --mean-logflux {mean_logflux} --sigma-logflux {sigma_logflux} --shape-noise {shape_noise} --sigma-e-int {sigma_e_int}"
-
-    base_cmd = template_cmd.format(
-        run_path=run_path,
-        tag=tag,
-        mode=mode,
+    base_cmd = """python /global/u2/i/imendoza/BPD/experiments/exp40/get_interim_samples.py
+               {{seed}} {tag}
+               --mode {mode}
+               --g1 {g1} --g2 {g2}
+               --n-gals {n_gals}
+               --n-samples-per-gal {n_samples_per_gal}
+               --mean-logflux {mean_logflux}
+               --sigma-logflux {sigma_logflux}
+               --shape-noise {shape_noise} --sigma-e-int {sigma_e_int}
+               """
+    base_cmd = " ".join(base_cmd.split())
+    base_cmd = base_cmd.format(
         g1=g1,
         g2=g2,
         n_gals=n_gals,
@@ -45,25 +46,16 @@ def main(
         sigma_e_int=sigma_e_int,
     )
 
-    # append to jobfile the  commands.
-    with open(jobfile, "a", encoding="utf-8") as f:
-        f.write("\n")
-
-    for ii in range(4):
-        cmd_seed = int(f"{seed}{ii}")
-        cmd = base_cmd.format(seed=cmd_seed)
-        srun_cmd = (
-            f"srun --exact -u -n 1 -c 1 --gpus-per-task 1 "
-            f"--mem-per-gpu={mem_per_gpu} {cmd}  &\n"
-        )
-
-        with open(jobfile, "a", encoding="utf-8") as f:
-            f.write(srun_cmd)
-
-    with open(jobfile, "a", encoding="utf-8") as f:
-        f.write("\nwait")
-
-    subprocess.run(f"sbatch {jobfile.as_posix()}", shell=True, check=False)
+    run_multi_gpu_job(
+        base_cmd,
+        jobname=jobname,
+        base_seed=seed,
+        time=time,
+        mem_per_gpu=mem_per_gpu,
+        qos=qos,
+        nodes=1,
+        n_tasks_per_node=4,
+    )
 
 
 if __name__ == "__main__":
