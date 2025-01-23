@@ -98,4 +98,7 @@ def run_jackknife_vectorized(
     g_pos_samples = vec_shear_pipeline(keys, params_jack_pos, init_g)
     g_neg_samples = vec_shear_pipeline(keys, params_jack_neg, -init_g)
 
+    assert g_pos_samples.shape[0] == n_jacks
+    assert g_pos_samples.shape[-1] == 2
+
     return g_pos_samples, g_neg_samples
