@@ -1,15 +1,15 @@
 SHELL=/bin/bash
-SEED := 43
-EXP := exp40
+SEED := 42
+EXP := exp43
 TAG := ${EXP}_${SEED}
 DIR := /pscratch/sd/i/imendoza/data/cache_chains/${TAG}
 
 # simulation parameters
-N_GALS := 250
+N_GALS := 2500
 N_SAMPLES_PER_GAL := 100
-SHAPE_NOISE := 1e-3
-SIGMA_E_INT := 0.04
-MEAN_LOG_FLUX := 6.0
+SHAPE_NOISE := 0.1
+SIGMA_E_INT := 0.15
+MEAN_LOG_FLUX := 6.0 
 SIGMA_LOG_FLUX := 0.1
 SHEAR := 0.02
 
@@ -35,8 +35,8 @@ collate:
 	../exp40/collate_samples.py ${SEED} --tag ${TAG} --mode "minus" --n-files 4
 
 samples: 
-	../exp40/slurm_get_interim_samples.py ${SEED} --tag ${TAG} --g1 ${SHEAR} --g2 0.0 --n-gals ${N_GALS} --n-samples-per-gal ${N_SAMPLES_PER_GAL} --mean-logflux ${MEAN_LOG_FLUX} --sigma-logflux ${SIGMA_LOG_FLUX} --shape-noise ${SHAPE_NOISE} --sigma-e-int ${SIGMA_E_INT} --time "00:05" --mode "plus" --mem-per-gpu "5G"
-	../exp40/slurm_get_interim_samples.py ${SEED} --tag ${TAG} --g1 -${SHEAR} --g2 0.0 --n-gals ${N_GALS} --n-samples-per-gal ${N_SAMPLES_PER_GAL} --mean-logflux ${MEAN_LOG_FLUX} --sigma-logflux ${SIGMA_LOG_FLUX} --shape-noise ${SHAPE_NOISE} --sigma-e-int ${SIGMA_E_INT} --time "00:05" --mode "minus" --mem-per-gpu "5G"
+	../exp40/slurm_get_interim_samples.py ${SEED} --tag ${TAG} --g1 ${SHEAR} --g2 0.0 --n-gals ${N_GALS} --n-samples-per-gal ${N_SAMPLES_PER_GAL} --mean-logflux ${MEAN_LOG_FLUX} --sigma-logflux ${SIGMA_LOG_FLUX} --shape-noise ${SHAPE_NOISE} --sigma-e-int ${SIGMA_E_INT} --time "00:25" --mode "plus" --mem-per-gpu "10G"
+	../exp40/slurm_get_interim_samples.py ${SEED} --tag ${TAG} --g1 -${SHEAR} --g2 0.0 --n-gals ${N_GALS} --n-samples-per-gal ${N_SAMPLES_PER_GAL} --mean-logflux ${MEAN_LOG_FLUX} --sigma-logflux ${SIGMA_LOG_FLUX} --shape-noise ${SHAPE_NOISE} --sigma-e-int ${SIGMA_E_INT} --time "00:25" --mode "minus" --mem-per-gpu "10G"
 
 clean: 
-	rm -f ${DIR}/g_samples_*.npy ${DIR}/interim_samples_*.npz ${DIR}/g_samples_*.npz
+	rm -f ${DIR}/g_samples_*.npy ${DIR}/interim_samples_*.npz
