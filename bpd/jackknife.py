@@ -68,6 +68,7 @@ def run_jackknife_vectorized(
     shear_pipeline: Callable,
     n_gals: int,
     n_jacks: int = 100,
+    n_splits: int = 2,
 ):
     batch_size = ceil(n_gals / n_jacks)
     keys = random.split(rng_key, n_jacks)
@@ -95,10 +96,25 @@ def run_jackknife_vectorized(
     )
 
     # run on full dataset
-    g_pos_samples = vec_shear_pipeline(keys, params_jack_pos, init_g)
-    g_neg_samples = vec_shear_pipeline(keys, params_jack_neg, -init_g)
+    results_plus = []
+    results_minus = []
+    batch_size2 = ceil(n_jacks / n_splits)
+    for jj in range(n_splits):
+        start, end = jj * batch_size2, (jj + 1) * batch_size2
+        params_pos_jj = {k: v[start:end] for k, v in params_jack_pos.items()}
+        params_neg_jj = {k: v[start:end] for k, v in params_jack_neg.items()}
 
+        gp_jj = vec_shear_pipeline(keys[start:end], params_pos_jj, init_g)
+        gn_jj = vec_shear_pipeline(keys[start:end], params_neg_jj, -init_g)
+
+        results_plus.append(gp_jj)
+        results_minus.append(gn_jj)
+
+    g_pos_samples = jnp.concatenate(results_plus)
+    g_neg_samples = jnp.concatenate(results_plus)
     assert g_pos_samples.shape[0] == n_jacks
     assert g_pos_samples.shape[-1] == 2
+    assert g_neg_samples.shape[0] == n_jacks
+    assert g_neg_samples.shape[-1] == 2
 
     return g_pos_samples, g_neg_samples
