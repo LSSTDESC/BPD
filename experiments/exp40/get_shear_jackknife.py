@@ -24,7 +24,7 @@ def main(
     n_samples: int = 2000,
     trim: int = 1,
     overwrite: bool = False,
-    n_jacks: int = 50,
+    n_jacks: int = 100,
 ):
     dirpath = DATA_DIR / "cache_chains" / tag
     samples_plus_fpath = dirpath / samples_plus_fname
