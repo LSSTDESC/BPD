@@ -10,9 +10,9 @@ c_std: 1.104
 #### Jackknife results ####
 Units: 1e-3
 
-m_mean: -10.77
-m_std: 4.564
+m_mean: -10.71
+m_std: 6.359
 
-c_mean: -0.05475
-c_std: 1.003
+c_mean: -0.05684
+c_std: 1.166
 
