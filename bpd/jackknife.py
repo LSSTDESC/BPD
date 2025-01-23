@@ -14,7 +14,7 @@ def run_jackknife_shear_pipeline(
     post_params_neg: dict,
     shear_pipeline: Callable,
     n_gals: int,
-    n_jacks: int = 50,
+    n_jacks: int = 100,
     disable_bar: bool = True,
 ):
     """Use jackknife+shape noise cancellation to estimate the mean and std of the shear posterior.
@@ -67,7 +67,7 @@ def run_jackknife_vectorized(
     post_params_neg: dict,
     shear_pipeline: Callable,
     n_gals: int,
-    n_jacks: int = 50,
+    n_jacks: int = 100,
 ):
     batch_size = ceil(n_gals / n_jacks)
     keys = random.split(rng_key, n_jacks)
