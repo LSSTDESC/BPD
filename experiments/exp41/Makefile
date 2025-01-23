@@ -1,5 +1,5 @@
 SHELL=/bin/bash
-SEED := 43
+SEED := 42
 DIR := /pscratch/sd/i/imendoza/data/cache_chains/exp41_${SEED}
 TAG := exp41_${SEED}
 export JAX_ENABLE_X64=True
