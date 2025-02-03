@@ -10,7 +10,7 @@ def main(
     tag: str,
     time: str = "00:20",  # HH:MM
     mem_per_gpu: str = "20G",
-    qos: str = "debug",  # debug (< 30 min), regular
+    qos: str = "regular",
     n_vec: int = 50,
     n_exps: int = 250,  # per gpu
     n_samples_per_gal: int = 1000,
