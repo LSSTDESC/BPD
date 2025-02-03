@@ -6,7 +6,7 @@ DIR := /pscratch/sd/i/imendoza/data/cache_chains/${TAG}
 
 # simulation parameters
 N_GALS := 250
-N_SAMPLES_PER_GAL := 100
+N_SAMPLES_PER_GAL := 300
 SHAPE_NOISE := 0.1
 SIGMA_E_INT := 0.15
 MEAN_LOG_FLUX := 6.0 
