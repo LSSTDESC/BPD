@@ -11,7 +11,7 @@ def main(
     mode: str = "",
     time: str = "00:25",  # HH:MM
     mem_per_gpu: str = "10G",
-    qos: str = "regular",
+    qos: str = "debug",
     g1: float = 0.02,
     g2: float = 0.0,
     n_gals: int = 2500,
