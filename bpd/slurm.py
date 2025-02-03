@@ -16,7 +16,7 @@ def setup_sbatch_job_gpu(
     time: str = "00:10",
     nodes: int = 1,
     n_tasks_per_node: int = 1,
-    qos: str = "debug",
+    qos: str = "regular",
 ) -> Path:
     """Returns path to sbatch ready job file, commands need to be appended."""
 
@@ -52,7 +52,7 @@ def run_multi_gpu_job(
     base_seed: int,
     time: str = "00:25",  # HH:MM
     mem_per_gpu: str = "10G",
-    qos: str = "debug",  # debug (< 30 min), regular
+    qos: str = "regular",
     nodes: int = 1,
     n_tasks_per_node: int = 4,
 ):

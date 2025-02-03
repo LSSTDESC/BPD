@@ -8,9 +8,10 @@ from bpd.slurm import run_multi_gpu_job
 def main(
     seed: int,
     tag: str = typer.Option(),
+    mode: str = "",
     time: str = "00:25",  # HH:MM
     mem_per_gpu: str = "10G",
-    qos: str = "debug",  # debug (< 30 min), regular
+    qos: str = "regular",
     g1: float = 0.02,
     g2: float = 0.0,
     n_gals: int = 2500,
@@ -19,7 +20,6 @@ def main(
     sigma_logflux: float = 0.4,
     shape_noise: float = 0.1,
     sigma_e_int: float = 0.15,
-    mode: str = "",
 ):
     mode_txt = f"_{mode}" if mode else ""
     jobname = f"{tag}{mode_txt}"
@@ -36,6 +36,8 @@ def main(
                """
     base_cmd = " ".join(base_cmd.split())
     base_cmd = base_cmd.format(
+        tag=tag,
+        mode=mode,
         g1=g1,
         g2=g2,
         n_gals=n_gals,
