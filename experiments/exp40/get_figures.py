@@ -213,10 +213,10 @@ def main(seed: int, tag: str = typer.Option()):
             "Units: 1e-3\n"
             "\n"
             f"m_mean: {m_samples.mean() * 1e3:.4g}\n"
-            f"m_std: {m_samples.std() * 1e3:.4g}\n"
+            f"3 * m_std: {m_samples.std() * 3 * 1e3:.4g}\n"
             "\n"
             f"c_mean: {c_samples.mean() * 1e3:.4g}\n"
-            f"c_std: {c_samples.std() * 1e3:.4g}\n"
+            f"3 * c_std: {c_samples.std() * 3 * 1e3:.4g}\n"
             ""
         )
         print(txt, file=f)
@@ -249,10 +249,10 @@ def main(seed: int, tag: str = typer.Option()):
                 "Units: 1e-3\n"
                 "\n"
                 f"m_mean: {m_jack_mean * 1e3:.4g}\n"
-                f"m_std: {m_jack_std * 1e3:.4g}\n"
+                f"3 * m_std: {m_jack_std * 3 * 1e3:.4g}\n"
                 "\n"
                 f"c_mean: {c_jack_mean * 1e3:.4g}\n"
-                f"c_std: {c_jack_std * 1e3:.4g}\n"
+                f"3 * c_std: {c_jack_std * 3 * 1e3:.4g}\n"
             )
             print(txt, file=f)
 
