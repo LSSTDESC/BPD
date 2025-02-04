@@ -29,7 +29,12 @@ def make_trace_plots(g_samples: Array, mode: str, seed: int) -> None:
         g2 = g_samples[:, 1]
 
         ax1.plot(g1)
+        ax1.axhline(g1.mean(), color="r", linestyle="--")
+        ax1.axhline(0.02 if mode == "plus" else -0.02, color="k", linestyle="--")
+
         ax2.plot(g2)
+        ax2.axhline(g2.mean(), color="r", linestyle="--")
+        ax2.axhline(0.0, color="k", linestyle="--")
 
         pdf.savefig(fig)
         plt.close(fig)
