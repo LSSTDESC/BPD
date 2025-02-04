@@ -1,6 +1,6 @@
 # Experiment 4.2
 
-Same as experiment `4.0`, shape noise level is the same but high SNR galaxies only.
+Same as experiment `4.1`, but realistic flux distribution.
 
 ## Reproducing results
 
