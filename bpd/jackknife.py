@@ -116,7 +116,7 @@ def run_jackknife_vectorized(
         results_minus.append(gn_jj)
 
     g_pos_samples = jnp.concatenate(results_plus)
-    g_neg_samples = jnp.concatenate(results_plus)
+    g_neg_samples = jnp.concatenate(results_minus)
 
     assert g_pos_samples.shape[0] == n_jacks
     assert g_pos_samples.shape[-1] == 2
