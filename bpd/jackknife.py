@@ -70,7 +70,8 @@ def run_jackknife_vectorized(
     n_jacks: int = 100,
     n_splits: int = 2,
 ):
-    batch_size = ceil(n_gals / n_jacks)
+    assert n_gals % n_jacks == 0, "# of galaxies needs to be divisible by # jackknives."
+    batch_size = int(n_gals / n_jacks)
     keys = random.split(rng_key, n_jacks)
 
     # prepare dictionaries of jackknife samples
@@ -89,6 +90,9 @@ def run_jackknife_vectorized(
         params_jack_pos[k] = jnp.stack(all_jack_params_pos, axis=0)
         params_jack_neg[k] = jnp.stack(all_jack_params_neg, axis=0)
 
+        assert params_jack_pos[k].shape[0] == n_jacks
+        assert params_jack_neg[k].shape[0] == n_jacks
+
     # run on a single example for compilation purposes
     vec_shear_pipeline = jit(vmap(shear_pipeline, in_axes=(0, 0, None)))
     _ = vec_shear_pipeline(
@@ -98,7 +102,8 @@ def run_jackknife_vectorized(
     # run on full dataset
     results_plus = []
     results_minus = []
-    batch_size2 = ceil(n_jacks / n_splits)
+    batch_size2 = int(n_jacks / n_splits)
+    assert n_jacks % n_splits == 0
     for jj in range(n_splits):
         start, end = jj * batch_size2, (jj + 1) * batch_size2
         params_pos_jj = {k: v[start:end] for k, v in params_jack_pos.items()}
@@ -112,6 +117,7 @@ def run_jackknife_vectorized(
 
     g_pos_samples = jnp.concatenate(results_plus)
     g_neg_samples = jnp.concatenate(results_plus)
+
     assert g_pos_samples.shape[0] == n_jacks
     assert g_pos_samples.shape[-1] == 2
     assert g_neg_samples.shape[0] == n_jacks
