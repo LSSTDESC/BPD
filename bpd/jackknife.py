@@ -34,8 +34,11 @@ def run_jackknife_shear_pipeline(
     """
     batch_size = ceil(n_gals / n_jacks)
 
-    g_best_list = []
+    results_plus = []
+    results_minus = []
     keys = random.split(rng_key, n_jacks)
+
+    pipe = jit(shear_pipeline)
 
     for ii in tqdm(range(n_jacks), desc="Jackknife #", disable=disable_bar):
         k_ii = keys[ii]
@@ -48,15 +51,18 @@ def run_jackknife_shear_pipeline(
             k: jnp.concatenate([v[:start], v[end:]]) for k, v in post_params_neg.items()
         }
 
-        g_pos_ii = shear_pipeline(k_ii, _params_jack_pos, init_g)
-        g_neg_ii = shear_pipeline(k_ii, _params_jack_neg, -init_g)
-        g_best_ii = (g_pos_ii - g_neg_ii) * 0.5
-        g_best_mean_ii = g_best_ii.mean(axis=0)
+        g_pos_ii = pipe(k_ii, _params_jack_pos, init_g)
+        g_neg_ii = pipe(k_ii, _params_jack_neg, -init_g)
 
-        g_best_list.append(g_best_mean_ii)
+        results_plus.append(g_pos_ii)
+        results_minus.append(g_neg_ii)
 
-    g_best_means = jnp.array(g_best_list)
-    return g_best_means
+    g_pos_samples = jnp.stack(results_plus, axis=0)
+    g_neg_samples = jnp.stack(results_minus, axis=0)
+    assert g_pos_samples.shape[0] == n_jacks and g_pos_samples.shape[-1] == 2
+    assert g_neg_samples.shape[0] == n_jacks and g_neg_samples.shape[-1] == 2
+
+    return g_pos_samples, g_neg_samples
 
 
 def run_jackknife_vectorized(
@@ -70,6 +76,7 @@ def run_jackknife_vectorized(
     n_jacks: int = 100,
     n_splits: int = 2,
 ):
+    """Same as previous function, but vectorized for speed."""
     assert n_gals % n_jacks == 0, "# of galaxies needs to be divisible by # jackknives."
     batch_size = int(n_gals / n_jacks)
     keys = random.split(rng_key, n_jacks)
