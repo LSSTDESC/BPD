@@ -35,8 +35,8 @@ shear:
 	../../scripts/get_shear_from_shapes.py ${SEED} --old-seed ${SEED} --interim-samples-fname "interim_samples_${SEED}_minus.npz" --tag ${TAG} --overwrite --extra-tag "minus"
 
 collate:
-	../exp40/collate_samples.py ${SEED} --tag ${TAG} --mode "plus" --n-files 4
-	../exp40/collate_samples.py ${SEED} --tag ${TAG} --mode "minus" --n-files 4
+	../exp40/collate_samples.py ${SEED} --tag ${TAG} --mode "plus"
+	../exp40/collate_samples.py ${SEED} --tag ${TAG} --mode "minus"
 
 samples: 
 	../exp40/slurm_get_interim_samples.py ${SEED} --tag ${TAG} --g1 ${SHEAR} --g2 0.0 --n-gals ${N_GALS} --n-samples-per-gal ${N_SAMPLES_PER_GAL} --mean-logflux ${MEAN_LOG_FLUX} --sigma-logflux ${SIGMA_LOG_FLUX} --shape-noise ${SHAPE_NOISE} --sigma-e-int ${SIGMA_E_INT} --time "00:10" --mode "plus" --mem-per-gpu "5G" --qos ${QOS} --nodes ${NODES_SAMPLE} --n-tasks-per-node ${NTASKS_SAMPLE}
