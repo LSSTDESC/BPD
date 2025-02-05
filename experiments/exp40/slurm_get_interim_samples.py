@@ -12,10 +12,12 @@ def main(
     time: str = "00:25",  # HH:MM
     mem_per_gpu: str = "10G",
     qos: str = "debug",
+    nodes: int = 1,
+    n_tasks_per_node: int = 4,
     g1: float = 0.02,
     g2: float = 0.0,
     n_gals: int = 2500,
-    n_samples_per_gal: int = 150,
+    n_samples_per_gal: int = 300,
     mean_logflux: float = 2.6,
     sigma_logflux: float = 0.4,
     shape_noise: float = 0.1,
@@ -55,8 +57,8 @@ def main(
         time=time,
         mem_per_gpu=mem_per_gpu,
         qos=qos,
-        nodes=1,
-        n_tasks_per_node=4,
+        nodes=nodes,
+        n_tasks_per_node=n_tasks_per_node,
     )
 
 
