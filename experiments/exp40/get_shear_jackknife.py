@@ -26,6 +26,7 @@ def main(
     overwrite: bool = False,
     n_jacks: int = 100,
     n_splits: int = 10,
+    no_bar: bool = False,
 ):
     dirpath = DATA_DIR / "cache_chains" / tag
     samples_plus_fpath = dirpath / samples_plus_fname
@@ -71,6 +72,7 @@ def main(
         n_gals=e_post_plus.shape[0],
         n_jacks=n_jacks,
         n_splits=n_splits,
+        no_bar=no_bar,
     )
 
     assert g_plus.shape == (n_jacks, n_samples, 2)
