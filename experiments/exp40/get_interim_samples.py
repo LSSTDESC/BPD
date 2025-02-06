@@ -59,7 +59,8 @@ def main(
     background: float = 1.0,
     initial_step_size: float = 1e-3,
 ):
-    assert mode in ("plus", "minus", "")
+    assert (g1 > 0 and mode == "plus") or (g1 < 0 and mode == "minus") or (not mode)
+
     rng_key = random.key(seed)
     pkey, nkey, gkey = random.split(rng_key, 3)
 

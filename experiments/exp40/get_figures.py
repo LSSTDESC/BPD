@@ -29,7 +29,12 @@ def make_trace_plots(g_samples: Array, mode: str, seed: int) -> None:
         g2 = g_samples[:, 1]
 
         ax1.plot(g1)
+        ax1.axhline(g1.mean(), color="r", linestyle="--")
+        ax1.axhline(0.02 if mode == "plus" else -0.02, color="k", linestyle="--")
+
         ax2.plot(g2)
+        ax2.axhline(g2.mean(), color="r", linestyle="--")
+        ax2.axhline(0.0, color="k", linestyle="--")
 
         pdf.savefig(fig)
         plt.close(fig)
@@ -102,6 +107,66 @@ def make_contour_plots(
         plt.close(fig)
 
 
+def get_jack_traces(
+    g_plus_jack: Array, g_minus_jack: Array, g1_true: float, g2_true: float, seed: int
+):
+    fname = f"figs/{seed}/jack_traces.pdf"
+    assert g_plus_jack.ndim == 3
+    assert g_plus_jack.shape[-1] == 2
+    n_jack = g_plus_jack.shape[0]
+    with PdfPages(fname) as pdf:
+        for ii in range(n_jack):
+            fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(10, 20))
+
+            ax1.plot(g_plus_jack[ii, :, 0])
+            ax1.axhline(g1_true, color="k", linestyle="--")
+            ax1.axhline(g_plus_jack[ii, :, 0].mean(), color="r", linestyle="--")
+
+            ax2.plot(g_minus_jack[ii, :, 0])
+            ax2.axhline(-g1_true, color="k", linestyle="--")
+            ax2.axhline(g_minus_jack[ii, :, 0].mean(), color="r", linestyle="--")
+
+            ax3.plot(g_plus_jack[ii, :, 1])
+            ax3.axhline(g2_true, color="k", linestyle="--")
+            ax3.axhline(g_plus_jack[ii, :, 1].mean(), color="r", linestyle="--")
+
+            ax4.plot(g_minus_jack[ii, :, 1])
+            ax4.axhline(-g2_true, color="k", linestyle="--")
+            ax4.axhline(g_minus_jack[ii, :, 1].mean(), color="r", linestyle="--")
+
+            pdf.savefig(fig)
+            plt.close(fig)
+
+
+def get_jack_contours(
+    g_plus_jack: Array, g_minus_jack: Array, g1_true: float, g2_true: float, seed: int
+):
+    fname = f"figs/{seed}/jack_traces.pdf"
+    assert g_plus_jack.ndim == 3
+    assert g_plus_jack.shape[-1] == 2
+    n_jacks = g_plus_jack.shape[0]
+    fname = f"figs/{seed}/contours_jack.pdf"
+    with PdfPages(fname) as pdf:
+        for _ in range(10):
+            idx = np.random.choice(np.arange(0, n_jacks))
+
+            truth = {
+                "g1+": g1_true,
+                "g2+": g2_true,
+                "g1-": -g1_true,
+                "g2-": -g2_true,
+            }
+            g_dict = {
+                "g1+": g_plus_jack[idx, :, 0],
+                "g2+": g_plus_jack[idx, :, 1],
+                "g1-": g_minus_jack[idx, :, 0],
+                "g2-": g_minus_jack[idx, :, 1],
+            }
+            fig = get_contour_plot([g_dict], ["post"], truth, figsize=(10, 10))
+            pdf.savefig(fig)
+            plt.close(fig)
+
+
 def main(seed: int, tag: str = typer.Option()):
     np.random.seed(seed)
 
@@ -153,10 +218,10 @@ def main(seed: int, tag: str = typer.Option()):
             "Units: 1e-3\n"
             "\n"
             f"m_mean: {m_samples.mean() * 1e3:.4g}\n"
-            f"m_std: {m_samples.std() * 1e3:.4g}\n"
+            f"3 * m_std: {m_samples.std() * 3 * 1e3:.4g}\n"
             "\n"
             f"c_mean: {c_samples.mean() * 1e3:.4g}\n"
-            f"c_std: {c_samples.std() * 1e3:.4g}\n"
+            f"3 * c_std: {c_samples.std() * 3 * 1e3:.4g}\n"
             ""
         )
         print(txt, file=f)
@@ -189,12 +254,15 @@ def main(seed: int, tag: str = typer.Option()):
                 "Units: 1e-3\n"
                 "\n"
                 f"m_mean: {m_jack_mean * 1e3:.4g}\n"
-                f"m_std: {m_jack_std * 1e3:.4g}\n"
+                f"3 * m_std: {m_jack_std * 3 * 1e3:.4g}\n"
                 "\n"
                 f"c_mean: {c_jack_mean * 1e3:.4g}\n"
-                f"c_std: {c_jack_std * 1e3:.4g}\n"
+                f"3 * c_std: {c_jack_std * 3 * 1e3:.4g}\n"
             )
             print(txt, file=f)
+
+        get_jack_traces(g_plus_jack, g_minus_jack, g1, g2, seed)
+        get_jack_contours(g_plus_jack, g_minus_jack, g1, g2, seed)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=exp2_42
 #SBATCH --account=m1727
-#SBATCH --qos=regular
+#SBATCH --qos=debug
 #SBATCH --mail-type=begin,end,fail
 #SBATCH --mail-user=imendoza@umich.edu
 #SBATCH -C gpu
