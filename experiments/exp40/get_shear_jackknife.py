@@ -21,10 +21,12 @@ def main(
     samples_minus_fname: str = typer.Option(),
     tag: str = typer.Option(),
     initial_step_size: float = 1e-3,
-    n_samples: int = 2000,
+    n_samples: int = 1000,
     trim: int = 1,
     overwrite: bool = False,
-    n_jacks: int = 50,
+    n_jacks: int = 100,
+    n_splits: int = 10,
+    no_bar: bool = False,
 ):
     dirpath = DATA_DIR / "cache_chains" / tag
     samples_plus_fpath = dirpath / samples_plus_fname
@@ -63,12 +65,14 @@ def main(
 
     g_plus, g_minus = run_jackknife_vectorized(
         rng_key,
-        init_g=true_g,
+        init_g=jnp.array([0.0, 0.0]),
         post_params_pos={"e1e2": e_post_plus},
         post_params_neg={"e1e2": e_post_minus},
         shear_pipeline=pipeline,
         n_gals=e_post_plus.shape[0],
         n_jacks=n_jacks,
+        n_splits=n_splits,
+        no_bar=no_bar,
     )
 
     assert g_plus.shape == (n_jacks, n_samples, 2)

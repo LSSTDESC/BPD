@@ -8,9 +8,7 @@ from bpd import DATA_DIR
 from bpd.io import load_dataset, save_dataset
 
 
-def main(
-    seed: int, tag: str = typer.Option(), mode: str = typer.Option(), n_files: int = 4
-):
+def main(seed: int, tag: str = typer.Option(), mode: str = typer.Option()):
     assert mode in ("plus", "minus", "")
     mode_txt = f"_{mode}" if mode else ""
     dirpath = DATA_DIR / "cache_chains" / tag
@@ -21,8 +19,17 @@ def main(
 
     full_ds = {}
 
-    for ii in range(n_files):
-        fp = dirpath / f"interim_samples_{seed}{ii}{mode_txt}.npz"
+    # first collect all relevant files
+    fps = []
+    for fp in dirpath.iterdir():
+        cond1 = fp.name.startswith(f"interim_samples_{seed}")
+        cond2 = fp.name != newpath.name
+        cond3 = mode in fp.name
+        if cond1 and cond2 and cond3:
+            fps.append(fp)
+
+    fps = sorted(fps)  # paths have intrinsic ordering just like strings
+    for fp in fps:
         ds = load_dataset(fp)
 
         for k, v in ds.items():

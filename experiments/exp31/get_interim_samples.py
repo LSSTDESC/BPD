@@ -22,7 +22,7 @@ from bpd.sample import (
 def main(
     seed: int,
     n_gals: int = 1000,  # technically, in this file it means 'noise realizations'
-    n_samples_per_gal: int = 100,
+    n_samples_per_gal: int = 300,
     g1: float = 0.02,
     g2: float = 0.0,
     lf: float = 6.0,  # ~ SNR = 1000
