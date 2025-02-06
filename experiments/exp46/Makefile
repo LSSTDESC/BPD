@@ -30,7 +30,7 @@ jackknife:
 	../exp40/get_shear_jackknife.py ${SEED} --old-seed ${SEED} \
 	--samples-plus-fname interim_samples_${SEED}_plus.npz \
 	--samples-minus-fname interim_samples_${SEED}_minus.npz \
-	--tag ${TAG} --overwrite
+	--tag ${TAG} --overwrite --n-splits 5 --n-jacks 50
 
 shear: 
 	export CUDA_VISIBLE_DEVICES=0
