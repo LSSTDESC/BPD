@@ -75,6 +75,7 @@ def run_jackknife_vectorized(
     n_gals: int,
     n_jacks: int = 100,
     n_splits: int = 2,
+    no_bar: bool = False,
 ):
     """Same as previous function, but vectorized for speed."""
     b1 = int(n_jacks / n_splits)
@@ -89,7 +90,7 @@ def run_jackknife_vectorized(
     results_plus = []
     results_minus = []
 
-    for ii in range(n_splits):
+    for ii in tqdm(range(n_splits), disable=no_bar, desc="Splits JK"):
         start1, end1 = ii * b1, (ii + 1) * b1
 
         # prepare dictionaries of jackknife samples
