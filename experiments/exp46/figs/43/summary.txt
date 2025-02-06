@@ -1,0 +1,9 @@
+#### Full results ####
+Units: 1e-3
+
+m_mean: -3.121
+3 * m_std: 21.79
+
+c_mean: -0.3219
+3 * c_std: 1.103
+
