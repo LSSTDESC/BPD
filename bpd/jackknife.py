@@ -15,7 +15,7 @@ def run_jackknife_shear_pipeline(
     shear_pipeline: Callable,
     n_gals: int,
     n_jacks: int = 100,
-    disable_bar: bool = True,
+    no_bar: bool = True,
 ):
     """Use jackknife+shape noise cancellation to estimate the mean and std of the shear posterior.
 
@@ -40,7 +40,7 @@ def run_jackknife_shear_pipeline(
 
     pipe = jit(shear_pipeline)
 
-    for ii in tqdm(range(n_jacks), desc="Jackknife #", disable=disable_bar):
+    for ii in tqdm(range(n_jacks), desc="Jackknife #", disable=no_bar):
         k_ii = keys[ii]
         start, end = ii * batch_size, (ii + 1) * batch_size
 
@@ -77,50 +77,52 @@ def run_jackknife_vectorized(
     n_splits: int = 2,
 ):
     """Same as previous function, but vectorized for speed."""
+    b1 = int(n_jacks / n_splits)
+    b2 = int(n_gals / n_jacks)
+    assert n_jacks % n_splits == 0
     assert n_gals % n_jacks == 0, "# of galaxies needs to be divisible by # jackknives."
-    batch_size = int(n_gals / n_jacks)
+
     keys = random.split(rng_key, n_jacks)
 
-    # prepare dictionaries of jackknife samples
-    params_jack_pos = {}
-    params_jack_neg = {}
-    for k in post_params_pos:
-        v1 = post_params_pos[k]
-        v2 = post_params_neg[k]
-        all_jack_params_pos = []
-        all_jack_params_neg = []
-        for ii in range(n_jacks):
-            start, end = ii * batch_size, (ii + 1) * batch_size
-            all_jack_params_pos.append(jnp.concatenate([v1[:start], v1[end:]]))
-            all_jack_params_neg.append(jnp.concatenate([v2[:start], v2[end:]]))
-
-        params_jack_pos[k] = jnp.stack(all_jack_params_pos, axis=0)
-        params_jack_neg[k] = jnp.stack(all_jack_params_neg, axis=0)
-
-        assert params_jack_pos[k].shape[0] == n_jacks
-        assert params_jack_neg[k].shape[0] == n_jacks
-
-    # run on a single example for compilation purposes
     vec_shear_pipeline = jit(vmap(shear_pipeline, in_axes=(0, 0, None)))
-    _ = vec_shear_pipeline(
-        keys[0, None], {k: v[0, None] for k, v in params_jack_pos.items()}, init_g
-    )
 
-    # run on full dataset
     results_plus = []
     results_minus = []
-    batch_size2 = int(n_jacks / n_splits)
-    assert n_jacks % n_splits == 0
-    for jj in range(n_splits):
-        start, end = jj * batch_size2, (jj + 1) * batch_size2
-        params_pos_jj = {k: v[start:end] for k, v in params_jack_pos.items()}
-        params_neg_jj = {k: v[start:end] for k, v in params_jack_neg.items()}
 
-        gp_jj = vec_shear_pipeline(keys[start:end], params_pos_jj, init_g)
-        gn_jj = vec_shear_pipeline(keys[start:end], params_neg_jj, -init_g)
+    for ii in range(n_splits):
+        start1, end1 = ii * b1, (ii + 1) * b1
 
-        results_plus.append(gp_jj)
-        results_minus.append(gn_jj)
+        # prepare dictionaries of jackknife samples
+        params_jack_pos = {}
+        params_jack_neg = {}
+        for k in post_params_pos:
+            v1 = post_params_pos[k]
+            v2 = post_params_neg[k]
+            all_jack_params_pos = []
+            all_jack_params_neg = []
+            for jj in range(start1, end1):
+                start2, end2 = jj * b2, (jj + 1) * b2
+                all_jack_params_pos.append(jnp.concatenate([v1[:start2], v1[end2:]]))
+                all_jack_params_neg.append(jnp.concatenate([v2[:start2], v2[end2:]]))
+
+            params_jack_pos[k] = jnp.stack(all_jack_params_pos, axis=0)
+            params_jack_neg[k] = jnp.stack(all_jack_params_neg, axis=0)
+
+            assert params_jack_pos[k].shape[0] == b1
+
+        if ii == 0:
+            # run first a single example for compilation purposes
+            _ = vec_shear_pipeline(
+                keys[0, None],
+                {k: v[0, None] for k, v in params_jack_pos.items()},
+                init_g,
+            )
+
+        gp = vec_shear_pipeline(keys[start1:end1], params_jack_pos, init_g)
+        gn = vec_shear_pipeline(keys[start1:end1], params_jack_neg, -init_g)
+
+        results_plus.append(gp)
+        results_minus.append(gn)
 
     g_pos_samples = jnp.concatenate(results_plus)
     g_neg_samples = jnp.concatenate(results_minus)
