@@ -25,6 +25,7 @@ def main(
     trim: int = 1,
     overwrite: bool = False,
     n_jacks: int = 100,
+    n_splits: int = 10,
 ):
     dirpath = DATA_DIR / "cache_chains" / tag
     samples_plus_fpath = dirpath / samples_plus_fname
@@ -69,6 +70,7 @@ def main(
         shear_pipeline=pipeline,
         n_gals=e_post_plus.shape[0],
         n_jacks=n_jacks,
+        n_splits=n_splits,
     )
 
     assert g_plus.shape == (n_jacks, n_samples, 2)
