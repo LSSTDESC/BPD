@@ -1,5 +1,5 @@
 SHELL=/bin/bash
-SEED := 42
+SEED := 43
 EXP := exp46
 TAG := ${EXP}_${SEED}
 DIR := /pscratch/sd/i/imendoza/data/cache_chains/${TAG}
@@ -14,9 +14,9 @@ SIGMA_LOG_FLUX := 0.4
 SHEAR := 0.02
 QOS := regular
 
-TIME_SAMPLE := 01:30
-NODES_SAMPLE := 1
-NTASKS_SAMPLE := 1
+TIME_SAMPLE := 01:00
+NODES_SAMPLE := 4
+NTASKS_SAMPLE := 4
 MEM_PER_GPU := 10G
 
 
