@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check chains ran on a variety of galaxies with different SNR, initialization from the prior."""
+"""This experiment is more attuned to what we will use for final results."""
 
 import time
 from functools import partial
@@ -14,11 +14,9 @@ from jax.scipy import stats
 from bpd import DATA_DIR
 from bpd.chains import run_sampling_nuts, run_warmup_nuts
 from bpd.draw import draw_gaussian
-from bpd.initialization import init_with_prior
 from bpd.prior import ellip_prior_e1e2
 from bpd.sample import (
     get_target_images,
-    get_true_params_from_galaxy_params,
     sample_target_galaxy_params_simple,
 )
 
@@ -62,6 +60,18 @@ def loglikelihood(
     return jnp.sum(likelihood_pp)
 
 
+def _init_fnc(image: Array):
+    assert image.ndim == 2
+    assert image.shape[0] == image.shape[1]
+    flux = image.sum()
+    hlr = 0.95  # median size
+    e1 = 0.0
+    e2 = 0.0
+    x = 0.0
+    y = 0.0
+    return {"lf": jnp.log10(flux), "hlr": hlr, "e1": e1, "e2": e2, "x": x, "y": y}
+
+
 def logtarget(
     params: dict[str, Array],
     data: Array,
@@ -75,17 +85,17 @@ def logtarget(
 def sample_prior(
     rng_key: PRNGKeyArray,
     *,
-    flux_bds: tuple = (2.5, 4.0),
-    hlr_bds: tuple = (0.7, 2.0),
-    shape_noise: float = 0.3,
+    shape_noise: float,
+    mean_logflux: float = 2.6,
+    sigma_logflux: float = 0.4,
+    hlr_bds: tuple[float, float] = (0.7, 1.2),
     g1: float = 0.02,
     g2: float = 0.0,
 ) -> dict[str, float]:
     k1, k2, k3 = random.split(rng_key, 3)
 
-    lf = random.uniform(k1, minval=flux_bds[0], maxval=flux_bds[1])
+    lf = random.normal(k1) * sigma_logflux + mean_logflux
     hlr = random.uniform(k2, minval=hlr_bds[0], maxval=hlr_bds[1])
-
     other_params = sample_target_galaxy_params_simple(
         k3, shape_noise=shape_noise, g1=g1, g2=g2
     )
@@ -93,30 +103,21 @@ def sample_prior(
     return {"lf": lf, "hlr": hlr, **other_params}
 
 
-def _sample_prior_init(rng_key: PRNGKeyArray):
-    prior_samples = sample_prior(rng_key)
-    truth_samples = get_true_params_from_galaxy_params(prior_samples)
-    return truth_samples
-
-
-INIT_FNC = partial(init_with_prior, prior=_sample_prior_init)
-
-
 def main(
     seed: int,
     n_samples: int = 500,
     shape_noise: float = 0.3,
     sigma_e_int: float = 0.5,
-    slen: int = 53,
+    slen: int = 63,  # adjust depending on HLR bds
     fft_size: int = 256,
     background: float = 1.0,
     initial_step_size: float = 0.1,
 ):
     rng_key = random.key(seed)
-    pkey, nkey, ikey, rkey = random.split(rng_key, 4)
+    pkey, nkey, rkey = random.split(rng_key, 3)
 
     # directory structure
-    dirpath = DATA_DIR / "cache_chains" / f"exp2_{seed}"
+    dirpath = DATA_DIR / "cache_chains" / f"exp21_{seed}"
     if not dirpath.exists():
         dirpath.mkdir(exist_ok=True)
     fpath = dirpath / f"chain_results_{seed}.npy"
@@ -163,15 +164,16 @@ def main(
             nkey, draw_params, background=background, slen=slen
         )
         assert target_images.shape == (n_gals, slen, slen)
-        true_params = vmap(get_true_params_from_galaxy_params)(galaxy_params)
 
         # initialize positions
-        ikeys = random.split(ikey, (n_gals, 4))
-        init_positions = vmap(vmap(INIT_FNC, in_axes=(0, None)))(ikeys, true_params)
+        init_positions = vmap(_init_fnc)(target_images)
+        init_positions = {
+            k: v.reshape(-1, 1).repeat(4, axis=1) for k, v in init_positions.items()
+        }
 
         gkeys = random.split(rkey, (n_gals, 4, 2))
         wkeys = gkeys[..., 0]
-        ikeys = gkeys[..., 1]
+        skeys = gkeys[..., 1]
 
         # warmup
         t1 = time.time()
@@ -184,7 +186,7 @@ def main(
 
         # inference
         t1 = time.time()
-        samples, _ = _run_sampling(ikeys, init_states, tuned_params, target_images)
+        samples, _ = _run_sampling(skeys, init_states, tuned_params, target_images)
         t2 = time.time()
         t_sampling = t2 - t1
 
@@ -192,8 +194,9 @@ def main(
         results[n_gals]["t_warmup"] = t_warmup
         results[n_gals]["t_sampling"] = t_sampling
         results[n_gals]["samples"] = samples
-        results[n_gals]["truth"] = true_params
+        results[n_gals]["truth"] = galaxy_params
         results[n_gals]["adapt_info"] = adapt_info
+        results[n_gals]["tuned_params"] = tuned_params
 
     jnp.save(fpath, results)
 
