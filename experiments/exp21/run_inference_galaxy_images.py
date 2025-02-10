@@ -5,71 +5,65 @@ import time
 from functools import partial
 from typing import Callable
 
+import jax
 import jax.numpy as jnp
+import optax
 import typer
-from jax import Array, jit, random, vmap
+from jax import Array, jit, random, value_and_grad, vmap
 from jax._src.prng import PRNGKeyArray
-from jax.scipy import stats
 
 from bpd import DATA_DIR
 from bpd.chains import run_sampling_nuts, run_warmup_nuts
 from bpd.draw import draw_gaussian
-from bpd.prior import ellip_prior_e1e2
+from bpd.likelihood import gaussian_image_loglikelihood
+from bpd.pipelines import logtarget_images
+from bpd.prior import interim_gprops_logprior
 from bpd.sample import (
     get_target_images,
+    get_true_params_from_galaxy_params,
     sample_target_galaxy_params_simple,
 )
 
 
-def logprior(
-    params: dict[str, Array],
-    *,
-    sigma_e: float,
-    sigma_x: float = 0.5,  # pixels
-    flux_bds: tuple = (-1.0, 9.0),
-    hlr_bds: tuple = (0.01, 5.0),
-) -> Array:
-    prior = jnp.array(0.0)
-
-    f1, f2 = flux_bds
-    prior += stats.uniform.logpdf(params["lf"], f1, f2 - f1)
-
-    h1, h2 = hlr_bds
-    prior += stats.uniform.logpdf(params["hlr"], h1, h2 - h1)
-
-    prior += stats.norm.logpdf(params["x"], loc=0.0, scale=sigma_x)
-    prior += stats.norm.logpdf(params["y"], loc=0.0, scale=sigma_x)
-
-    e1e2 = jnp.stack((params["e1"], params["e2"]), axis=-1)
-    prior += jnp.log(ellip_prior_e1e2(e1e2, sigma=sigma_e))
-
-    return prior
-
-
-def loglikelihood(
-    params: dict[str, Array],
+def find_likelihood_peak_scan(
     data: Array,
+    params_init: dict,
     *,
-    draw_fnc: Callable,
-    background: float,
-):
-    _draw_params = {**params}
-    _draw_params["f"] = 10 ** _draw_params.pop("lf")
-    model = draw_fnc(**_draw_params)
-    likelihood_pp = stats.norm.logpdf(data, loc=model, scale=jnp.sqrt(background))
-    return jnp.sum(likelihood_pp)
+    lr: float = 1e-3,
+    n_steps: int = 1000,
+    likelihood_fnc: Callable,
+) -> tuple[float, float]:
+    """Find the peak of the likelihood using gradient descent."""
+
+    def loss(params):
+        return -likelihood_fnc(params, data)
+
+    optimizer = optax.adam(lr)
+    opt_state = optimizer.init(params_init)
+    params = params_init
+
+    def step(state, _):
+        params, opt_state = state
+        loss_val, grads = value_and_grad(loss)(params)
+        updates, opt_state = optimizer.update(grads, opt_state)
+        params = optax.apply_updates(params, updates)
+        return (params, opt_state), loss_val
+
+    (params, _), loss_vals = jax.lax.scan(step, (params, opt_state), length=n_steps)
+
+    return params, loss_vals
 
 
 def _init_fnc(image: Array):
     assert image.ndim == 2
     assert image.shape[0] == image.shape[1]
     flux = image.sum()
-    hlr = 0.95  # median size
+    lhlr = -0.1
     e1 = 0.0
     e2 = 0.0
-    x = 0.0
-    y = 0.0
-    return {"lf": jnp.log10(flux), "hlr": hlr, "e1": e1, "e2": e2, "x": x, "y": y}
+    dx = 0.0
+    dy = 0.0
+    return {"lf": jnp.log10(flux), "lhlr": lhlr, "e1": e1, "e2": e2, "dx": dx, "dy": dy}
 
 
 def logtarget(
@@ -88,19 +82,20 @@ def sample_prior(
     shape_noise: float,
     mean_logflux: float = 2.6,
     sigma_logflux: float = 0.4,
-    hlr_bds: tuple[float, float] = (0.7, 1.2),
+    mean_loghlr: float = -0.1,
+    sigma_loghlr: float = 0.05,
     g1: float = 0.02,
     g2: float = 0.0,
 ) -> dict[str, float]:
     k1, k2, k3 = random.split(rng_key, 3)
 
     lf = random.normal(k1) * sigma_logflux + mean_logflux
-    hlr = random.uniform(k2, minval=hlr_bds[0], maxval=hlr_bds[1])
+    lhlr = random.normal(k2) * sigma_loghlr + mean_loghlr
     other_params = sample_target_galaxy_params_simple(
         k3, shape_noise=shape_noise, g1=g1, g2=g2
     )
 
-    return {"lf": lf, "hlr": hlr, **other_params}
+    return {"lf": lf, "lhlr": lhlr, **other_params}
 
 
 def main(
@@ -124,35 +119,59 @@ def main(
 
     # setup target density
     draw_fnc = partial(draw_gaussian, slen=slen, fft_size=fft_size)
-    _loglikelihood = partial(loglikelihood, draw_fnc=draw_fnc, background=background)
-    _logprior = partial(logprior, sigma_e=sigma_e_int)
+    _logprior = partial(
+        interim_gprops_logprior, sigma_e=sigma_e_int, free_flux_hlr=True, free_dxdy=True
+    )
+    _loglikelihood = partial(
+        gaussian_image_loglikelihood,
+        draw_fnc=draw_fnc,
+        background=background,
+        free_flux_hlr=True,
+        free_dxdy=True,
+    )
     _logtarget = partial(
-        logtarget, logprior_fnc=_logprior, loglikelihood_fnc=_loglikelihood
+        logtarget_images, logprior_fnc=_logprior, loglikelihood_fnc=_loglikelihood
     )
 
-    # setup nuts functions
-    _run_warmup1 = partial(
-        run_warmup_nuts,
-        logtarget=_logtarget,
-        initial_step_size=initial_step_size,
-        max_num_doublings=5,
-        n_warmup_steps=500,
-    )
-    _run_warmup = vmap(vmap(jit(_run_warmup1), in_axes=(0, 0, None)))
+    def _run_opt(default_pos, images, fixed_params):
+        return find_likelihood_peak_scan(
+            images,
+            default_pos,
+            lr=1e-3,
+            n_steps=500,
+            likelihood_fnc=partial(_loglikelihood, fixed_params=fixed_params),
+        )
 
-    _run_sampling1 = partial(
-        run_sampling_nuts,
-        logtarget=_logtarget,
-        n_samples=n_samples,
-        max_num_doublings=5,
-    )
-    _run_sampling = vmap(vmap(jit(_run_sampling1), in_axes=(0, 0, 0, None)))
+    def _run_warmup(key, init_pos, data, fixed_params):
+        return run_warmup_nuts(
+            key,
+            init_pos,
+            data,
+            logtarget=partial(_logtarget, fixed_params=fixed_params),
+            initial_step_size=initial_step_size,
+            max_num_doublings=5,
+            n_warmup_steps=500,
+        )
+
+    def _run_sampling(key, istates, tp, data, fixed_params):
+        return run_sampling_nuts(
+            key,
+            istates,
+            tp,
+            data,
+            logtarget=partial(_logtarget, fixed_params=fixed_params),
+            n_samples=n_samples,
+            max_num_doublings=5,
+        )
+
+    run_opt = vmap(jit(_run_opt))
+    run_warmup = vmap(vmap(jit(_run_warmup), in_axes=(0, 0, None, None)))
+    run_sampling = vmap(vmap(jit(_run_sampling), in_axes=(0, 0, 0, None, None)))
 
     results = {}
-    for n_gals in (1, 1, 5, 10, 20, 25, 50, 100, 250, 500):  # repeat 1 == compilation
+    for n_gals in (1, 1, 5, 10, 20, 25, 50, 100, 250):  # repeat 1 == compilation
         print("n_gals:", n_gals)
 
-        # generate data and parameters
         pkeys = random.split(pkey, n_gals)
         galaxy_params = vmap(partial(sample_prior, shape_noise=shape_noise))(pkeys)
         assert galaxy_params["x"].shape == (n_gals,)
@@ -160,25 +179,28 @@ def main(
         # get images
         draw_params = {**galaxy_params}
         draw_params["f"] = 10 ** draw_params.pop("lf")
+        draw_params["hlr"] = 10 ** draw_params.pop("lhlr")
         target_images = get_target_images(
             nkey, draw_params, background=background, slen=slen
         )
         assert target_images.shape == (n_gals, slen, slen)
 
-        # initialize positions
-        init_positions = vmap(_init_fnc)(target_images)
-        init_positions = {
-            k: v.reshape(-1, 1).repeat(4, axis=1) for k, v in init_positions.items()
-        }
+        # initialize chain positions
+        default_positions = vmap(_init_fnc)(target_images)
+        fixed_params = {"x": galaxy_params["x"], "y": galaxy_params["y"]}
 
-        gkeys = random.split(rkey, (n_gals, 4, 2))
-        wkeys = gkeys[..., 0]
-        skeys = gkeys[..., 1]
+        rkeys = random.split(rkey, (n_gals, 4, 2))
+        wkeys = rkeys[..., 0]
+        skeys = rkeys[..., 1]
 
-        # warmup
+        # optimization + warmup
         t1 = time.time()
-        init_states, tuned_params, adapt_info = _run_warmup(
-            wkeys, init_positions, target_images
+        _init_positions, _ = run_opt(default_positions, target_images, fixed_params)
+        init_positions = {
+            k: v.reshape(-1, 1).repeat(4, axis=1) for k, v in _init_positions.items()
+        }
+        init_states, tuned_params, adapt_info = run_warmup(
+            wkeys, init_positions, target_images, fixed_params
         )
         t2 = time.time()
         t_warmup = t2 - t1
@@ -186,15 +208,20 @@ def main(
 
         # inference
         t1 = time.time()
-        samples, _ = _run_sampling(skeys, init_states, tuned_params, target_images)
+        samples, _ = run_sampling(
+            skeys, init_states, tuned_params, target_images, fixed_params
+        )
         t2 = time.time()
         t_sampling = t2 - t1
+
+        # for logging
+        true_params = vmap(get_true_params_from_galaxy_params)(galaxy_params)
 
         results[n_gals] = {}
         results[n_gals]["t_warmup"] = t_warmup
         results[n_gals]["t_sampling"] = t_sampling
         results[n_gals]["samples"] = samples
-        results[n_gals]["truth"] = galaxy_params
+        results[n_gals]["truth"] = true_params
         results[n_gals]["adapt_info"] = adapt_info
         results[n_gals]["tuned_params"] = tuned_params
 
