@@ -72,7 +72,10 @@ def sample_target_galaxy_params_simple(
 
 
 def get_true_params_from_galaxy_params(galaxy_params: dict[str, Array]):
+    """Utility function to get sheared ellipticities for initializing chains."""
     true_params = {**galaxy_params}
+
+    # ellipticities
     e1, e2 = true_params.pop("e1"), true_params.pop("e2")
     g1, g2 = true_params.pop("g1"), true_params.pop("g2")
 
@@ -82,7 +85,7 @@ def get_true_params_from_galaxy_params(galaxy_params: dict[str, Array]):
     true_params["e1"] = e1_prime
     true_params["e2"] = e2_prime
 
-    return true_params  # don't add back g1,g2 as we are not inferring those in interim posterior
+    return true_params
 
 
 def get_target_images_single(
