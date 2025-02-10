@@ -169,7 +169,7 @@ def main(
     run_sampling = vmap(vmap(jit(_run_sampling), in_axes=(0, 0, 0, None, None)))
 
     results = {}
-    for n_gals in (1, 1, 5, 10, 20, 25, 50, 100, 250):  # repeat 1 == compilation
+    for n_gals in (1, 1, 5, 10, 25, 50, 100, 250):  # repeat 1 == compilation
         print("n_gals:", n_gals)
 
         pkeys = random.split(pkey, n_gals)
