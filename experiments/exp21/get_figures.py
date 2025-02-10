@@ -122,14 +122,44 @@ def make_convergence_histograms(samples_dict: dict[str, Array]) -> None:
 
             ax1.hist(rhat_p, bins=25, range=(0.98, 1.1))
             ax2.hist(ess_p, bins=25)
+            ax2.axvline(ess_p.mean(), linestyle="--", color="k", label="mean")
 
             ax1.set_xlabel("R-hat")
             ax2.set_ylabel("ESS")
+            ax2.legend()
 
             pdf.savefig(fig)
             plt.close(fig)
 
     return outliers_indices
+
+
+def make_adaptation_hists(tuned_params: dict, pnames: dict):
+    fname = "figs/tuned_hists.pdf"
+
+    step_sizes = tuned_params["step_size"]
+    imm = tuned_params["inverse_mass_matrix"]
+
+    with PdfPages(fname) as pdf:
+        fig, ax = plt.subplots(1, 1, figsize=(7, 7))
+        ax.hist(step_sizes.flatten(), bins=25)
+        ax.axvline(step_sizes.flatten().mean(), linestyle="--", color="k", label="mean")
+        ax.set_xlabel("Step sizes")
+        ax.legend()
+
+        pdf.savefig(fig)
+        plt.close(fig)
+
+        for ii, p in enumerate(pnames):
+            diag_elems = imm[:, :, ii].flatten()
+            fig, ax = plt.subplots(1, 1, figsize=(7, 7))
+            ax.hist(diag_elems, bins=25)
+            ax.axvline(diag_elems.mean(), linestyle="--", color="k", label="mean")
+            ax.set_xlabel(f"Diag Mass Matrix for {p}")
+            ax.legend()
+
+            pdf.savefig(fig)
+            plt.close(fig)
 
 
 def make_timing_plots(results_dict: dict) -> None:
@@ -179,14 +209,16 @@ def make_timing_plots(results_dict: dict) -> None:
 def main():
     np.random.seed(42)
 
-    fpath = (
-        DATA_DIR / "cache_chains" / "test_image_sampling_42" / "chain_results_42.npy"
-    )
+    fpath = DATA_DIR / "cache_chains" / "exp21_42" / "chain_results_42.npy"
     assert fpath.exists()
     results = jnp.load(fpath, allow_pickle=True).item()
     max_n_gal = max(results.keys())
     samples = results[max_n_gal]["samples"]
     truth = results[max_n_gal]["truth"]
+
+    tuned_params = results[max_n_gal]["tuned_params"]
+
+    param_names = list(samples.keys())
 
     # make plots
     make_trace_plots(samples, truth, fpath="figs/traces.pdf")
@@ -204,6 +236,8 @@ def main():
     else:  # avoid confusion with previous
         if Path("figs/traces_out.pdf").exists():
             os.remove("figs/traces_out.pdf")
+
+    make_adaptation_hists(tuned_params, param_names)
 
 
 if __name__ == "__main__":
