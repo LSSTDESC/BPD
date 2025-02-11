@@ -5,11 +5,9 @@ import time
 from functools import partial
 from typing import Callable
 
-import jax
 import jax.numpy as jnp
-import optax
 import typer
-from jax import Array, jit, random, value_and_grad, vmap
+from jax import Array, jit, random, vmap
 from jax._src.prng import PRNGKeyArray
 
 from bpd import DATA_DIR
@@ -25,40 +23,14 @@ from bpd.sample import (
 )
 
 
-def find_likelihood_peak_scan(
-    data: Array,
-    params_init: dict,
-    *,
-    lr: float = 1e-3,
-    n_steps: int = 1000,
-    likelihood_fnc: Callable,
-) -> tuple[float, float]:
-    """Find the peak of the likelihood using gradient descent."""
-
-    def loss(params):
-        return -likelihood_fnc(params, data)
-
-    optimizer = optax.adam(lr)
-    opt_state = optimizer.init(params_init)
-    params = params_init
-
-    def step(state, _):
-        params, opt_state = state
-        loss_val, grads = value_and_grad(loss)(params)
-        updates, opt_state = optimizer.update(grads, opt_state)
-        params = optax.apply_updates(params, updates)
-        return (params, opt_state), loss_val
-
-    (params, _), loss_vals = jax.lax.scan(step, (params, opt_state), length=n_steps)
-
-    return params, loss_vals
-
-
-def _init_fnc(image: Array):
+def _init_fnc(key: PRNGKeyArray, image: Array, true_params: dict):
     assert image.ndim == 2
     assert image.shape[0] == image.shape[1]
     flux = image.sum()
-    lhlr = -0.1
+
+    tlhlr = true_params["lhlr"]
+    lhlr = random.uniform(key, shape=(), minval=tlhlr - 0.05, maxval=tlhlr + 0.05)
+
     e1 = 0.0
     e2 = 0.0
     dx = 0.0
@@ -110,6 +82,7 @@ def main(
 ):
     rng_key = random.key(seed)
     pkey, nkey, rkey = random.split(rng_key, 3)
+    pkey1, pkey2 = random.split(pkey)
 
     # directory structure
     dirpath = DATA_DIR / "cache_chains" / f"exp21_{seed}"
@@ -133,15 +106,6 @@ def main(
         logtarget_images, logprior_fnc=_logprior, loglikelihood_fnc=_loglikelihood
     )
 
-    def _run_opt(default_pos, images, fixed_params):
-        return find_likelihood_peak_scan(
-            images,
-            default_pos,
-            lr=1e-3,
-            n_steps=500,
-            likelihood_fnc=partial(_loglikelihood, fixed_params=fixed_params),
-        )
-
     def _run_warmup(key, init_pos, data, fixed_params):
         return run_warmup_nuts(
             key,
@@ -164,7 +128,6 @@ def main(
             max_num_doublings=5,
         )
 
-    run_opt = vmap(jit(_run_opt))
     run_warmup = vmap(vmap(jit(_run_warmup), in_axes=(0, 0, None, None)))
     run_sampling = vmap(vmap(jit(_run_sampling), in_axes=(0, 0, 0, None, None)))
 
@@ -172,8 +135,8 @@ def main(
     for n_gals in (1, 1, 5, 10, 25, 50, 100, 250):  # repeat 1 == compilation
         print("n_gals:", n_gals)
 
-        pkeys = random.split(pkey, n_gals)
-        galaxy_params = vmap(partial(sample_prior, shape_noise=shape_noise))(pkeys)
+        pkeys1 = random.split(pkey1, n_gals)
+        galaxy_params = vmap(partial(sample_prior, shape_noise=shape_noise))(pkeys1)
         assert galaxy_params["x"].shape == (n_gals,)
 
         # get images
@@ -185,8 +148,13 @@ def main(
         )
         assert target_images.shape == (n_gals, slen, slen)
 
+        true_params = vmap(get_true_params_from_galaxy_params)(galaxy_params)
+        pkeys2 = random.split(pkey2, (n_gals, 4))
+
         # initialize chain positions
-        default_positions = vmap(_init_fnc)(target_images)
+        init_positions = vmap(_init_fnc, in_axes=(0, None, None))(
+            pkeys2, target_images, true_params
+        )
         fixed_params = {"x": galaxy_params["x"], "y": galaxy_params["y"]}
 
         rkeys = random.split(rkey, (n_gals, 4, 2))
@@ -195,10 +163,6 @@ def main(
 
         # optimization + warmup
         t1 = time.time()
-        _init_positions, _ = run_opt(default_positions, target_images, fixed_params)
-        init_positions = {
-            k: v.reshape(-1, 1).repeat(4, axis=1) for k, v in _init_positions.items()
-        }
         init_states, tuned_params, adapt_info = run_warmup(
             wkeys, init_positions, target_images, fixed_params
         )
@@ -215,7 +179,8 @@ def main(
         t_sampling = t2 - t1
 
         # for logging
-        true_params = vmap(get_true_params_from_galaxy_params)(galaxy_params)
+        true_params["dx"] = jnp.zeros_like(true_params.pop("x"))
+        true_params["dy"] = jnp.zeros_like(true_params.pop("y"))
 
         results[n_gals] = {}
         results[n_gals]["t_warmup"] = t_warmup
