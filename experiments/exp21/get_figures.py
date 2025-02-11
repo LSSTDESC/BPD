@@ -62,7 +62,7 @@ def make_trace_at_indices(
 
 
 def make_contour_plots(
-    samples_dict: dict[str, Array], truth: dict[str, Array], n_examples: int = 25
+    samples_dict: dict[str, Array], truth: dict[str, Array], n_examples: int = 10
 ) -> None:
     """Make example figure showing example contour plots of galaxy properties"""
     fname = "figs/contours.pdf"
@@ -215,6 +215,10 @@ def main():
     max_n_gal = max(results.keys())
     samples = results[max_n_gal]["samples"]
     truth = results[max_n_gal]["truth"]
+
+    if "x" in truth:
+        truth["dx"] = jnp.zeros_like(truth.pop("x"))
+        truth["dy"] = jnp.zeros_like(truth.pop("y"))
 
     tuned_params = results[max_n_gal]["tuned_params"]
 
