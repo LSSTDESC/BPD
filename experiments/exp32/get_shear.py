@@ -27,7 +27,7 @@ def _logprior(
 ):
     lf = post_params["lf"]
     lhlr = post_params["lhlr"]
-    e_post = jnp.stack((post_params["e1"], post_params["e2"]), axis=-1)
+    e1e2 = jnp.stack((post_params["e1"], post_params["e2"]), axis=-1)
 
     prior = jnp.array(0.0)
 
@@ -36,7 +36,7 @@ def _logprior(
     prior += stats.norm.logpdf(lhlr, loc=mean_loghlr, scale=sigma_loghlr)
 
     # elliptcity
-    prior += true_ellip_logprior(e_post, g, sigma_e=sigma_e)
+    prior += true_ellip_logprior(e1e2, g, sigma_e=sigma_e)
 
     return prior
 
