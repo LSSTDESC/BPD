@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 
-from bpd import DATA_DIR
 from bpd.slurm import run_single_gpu_job
 
 
