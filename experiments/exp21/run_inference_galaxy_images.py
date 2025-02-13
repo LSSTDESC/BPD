@@ -117,7 +117,7 @@ def main(
     tag: str,
     n_samples: int = 500,
     shape_noise: float = 0.3,
-    sigma_e_int: float = 0.5,
+    sigma_e_int: float = 0.35,
     slen: int = 63,  # adjust depending on HLR bds
     fft_size: int = 256,
     background: float = 1.0,
@@ -127,16 +127,18 @@ def main(
     mean_loghlr: float = 0.0,
     sigma_loghlr: float = 0.05,
     min_logflux: float = 2.4,
+    mode: str = "short",
 ):
+    assert mode in ("short", "long")
     rng_key = random.key(seed)
     pkey, nkey, rkey = random.split(rng_key, 3)
     pkey1, pkey2 = random.split(pkey)
 
     # directory structure
-    dirpath = DATA_DIR / "cache_chains" / f"{tag}_{seed}"
+    dirpath = DATA_DIR / "cache_chains" / tag
     if not dirpath.exists():
         dirpath.mkdir(exist_ok=True)
-    fpath = dirpath / f"chain_results_{seed}.npy"
+    fpath = dirpath / f"chain_results_{seed}.npz"
 
     # setup target density
     draw_fnc = partial(draw_gaussian, slen=slen, fft_size=fft_size)
@@ -173,7 +175,12 @@ def main(
     )
 
     results = {}
-    for n_gals in (1, 1, 5, 10, 25, 50, 100, 250):  # repeat 1 == compilation
+
+    opt1 = (1, 1, 5, 10, 25, 50, 100, 250)
+    opt2 = (1, 1, 5, 10, 25, 50, 100, 250, 500, 1000)
+    all_n_gals = opt1 if mode == "short" else opt2
+
+    for n_gals in all_n_gals:  # repeat 1 == compilation
         print("n_gals:", n_gals)
 
         pkeys1 = random.split(pkey1, n_gals)
@@ -223,13 +230,16 @@ def main(
         true_params["dx"] = jnp.zeros_like(true_params.pop("x"))
         true_params["dy"] = jnp.zeros_like(true_params.pop("y"))
 
-        results[n_gals] = {}
-        results[n_gals]["t_warmup"] = t_warmup
-        results[n_gals]["t_sampling"] = t_sampling
-        results[n_gals]["samples"] = samples
-        results[n_gals]["truth"] = true_params
-        results[n_gals]["adapt_info"] = adapt_info
-        results[n_gals]["tuned_params"] = tuned_params
+        n_gals_str = str(n_gals)
+        results[n_gals_str] = {}
+        results[n_gals_str]["t_warmup"] = t_warmup
+        results[n_gals_str]["t_sampling"] = t_sampling
+
+        if n_gals == all_n_gals[-1]:  # no need to save everything just the last one
+            results[n_gals_str]["samples"] = samples
+            results[n_gals_str]["truth"] = true_params
+            results[n_gals_str]["tuned_params"] = tuned_params
+            results[n_gals_str]["adapt_position"] = adapt_info.state.position
 
     save_dataset(results, fpath, overwrite=True)
 
