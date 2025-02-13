@@ -12,7 +12,7 @@ from bpd.io import load_dataset, save_dataset
 
 def get_ess_all(samples: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
     """One histogram of ESS and R-hat per parameter."""
-    print("INFO: Computing convergence plots...")
+    print("INFO: Computing ESS...")
     n_gals, n_chains_per_gal, n_samples = samples["lf"].shape
 
     ess_dict = {}
@@ -30,7 +30,7 @@ def get_ess_all(samples: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
 
 def get_rhat_all(samples: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
     """One histogram of ESS and R-hat per parameter."""
-    print("INFO: Computing convergence plots...")
+    print("INFO: Computing R-hats...")
     n_gals, n_chains_per_gal, n_samples = samples["lf"].shape
 
     rhat_dict = {}
@@ -48,11 +48,11 @@ def get_rhat_all(samples: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
 def main(seed: int, tag: str):
     exp_dir = DATA_DIR / "cache_chains" / tag
 
-    fpath = exp_dir / f"chain_results_{seed}.npy"
+    fpath = exp_dir / f"chain_results_{seed}.npz"
 
     results = load_dataset(fpath)
     max_n_gal = max(int(k) for k in results)
-    samples = results[max_n_gal]["samples"]
+    samples = results[str(max_n_gal)]["samples"]
 
     ess = get_ess_all(samples)
     rhats = get_rhat_all(samples)
