@@ -7,6 +7,7 @@ from typing import Iterable
 import cycler
 import matplotlib.pyplot as plt
 import numpy as np
+import typer
 from matplotlib.backends.backend_pdf import PdfPages
 from tqdm import tqdm
 
@@ -75,10 +76,10 @@ def make_contour_plots(
             plt.close(fig)
 
 
-def make_timing_plots(results: dict) -> None:
+def make_timing_plots(results: dict, max_n_gal: str) -> None:
     print("INFO: Making timing plots...")
     fname = "figs/timing.pdf"
-    all_n_gals = [int(n_gals) for n_gals in results]
+    all_n_gals = [n_gals for n_gals in results]
 
     # cycler from blue to red
     color = plt.cm.coolwarm(np.linspace(0, 1, len(all_n_gals)))
@@ -87,11 +88,13 @@ def make_timing_plots(results: dict) -> None:
     t_per_obj_dict = {}
     n_samples_array = np.arange(0, 1001, 1)
 
-    _, n_chains_per_gal, n_samples = results[1]["samples"]["lf"].shape
+    _, n_chains_per_gal, n_samples = results[max_n_gal]["samples"]["lf"].shape
 
-    for n_gals in all_n_gals:
-        t_warmup = results[n_gals]["t_warmup"]
-        t_sampling = results[n_gals]["t_sampling"]
+    for n_gals_str in all_n_gals:
+        t_warmup = results[n_gals_str]["t_warmup"]
+        t_sampling = results[n_gals_str]["t_sampling"]
+
+        n_gals = int(n_gals_str)
 
         n_chains = n_gals * n_chains_per_gal
 
@@ -192,7 +195,7 @@ def main(seed: int, tag: str):
     np.random.seed(seed)
 
     wdir = DATA_DIR / "cache_chains" / tag
-    results_fpath = wdir / f"chain_results_{seed}.npy"
+    results_fpath = wdir / f"chain_results_{seed}.npz"
     conv_fpath = wdir / f"convergence_results_{seed}.npz"
 
     assert results_fpath.exists() and conv_fpath.exists()
@@ -207,7 +210,7 @@ def main(seed: int, tag: str):
     # make plots
     make_trace_plots(samples, truth, fpath="figs/traces.pdf")
     make_contour_plots(samples, truth)
-    make_timing_plots(results)
+    make_timing_plots(results, max_n_gal)
     make_adaptation_hists(tuned_params, param_names)
 
     # on adaption too
@@ -228,4 +231,4 @@ def main(seed: int, tag: str):
 
 
 if __name__ == "__main__":
-    main()
+    typer.run(main)
