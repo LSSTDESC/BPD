@@ -2,7 +2,7 @@
 """This file creates toy samples of ellipticities and saves them to .hdf5 file."""
 
 import jax
-import jax.numpy as jnp
+import numpy as np
 import typer
 
 from bpd import DATA_DIR
@@ -51,7 +51,7 @@ def main(
         initial_step_size=initial_step_size,
     )
 
-    jnp.save(fpath, g_samples)
+    np.save(fpath, np.asarray(g_samples))
 
 
 if __name__ == "__main__":
