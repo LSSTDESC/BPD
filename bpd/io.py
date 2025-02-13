@@ -12,6 +12,7 @@ from jax import Array
 def flatten_dict(ds: dict | Array, level: list):
     tmp_dict = {}
     for key, val in ds.items():
+        assert isinstance(key, str), "all keys need to be str"
         if isinstance(val, dict):
             tmp_dict.update(flatten_dict(val, [*level, key]))
         else:
