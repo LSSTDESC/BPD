@@ -155,7 +155,7 @@ def make_convergence_histograms(conv_results: dict) -> set:
     print("INFO: Computing convergence plots...")
     fname = "figs/convergence_hist.pdf"
     ess_dict = conv_results["ess"]
-    rhats_dict = conv_results["rhats"]
+    rhats_dict = conv_results["rhat"]
 
     # print rhat outliers
     outliers_indices = set()
