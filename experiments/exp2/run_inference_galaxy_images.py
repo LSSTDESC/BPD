@@ -116,7 +116,7 @@ def main(
     pkey, nkey, ikey, rkey = random.split(rng_key, 4)
 
     # directory structure
-    dirpath = DATA_DIR / "cache_chains" / f"exp2_{seed}"
+    dirpath = DATA_DIR / "cache_chains" / f"exp20_{seed}"
     if not dirpath.exists():
         dirpath.mkdir(exist_ok=True)
     fpath = dirpath / f"chain_results_{seed}.npy"
@@ -194,6 +194,7 @@ def main(
         results[n_gals]["samples"] = samples
         results[n_gals]["truth"] = true_params
         results[n_gals]["adapt_info"] = adapt_info
+        results[n_gals]["tuned_params"] = tuned_params
 
     jnp.save(fpath, results)
 

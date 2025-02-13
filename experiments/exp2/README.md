@@ -1,4 +1,4 @@
-# Experiment 2
+# Experiment 2.0
 
 This folder contains scripts to reproduce timing and convergence results on fitting galaxy images
 with NUTS with a realistic noise settings and broad priors on parameters. We initialize chains from

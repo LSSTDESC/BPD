@@ -1,18 +1,10 @@
 #!/usr/bin/env python3
 
-import os
-
-os.environ["CUDA_VISIBLE_DEVICES"] = ""
-os.environ["JAX_PLATFORMS"] = "cpu"
-os.environ["JAX_ENABLE_X64"] = "True"
-
 from pathlib import Path
 
-import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
 import typer
-from jax import Array
 from matplotlib.backends.backend_pdf import PdfPages
 
 from bpd import DATA_DIR
@@ -20,7 +12,7 @@ from bpd.diagnostics import get_contour_plot
 from bpd.io import load_dataset
 
 
-def make_trace_plots(g_samples: Array, mode: str, seed: int) -> None:
+def make_trace_plots(g_samples: np.ndarray, mode: str, seed: int) -> None:
     """Make trace plots of g1, g2."""
     fname = f"figs/{seed}/traces_{mode}.pdf"
     with PdfPages(fname) as pdf:
@@ -40,7 +32,9 @@ def make_trace_plots(g_samples: Array, mode: str, seed: int) -> None:
         plt.close(fig)
 
 
-def make_scatter_shape_plots(e_post: Array, seed: int, n_examples: int = 10) -> None:
+def make_scatter_shape_plots(
+    e_post: np.ndarray, seed: int, n_examples: int = 10
+) -> None:
     """Show example scatter plots of interim posterior ellipticitites."""
     # make two types, assuming gaussianity and one not assuming gaussianity.
     fname = f"figs/{seed}/scatter_shapes.pdf"
@@ -74,7 +68,7 @@ def make_scatter_shape_plots(e_post: Array, seed: int, n_examples: int = 10) -> 
         plt.close(fig)
 
 
-def make_hists(g_samples: Array, mode: str, seed: int) -> None:
+def make_hists(g_samples: np.ndarray, mode: str, seed: int) -> None:
     """Make histograms of g1 along with std and expected std."""
     fname = f"figs/{seed}/hists_{mode}.pdf"
     with PdfPages(fname) as pdf:
@@ -91,7 +85,7 @@ def make_hists(g_samples: Array, mode: str, seed: int) -> None:
 
 
 def make_contour_plots(
-    g_samples: Array,
+    g_samples: np.ndarray,
     mode: str,
     g1_true: float,
     g2_true: float,
@@ -108,7 +102,11 @@ def make_contour_plots(
 
 
 def get_jack_traces(
-    g_plus_jack: Array, g_minus_jack: Array, g1_true: float, g2_true: float, seed: int
+    g_plus_jack: np.ndarray,
+    g_minus_jack: np.ndarray,
+    g1_true: float,
+    g2_true: float,
+    seed: int,
 ):
     fname = f"figs/{seed}/jack_traces.pdf"
     assert g_plus_jack.ndim == 3
@@ -139,7 +137,11 @@ def get_jack_traces(
 
 
 def get_jack_contours(
-    g_plus_jack: Array, g_minus_jack: Array, g1_true: float, g2_true: float, seed: int
+    g_plus_jack: np.ndarray,
+    g_minus_jack: np.ndarray,
+    g1_true: float,
+    g2_true: float,
+    seed: int,
 ):
     fname = f"figs/{seed}/jack_traces.pdf"
     assert g_plus_jack.ndim == 3
@@ -180,8 +182,9 @@ def main(seed: int, tag: str = typer.Option()):
     e_post_samples = interim_dict["e_post"]
     g1, g2 = interim_dict["true_g"]
 
-    g_samples_plus = jnp.load(pdir / f"g_samples_{seed}_{seed}_plus.npy")
-    g_samples_minus = jnp.load(pdir / f"g_samples_{seed}_{seed}_minus.npy")
+    g_samples_plus = np.load(pdir / f"g_samples_{seed}_{seed}_plus.npy")
+    g_samples_minus = np.load(pdir / f"g_samples_{seed}_{seed}_minus.npy")
+    assert isinstance(g_samples_plus, np.ndarray)
 
     # make plots
     make_scatter_shape_plots(e_post_samples, seed=seed)
@@ -233,6 +236,7 @@ def main(seed: int, tag: str = typer.Option()):
         g_minus_jack = jack_ds["g_minus"]
         assert g_plus_jack.ndim == 3
         assert g_plus_jack.shape[-1] == 2
+        assert isinstance(g_plus_jack, np.ndarray)
         n_jack = g_plus_jack.shape[0]
 
         m_jack = (
@@ -243,10 +247,10 @@ def main(seed: int, tag: str = typer.Option()):
         ) / 2
 
         m_jack_mean = m_jack.mean().item()
-        m_jack_std = jnp.sqrt(m_jack.var() * (n_jack - 1)).item()
+        m_jack_std = np.sqrt(m_jack.var() * (n_jack - 1)).item()
 
         c_jack_mean = c_jack.mean().item()
-        c_jack_std = jnp.sqrt(c_jack.var() * (n_jack - 1)).item()
+        c_jack_std = np.sqrt(c_jack.var() * (n_jack - 1)).item()
 
         with open(summary_fpath, "a", encoding="utf-8") as f:
             txt = (

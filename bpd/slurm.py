@@ -45,6 +45,30 @@ def setup_sbatch_job_gpu(
     return jobfile
 
 
+def run_single_gpu_job(
+    cmd: str,
+    *,
+    jobname: str,
+    time: str = "00:10",  # HH:MM
+    mem_per_gpu: str = "10G",
+    qos: str = "debug",
+):
+    jobfile = setup_sbatch_job_gpu(
+        jobname, time=time, nodes=1, n_tasks_per_node=1, qos=qos
+    )
+
+    # append commands to jobfile
+    with open(jobfile, "a", encoding="utf-8") as f:
+        f.write("\n")
+        srun_cmd = (
+            f"srun --exact -u -n 1 -c 1 --gpus-per-task 1 "
+            f"--mem-per-gpu={mem_per_gpu} {cmd} &\n"
+        )
+        f.write(srun_cmd)
+
+    subprocess.run(f"sbatch {jobfile.as_posix()}", shell=True, check=False)
+
+
 def run_multi_gpu_job(
     base_cmd: str,
     *,

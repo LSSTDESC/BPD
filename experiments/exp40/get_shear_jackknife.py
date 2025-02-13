@@ -9,7 +9,7 @@ import typer
 from jax import jit
 
 from bpd import DATA_DIR
-from bpd.io import load_dataset, save_dataset
+from bpd.io import load_dataset_jax, save_dataset
 from bpd.jackknife import run_jackknife_vectorized
 from bpd.pipelines import pipeline_shear_inference_simple
 
@@ -37,8 +37,8 @@ def main(
     if fpath.exists() and not overwrite:
         raise IOError("overwriting...")
 
-    samples_plus_ds = load_dataset(samples_plus_fpath)
-    samples_minus_ds = load_dataset(samples_minus_fpath)
+    samples_plus_ds = load_dataset_jax(samples_plus_fpath)
+    samples_minus_ds = load_dataset_jax(samples_minus_fpath)
 
     e_post_plus = samples_plus_ds["e_post"][:, ::trim, :]
     e_post_minus = samples_minus_ds["e_post"][:, ::trim, :]
