@@ -23,19 +23,54 @@ from bpd.sample import (
 )
 
 
+def _sample_prior(
+    rng_key: PRNGKeyArray,
+    *,
+    shape_noise: float,
+    mean_logflux: float,
+    sigma_logflux: float,
+    mean_loghlr: float,
+    sigma_loghlr: float,
+    g1: float = 0.02,
+    g2: float = 0.0,
+    min_logflux: float = 0.0,
+) -> dict[str, float]:
+    k1, k2, k3 = random.split(rng_key, 3)
+
+    lf = random.normal(k1) * sigma_logflux + mean_logflux
+    lf = lf.clip(min=min_logflux)
+
+    lhlr = random.normal(k2) * sigma_loghlr + mean_loghlr
+    other_params = sample_target_galaxy_params_simple(
+        k3, shape_noise=shape_noise, g1=g1, g2=g2
+    )
+
+    return {"lf": lf, "lhlr": lhlr, **other_params}
+
+
 def _init_fnc(key: PRNGKeyArray, image: Array, true_params: dict):
     assert image.ndim == 2
     assert image.shape[0] == image.shape[1]
     flux = image.sum()
 
-    tlhlr = true_params["lhlr"]
-    lhlr = random.uniform(key, shape=(), minval=tlhlr - 0.05, maxval=tlhlr + 0.05)
+    k1, k2, k3 = random.split(key, 3)
 
-    e1 = 0.0
-    e2 = 0.0
-    dx = 0.0
-    dy = 0.0
-    return {"lf": jnp.log10(flux), "lhlr": lhlr, "e1": e1, "e2": e2, "dx": dx, "dy": dy}
+    tlhlr = true_params["lhlr"]
+    lhlr = random.uniform(k1, shape=(), minval=tlhlr - 0.015, maxval=tlhlr + 0.015)
+
+    te1 = true_params["e1"]
+    e1 = random.uniform(k2, shape=(), minval=te1 - 0.1, maxval=te1 + 0.1)
+
+    te2 = true_params["e2"]
+    e2 = random.uniform(k3, shape=(), minval=te2 - 0.1, maxval=te2 + 0.1)
+    return {
+        "lf": jnp.log10(flux),
+        "lhlr": lhlr,
+        "e1": e1,
+        "e2": e2,
+        "dx": 0.0,
+        "dy": 0.0,
+    }
 
 
 def logtarget(
@@ -48,30 +83,37 @@ def logtarget(
     return logprior_fnc(params) + loglikelihood_fnc(params, data)
 
 
-def sample_prior(
-    rng_key: PRNGKeyArray,
-    *,
-    shape_noise: float,
-    mean_logflux: float = 2.6,
-    sigma_logflux: float = 0.4,
-    mean_loghlr: float = -0.1,
-    sigma_loghlr: float = 0.05,
-    g1: float = 0.02,
-    g2: float = 0.0,
-) -> dict[str, float]:
-    k1, k2, k3 = random.split(rng_key, 3)
-
-    lf = random.normal(k1) * sigma_logflux + mean_logflux
-    lhlr = random.normal(k2) * sigma_loghlr + mean_loghlr
-    other_params = sample_target_galaxy_params_simple(
-        k3, shape_noise=shape_noise, g1=g1, g2=g2
+def _run_warmup(
+    key, init_pos, data, fixed_params, *, logtarget: Callable, initial_step_size: float
+):
+    return run_warmup_nuts(
+        key,
+        init_pos,
+        data,
+        logtarget=partial(logtarget, fixed_params=fixed_params),
+        initial_step_size=initial_step_size,
+        max_num_doublings=5,
+        n_warmup_steps=500,
     )
 
-    return {"lf": lf, "lhlr": lhlr, **other_params}
+
+def _run_sampling(
+    key, istates, tp, data, fixed_params, *, logtarget: Callable, n_samples: int
+):
+    return run_sampling_nuts(
+        key,
+        istates,
+        tp,
+        data,
+        logtarget=partial(logtarget, fixed_params=fixed_params),
+        n_samples=n_samples,
+        max_num_doublings=5,
+    )
 
 
 def main(
     seed: int,
+    tag: str,
     n_samples: int = 500,
     shape_noise: float = 0.3,
     sigma_e_int: float = 0.5,
@@ -79,13 +121,18 @@ def main(
     fft_size: int = 256,
     background: float = 1.0,
     initial_step_size: float = 0.1,
+    mean_logflux: float = 3.0,
+    sigma_logflux: float = 0.4,
+    mean_loghlr: float = -0.1,
+    sigma_loghlr: float = 0.05,
+    min_logflux: float = 2.5,
 ):
     rng_key = random.key(seed)
     pkey, nkey, rkey = random.split(rng_key, 3)
     pkey1, pkey2 = random.split(pkey)
 
     # directory structure
-    dirpath = DATA_DIR / "cache_chains" / f"exp21_{seed}"
+    dirpath = DATA_DIR / "cache_chains" / f"{tag}_{seed}"
     if not dirpath.exists():
         dirpath.mkdir(exist_ok=True)
     fpath = dirpath / f"chain_results_{seed}.npy"
@@ -106,37 +153,30 @@ def main(
         logtarget_images, logprior_fnc=_logprior, loglikelihood_fnc=_loglikelihood
     )
 
-    def _run_warmup(key, init_pos, data, fixed_params):
-        return run_warmup_nuts(
-            key,
-            init_pos,
-            data,
-            logtarget=partial(_logtarget, fixed_params=fixed_params),
-            initial_step_size=initial_step_size,
-            max_num_doublings=5,
-            n_warmup_steps=500,
-        )
+    _run_warmup2 = partial(
+        _run_warmup, logtarget=_logtarget, initial_step_size=initial_step_size
+    )
+    _run_sampling2 = partial(_run_sampling, logtarget=_logtarget, n_samples=n_samples)
 
-    def _run_sampling(key, istates, tp, data, fixed_params):
-        return run_sampling_nuts(
-            key,
-            istates,
-            tp,
-            data,
-            logtarget=partial(_logtarget, fixed_params=fixed_params),
-            n_samples=n_samples,
-            max_num_doublings=5,
-        )
+    run_warmup = vmap(vmap(jit(_run_warmup2), in_axes=(0, 0, None, None)))
+    run_sampling = vmap(vmap(jit(_run_sampling2), in_axes=(0, 0, 0, None, None)))
 
-    run_warmup = vmap(vmap(jit(_run_warmup), in_axes=(0, 0, None, None)))
-    run_sampling = vmap(vmap(jit(_run_sampling), in_axes=(0, 0, 0, None, None)))
+    sample_prior = partial(
+        _sample_prior,
+        shape_noise=shape_noise,
+        mean_logflux=mean_logflux,
+        sigma_logflux=sigma_logflux,
+        mean_loghlr=mean_loghlr,
+        sigma_loghlr=sigma_loghlr,
+        min_loflux=min_logflux,
+    )
 
     results = {}
-    for n_gals in (1, 1, 5, 10, 25, 50, 100, 250):  # repeat 1 == compilation
+    for n_gals in (1, 1, 5, 10, 25, 50, 100, 250, 1000):  # repeat 1 == compilation
         print("n_gals:", n_gals)
 
         pkeys1 = random.split(pkey1, n_gals)
-        galaxy_params = vmap(partial(sample_prior, shape_noise=shape_noise))(pkeys1)
+        galaxy_params = vmap(sample_prior)(pkeys1)
         assert galaxy_params["x"].shape == (n_gals,)
 
         # get images
@@ -152,7 +192,7 @@ def main(
         pkeys2 = random.split(pkey2, (n_gals, 4))
 
         # initialize chain positions
-        init_positions = vmap(_init_fnc, in_axes=(0, None, None))(
+        init_positions = vmap(vmap(_init_fnc, in_axes=(0, None, None)))(
             pkeys2, target_images, true_params
         )
         fixed_params = {"x": galaxy_params["x"], "y": galaxy_params["y"]}
