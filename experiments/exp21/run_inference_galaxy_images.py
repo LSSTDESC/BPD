@@ -13,6 +13,7 @@ from jax._src.prng import PRNGKeyArray
 from bpd import DATA_DIR
 from bpd.chains import run_sampling_nuts, run_warmup_nuts
 from bpd.draw import draw_gaussian
+from bpd.io import save_dataset
 from bpd.likelihood import gaussian_image_loglikelihood
 from bpd.pipelines import logtarget_images
 from bpd.prior import interim_gprops_logprior
@@ -123,9 +124,9 @@ def main(
     initial_step_size: float = 0.1,
     mean_logflux: float = 3.0,
     sigma_logflux: float = 0.4,
-    mean_loghlr: float = -0.1,
+    mean_loghlr: float = 0.0,
     sigma_loghlr: float = 0.05,
-    min_logflux: float = 2.5,
+    min_logflux: float = 2.4,
 ):
     rng_key = random.key(seed)
     pkey, nkey, rkey = random.split(rng_key, 3)
@@ -168,11 +169,11 @@ def main(
         sigma_logflux=sigma_logflux,
         mean_loghlr=mean_loghlr,
         sigma_loghlr=sigma_loghlr,
-        min_loflux=min_logflux,
+        min_logflux=min_logflux,
     )
 
     results = {}
-    for n_gals in (1, 1, 5, 10, 25, 50, 100, 250, 1000):  # repeat 1 == compilation
+    for n_gals in (1, 1, 5, 10, 25, 50, 100, 250):  # repeat 1 == compilation
         print("n_gals:", n_gals)
 
         pkeys1 = random.split(pkey1, n_gals)
@@ -230,7 +231,7 @@ def main(
         results[n_gals]["adapt_info"] = adapt_info
         results[n_gals]["tuned_params"] = tuned_params
 
-    jnp.save(fpath, results)
+    save_dataset(results, fpath, overwrite=True)
 
 
 if __name__ == "__main__":
