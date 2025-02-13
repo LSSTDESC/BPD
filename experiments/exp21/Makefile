@@ -7,7 +7,7 @@ DIR := /pscratch/sd/i/imendoza/data/cache_chains/${TAG}
 export JAX_ENABLE_X64=True
 
 figures:
-	./get_figures.py
+	./get_figures.py ${SEED} ${TAG}
 
 convergence:
 	./get_convergence.py ${SEED} ${TAG}
