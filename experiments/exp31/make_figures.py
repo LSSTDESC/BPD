@@ -1,17 +1,9 @@
 #!/usr/bin/env python3
 
-import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = ""
-os.environ["JAX_PLATFORMS"] = "cpu"
-os.environ["JAX_ENABLE_X64"] = "True"
-
-
-import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
 import typer
-from jax import Array
 from matplotlib.backends.backend_pdf import PdfPages
 
 from bpd import DATA_DIR
@@ -19,7 +11,7 @@ from bpd.diagnostics import get_contour_plot
 from bpd.io import load_dataset
 
 
-def make_trace_plots(g_samples: Array) -> None:
+def make_trace_plots(g_samples: np.ndarray) -> None:
     """Make trace plots of g1, g2."""
     fname = "figs/traces.pdf"
     with PdfPages(fname) as pdf:
@@ -34,7 +26,7 @@ def make_trace_plots(g_samples: Array) -> None:
         plt.close(fig)
 
 
-def make_contour_plots(g_samples: Array, n_examples=10) -> None:
+def make_contour_plots(g_samples: np.ndarray, n_examples: int = 10) -> None:
     """Make figure of contour plot on g1, g2."""
     fname = "figs/contours.pdf"
     with PdfPages(fname) as pdf:
@@ -45,7 +37,7 @@ def make_contour_plots(g_samples: Array, n_examples=10) -> None:
         plt.close(fig)
 
 
-def make_scatter_shape_plots(e_post: Array, n_examples: int = 10) -> None:
+def make_scatter_shape_plots(e_post: np.ndarray, n_examples: int = 10) -> None:
     """Show example scatter plots of interim posterior ellipticitites."""
     # make two types, assuming gaussianity and one not assuming gaussianity.
     fname = "figs/scatter_shapes.pdf"
@@ -79,7 +71,9 @@ def make_scatter_shape_plots(e_post: Array, n_examples: int = 10) -> None:
         plt.close(fig)
 
 
-def make_scatter_dxdy_plots(dx: Array, dy: Array, n_examples: int = 10) -> None:
+def make_scatter_dxdy_plots(
+    dx: np.ndarray, dy: np.ndarray, n_examples: int = 10
+) -> None:
     """Show example scatter plots of interim posterior ellipticitites."""
     # make two types, assuming gaussianity and one not assuming gaussianity.
     fname = "figs/scatter_dxdy.pdf"
@@ -113,7 +107,7 @@ def make_scatter_dxdy_plots(dx: Array, dy: Array, n_examples: int = 10) -> None:
         plt.close(fig)
 
 
-def make_hists(g_samples: Array, e1_samples: Array) -> None:
+def make_hists(g_samples: np.ndarray, e1_samples: np.ndarray) -> None:
     """Make histograms of g1 along with std and expected std."""
     fname = "figs/hists.pdf"
     with PdfPages(fname) as pdf:
@@ -138,7 +132,7 @@ def main(seed: int = 43):
     pdir = DATA_DIR / "cache_chains" / f"exp31_{seed}"
     e_post_dict = load_dataset(pdir / f"e_post_{seed}.npz")
     e_post_samples = e_post_dict["e_post"]
-    g_samples = jnp.load(pdir / f"g_samples_{seed}_{seed}.npy")
+    g_samples = np.load(pdir / f"g_samples_{seed}_{seed}.npy")
 
     e1_samples = e_post_dict["e1"]
     dx = e_post_dict["dx"]

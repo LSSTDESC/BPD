@@ -5,12 +5,13 @@ from functools import partial
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 import typer
 from jax import Array
 from jax.scipy import stats
 
 from bpd import DATA_DIR
-from bpd.io import load_dataset
+from bpd.io import load_dataset_jax
 from bpd.pipelines import pipeline_shear_inference
 from bpd.prior import interim_gprops_logprior, true_ellip_logprior
 
@@ -64,7 +65,7 @@ def main(
     if fpath.exists() and not overwrite:
         raise IOError("overwriting...")
 
-    samples_dataset = load_dataset(interim_samples_fpath)
+    samples_dataset = load_dataset_jax(interim_samples_fpath)
     true_g = samples_dataset["true_g"]
 
     # prior parameters
@@ -105,7 +106,7 @@ def main(
         initial_step_size=initial_step_size,
     )
 
-    jnp.save(fpath, g_samples)
+    np.save(fpath, np.asarray(g_samples))
 
 
 if __name__ == "__main__":
