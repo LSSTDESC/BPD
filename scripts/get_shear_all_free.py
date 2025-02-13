@@ -51,38 +51,42 @@ def _interim_logprior(post_params: dict[str, Array], sigma_e_int: float):
 
 def main(
     seed: int,
+    tag: str,
+    samples_fname: str,
     initial_step_size: float = 1e-3,
     n_samples: int = 3000,
     overwrite: bool = False,
 ):
     # directory structure
-    dirpath = DATA_DIR / "cache_chains" / f"exp32_{seed}"
-    interim_samples_fpath = dirpath / f"interim_samples_{seed}.npz"
-    assert interim_samples_fpath.exists(), "ellipticity samples file does not exist"
+    dirpath = DATA_DIR / "cache_chains" / tag
+    interim_samples_fpath = dirpath / samples_fname
     assert dirpath.exists()
-    fpath = dirpath / f"g_samples_{seed}.npy"
+    assert interim_samples_fpath.exists(), "ellipticity samples file does not exist"
+    out_fpath = dirpath / f"g_samples_{seed}.npy"
 
-    if fpath.exists() and not overwrite:
+    if out_fpath.exists() and not overwrite:
         raise IOError("overwriting...")
 
-    samples_dataset = load_dataset_jax(interim_samples_fpath)
-    true_g = samples_dataset["true_g"]
-
-    # prior parameters
-    sigma_e = samples_dataset["sigma_e"]
-    sigma_e_int = samples_dataset["sigma_e_int"]
-    mean_logflux = samples_dataset["mean_logflux"]
-    sigma_logflux = samples_dataset["sigma_logflux"]
-    mean_loghlr = samples_dataset["mean_loghlr"]
-    sigma_loghlr = samples_dataset["sigma_loghlr"]
+    ds = load_dataset_jax(interim_samples_fpath)
 
     # data
+    samples = ds["samples"]
     post_params = {
-        "lf": samples_dataset["lf"],
-        "lhlr": samples_dataset["lhlr"],
-        "e1": samples_dataset["e_post"][..., 0],
-        "e2": samples_dataset["e_post"][..., 1],
+        "lf": samples["lf"],
+        "lhlr": samples["lhlr"],
+        "e1": samples["e_post"][..., 0],
+        "e2": samples["e_post"][..., 1],
     }
+
+    # prior parameters
+    hyper = ds["truth"]
+    true_g = hyper["g"]
+    sigma_e_int = hyper["sigma_e_int"]
+    sigma_e = hyper["sigma_e"]
+    mean_logflux = hyper["mean_logflux"]
+    sigma_logflux = hyper["sigma_logflux"]
+    mean_loghlr = hyper["mean_loghlr"]
+    sigma_loghlr = hyper["sigma_loghlr"]
 
     # setup priors
     logprior_fnc = partial(
@@ -106,7 +110,7 @@ def main(
         initial_step_size=initial_step_size,
     )
 
-    np.save(fpath, np.asarray(g_samples))
+    np.save(out_fpath, np.asarray(g_samples))
 
 
 if __name__ == "__main__":
