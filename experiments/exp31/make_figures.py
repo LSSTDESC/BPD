@@ -115,7 +115,7 @@ def make_hists(g_samples: np.ndarray, e1_samples: np.ndarray) -> None:
 
         g1 = g_samples[:, 0]
         e1_std = e1_samples.std()
-        g1_exp_std = e1_std / jnp.sqrt(len(e1_samples))
+        g1_exp_std = e1_std / np.sqrt(len(e1_samples))
 
         ax.hist(g1, bins=25, histtype="step")
         ax.axvline(g1.mean(), linestyle="--", color="k")
