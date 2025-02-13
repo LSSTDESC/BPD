@@ -214,7 +214,7 @@ def main(seed: int, tag: str):
     make_adaptation_hists(tuned_params, param_names)
 
     # on adaption too
-    adapt_states = results[max_n_gal]["adapt_position"].state.position
+    adapt_states = results[max_n_gal]["adapt_position"]
     make_trace_plots(adapt_states, truth, fpath="figs/traces_adapt.pdf")
 
     if Path("figs/outliers.txt").exists():
