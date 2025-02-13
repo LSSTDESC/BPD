@@ -9,7 +9,7 @@ import numpy as np
 from jax import Array
 
 
-def flatten_dict(ds: dict | Array, level):
+def flatten_dict(ds: dict | Array, level: list):
     tmp_dict = {}
     for key, val in ds.items():
         if isinstance(val, dict):
@@ -42,7 +42,7 @@ def save_dataset(ds: dict, fpath: str | Path, overwrite: bool = False) -> None:
     if Path(fpath).exists() and not overwrite:
         raise IOError("overwriting existing ds")
     assert Path(fpath).suffix == ".npz"
-    flat_ds = flatten_dict(ds)
+    flat_ds = flatten_dict(ds, level=[])
     flat_ds_np = convert_dict_to_numpy(flat_ds)
     np.savez(fpath, **flat_ds_np)
 
