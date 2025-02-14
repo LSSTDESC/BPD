@@ -12,7 +12,7 @@ def main(
     qos: str = "regular",
     mean_logflux: float = 3.0,
     sigma_logflux: float = 0.4,
-    mean_loghlr: float = 0.0,
+    mean_loghlr: float = -0.1,
     sigma_loghlr: float = 0.05,
     min_logflux: float = 2.4,
 ):
