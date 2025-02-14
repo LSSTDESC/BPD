@@ -53,7 +53,7 @@ def main(
     n_samples_per_gal: int = 150,
     mean_logflux: float = 4.0,
     sigma_logflux: float = 0.3,
-    mean_loghlr: float = 0.0,
+    mean_loghlr: float = -0.1,
     sigma_loghlr: float = 0.05,
     g1: float = 0.02,
     g2: float = 0.0,
