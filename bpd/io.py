@@ -8,6 +8,7 @@ import jax.numpy as jnp
 import numpy as np
 from jax import Array
 from jax.typing import ArrayLike
+from numpy import ndarray
 
 
 def flatten_dict(ds: dict | Array, level: list):
@@ -36,42 +37,30 @@ def unflatten_dict(ds: dict):
 
 def merge_dicts(d1: dict, d2: dict, axis=0):
     d = {}
-    keys = set(d1.keys()).union(set(d2.keys()))
-    for k in keys:
-        if k in d1:
-            v1 = d1[k]
-            if k in d2:
-                v2 = d2[k]
-                if isinstance(v1, Array) and isinstance(v2, Array):
-                    v = jnp.concatenate([v1, v2], axis=axis)
-                    d[k] = v
-                elif isinstance(v1, dict) and isinstance(v2, dict):
-                    d[k] = merge_dicts(v1, v2, axis=axis)
-                elif (
-                    v1 == v2 and isinstance(v1, ArrayLike) and isinstance(v2, ArrayLike)
-                ):
-                    d[k] = v1
-                else:
-                    raise ValueError
-            else:
-                d[k] = v1
+    joint_keys = set(d1.keys()).intersection(set(d2.keys()))
+    only_d1_keys = set(d1.keys()).difference(set(d2.keys()))
+    only_d2_keys = set(d2.keys()).difference(set(d1.keys()))
+
+    for k in joint_keys:
+        v1 = d1[k]
+        v2 = d2[k]
+        if isinstance(v1, Array) and isinstance(v2, Array):
+            v = jnp.concatenate([v1, v2], axis=axis)
+            d[k] = v
+        elif isinstance(v1, ndarray) and isinstance(v2, ndarray):
+            v = np.concatenate([v1, v2], axis=axis)
+            d[k] = v
+        elif isinstance(v1, dict) and isinstance(v2, dict):
+            d[k] = merge_dicts(v1, v2, axis=axis)
+        elif v1 == v2 and isinstance(v1, ArrayLike) and isinstance(v2, ArrayLike):
+            d[k] = v1
         else:
-            v2 = d2[k]
-            if k in d1:
-                v1 = d1[k]
-                if isinstance(v1, ArrayLike) and isinstance(v2, ArrayLike):
-                    v = jnp.concatenate([v1, v2], axis=axis)
-                    d[k] = v
-                elif isinstance(v1, dict) and isinstance(v2, dict):
-                    d[k] = merge_dicts(v1, v2, axis=axis)
-                elif (
-                    v1 == v2 and isinstance(v1, ArrayLike) and isinstance(v2, ArrayLike)
-                ):
-                    d[k] = v2
-                else:
-                    raise ValueError
-            else:
-                d[k] = v2
+            raise ValueError("Dicts are not compatible for merging")
+    for k in only_d1_keys:
+        d[k] = d1[k]
+    for k in only_d2_keys:
+        d[k] = d2[k]
+
     return d
 
 
