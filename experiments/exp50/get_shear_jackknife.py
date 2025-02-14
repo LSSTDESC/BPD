@@ -6,13 +6,20 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 import typer
-from jax import jit
+from jax import Array, jit
 
 from bpd import DATA_DIR
 from bpd.io import load_dataset, save_dataset
 from bpd.jackknife import run_jackknife_vectorized
 from bpd.pipelines import pipeline_shear_inference
-from scripts.get_shear_all_free import interim_logprior, logprior
+from bpd.prior import interim_gprops_logprior, true_all_params_logprior
+
+
+def _interim_logprior(post_params: dict[str, Array], sigma_e_int: float):
+    # we do not evaluate dxdy as we assume it's the same as the true prior and they cancel
+    return interim_gprops_logprior(
+        post_params, sigma_e=sigma_e_int, free_flux_hlr=True, free_dxdy=False
+    )
 
 
 def main(
@@ -46,16 +53,16 @@ def main(
     post_params_plus = {
         "lf": samples_plus["lf"],
         "lhlr": samples_plus["lhlr"],
-        "e1": samples_plus["e_post"][..., 0],
-        "e2": samples_plus["e_post"][..., 1],
+        "e1": samples_plus["e1"],
+        "e2": samples_plus["e2"],
     }
 
     samples_minus = ds_minus["samples"]
     post_params_minus = {
         "lf": samples_minus["lf"],
         "lhlr": samples_minus["lhlr"],
-        "e1": samples_minus["e_post"][..., 0],
-        "e2": samples_minus["e_post"][..., 1],
+        "e1": samples_minus["e1"],
+        "e2": samples_minus["e2"],
     }
 
     g1 = ds_plus["hyper"]["g1"]
@@ -74,7 +81,7 @@ def main(
 
     assert jnp.all(true_g == -true_gm)
     assert sigma_e == ds_minus["hyper"]["sigma_e"]
-    assert sigma_e_int == ds_minus["hyper"]["g1"]
+    assert sigma_e_int == ds_minus["hyper"]["sigma_e_int"]
     assert mean_logflux == ds_minus["hyper"]["mean_logflux"]
     assert mean_loghlr == ds_minus["hyper"]["mean_loghlr"]
 
@@ -82,25 +89,23 @@ def main(
     assert jnp.all(ds_plus["truth"]["f"] == ds_minus["truth"]["f"])
 
     logprior_fnc = partial(
-        logprior,
+        true_all_params_logprior,
         sigma_e=sigma_e,
         mean_logflux=mean_logflux,
         sigma_logflux=sigma_logflux,
         mean_loghlr=mean_loghlr,
         sigma_loghlr=sigma_loghlr,
     )
-    interim_logprior_fnc = partial(interim_logprior, sigma_e_int=sigma_e_int)
+    interim_logprior_fnc = partial(_interim_logprior, sigma_e_int=sigma_e_int)
 
     raw_pipeline = partial(
         pipeline_shear_inference,
-        init_g=true_g,
         logprior=logprior_fnc,
         interim_logprior=interim_logprior_fnc,
         n_samples=n_samples,
         initial_step_size=initial_step_size,
     )
-    raw_pipeline_jitted = jit(raw_pipeline)
-    pipeline = lambda k, d, g: raw_pipeline_jitted(k, d["e1e2"], g)
+    pipeline = jit(raw_pipeline)
 
     g_plus, g_minus = run_jackknife_vectorized(
         rng_key,
@@ -108,7 +113,7 @@ def main(
         post_params_plus=post_params_plus,
         post_params_minus=post_params_minus,
         shear_pipeline=pipeline,
-        n_gals=post_params_plus["e1"].shape[0],
+        n_gals=samples_plus["e1"].shape[0],
         n_jacks=n_jacks,
         n_splits=n_splits,
         no_bar=no_bar,
