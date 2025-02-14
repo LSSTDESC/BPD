@@ -30,7 +30,7 @@ def sample_prior(
     mean_logflux: float,
     sigma_logflux: float,
     mean_loghlr: float,
-    sigma_loghlor: float,
+    sigma_loghlr: float,
     g1: float = 0.02,
     g2: float = 0.0,
 ) -> dict[str, float]:
@@ -50,7 +50,7 @@ def main(
     tag: str,
     mode: str = "",
     n_gals: int = 2500,
-    n_samples_per_gal: int = 150,
+    n_samples_per_gal: int = 300,
     mean_logflux: float = 4.0,
     sigma_logflux: float = 0.3,
     mean_loghlr: float = -0.1,
