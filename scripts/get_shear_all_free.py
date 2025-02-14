@@ -8,38 +8,11 @@ import jax.numpy as jnp
 import numpy as np
 import typer
 from jax import Array
-from jax.scipy import stats
 
 from bpd import DATA_DIR
 from bpd.io import load_dataset_jax
 from bpd.pipelines import pipeline_shear_inference
-from bpd.prior import interim_gprops_logprior, true_ellip_logprior
-
-
-def logprior(
-    post_params: dict[str, Array],
-    g: Array,
-    *,
-    sigma_e: float,
-    mean_logflux: float,
-    sigma_logflux: float,
-    mean_loghlr: float,
-    sigma_loghlr: float,
-):
-    lf = post_params["lf"]
-    lhlr = post_params["lhlr"]
-    e1e2 = jnp.stack((post_params["e1"], post_params["e2"]), axis=-1)
-
-    prior = jnp.array(0.0)
-
-    # we also pickup a jacobian in the corresponding probability densities
-    prior += stats.norm.logpdf(lf, loc=mean_logflux, scale=sigma_logflux)
-    prior += stats.norm.logpdf(lhlr, loc=mean_loghlr, scale=sigma_loghlr)
-
-    # elliptcity
-    prior += true_ellip_logprior(e1e2, g, sigma_e=sigma_e)
-
-    return prior
+from bpd.prior import interim_gprops_logprior, true_all_params_logprior
 
 
 def interim_logprior(post_params: dict[str, Array], sigma_e_int: float):
@@ -96,7 +69,7 @@ def main(
 
     # setup priors
     logprior_fnc = partial(
-        logprior,
+        true_all_params_logprior,
         sigma_e=sigma_e,
         mean_logflux=mean_logflux,
         sigma_logflux=sigma_logflux,
