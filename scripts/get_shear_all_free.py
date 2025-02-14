@@ -84,7 +84,9 @@ def main(
 
     # prior parameters
     hyper = ds["hyper"]
-    true_g = hyper["g"]
+    g1 = hyper["g1"]
+    g2 = hyper["g2"]
+    true_g = jnp.array([g1, g2])
     sigma_e_int = hyper["sigma_e_int"]
     sigma_e = hyper["sigma_e"]
     mean_logflux = hyper["mean_logflux"]
