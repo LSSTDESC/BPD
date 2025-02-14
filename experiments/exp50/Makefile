@@ -23,7 +23,7 @@ figures:
 
 jackknife:
 	export CUDA_VISIBLE_DEVICES=0
-	../exp40/get_shear_jackknife.py ${SEED} --old-seed ${SEED} \
+	../exp50/get_shear_jackknife.py ${SEED} --old-seed ${SEED} \
 	--samples-plus-fname interim_samples_${SEED}_plus.npz \
 	--samples-minus-fname interim_samples_${SEED}_minus.npz \
 	--tag ${TAG} --overwrite
