@@ -16,7 +16,7 @@ from bpd.pipelines import pipeline_shear_inference
 from bpd.prior import interim_gprops_logprior, true_ellip_logprior
 
 
-def _logprior(
+def logprior(
     post_params: dict[str, Array],
     g: Array,
     *,
@@ -42,7 +42,7 @@ def _logprior(
     return prior
 
 
-def _interim_logprior(post_params: dict[str, Array], sigma_e_int: float):
+def interim_logprior(post_params: dict[str, Array], sigma_e_int: float):
     # we do not evaluate dxdy as we assume it's the same as the true prior and they cancel
     return interim_gprops_logprior(
         post_params, sigma_e=sigma_e_int, free_flux_hlr=True, free_dxdy=False
@@ -96,14 +96,14 @@ def main(
 
     # setup priors
     logprior_fnc = partial(
-        _logprior,
+        logprior,
         sigma_e=sigma_e,
         mean_logflux=mean_logflux,
         sigma_logflux=sigma_logflux,
         mean_loghlr=mean_loghlr,
         sigma_loghlr=sigma_loghlr,
     )
-    interim_logprior_fnc = partial(_interim_logprior, sigma_e_int=sigma_e_int)
+    interim_logprior_fnc = partial(interim_logprior, sigma_e_int=sigma_e_int)
 
     rng_key = jax.random.key(seed)
     g_samples = pipeline_shear_inference(
