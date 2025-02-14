@@ -156,7 +156,8 @@ def main(
                 "hlr": draw_params["hlr"],
             },
             "hyper": {
-                "g": jnp.array([g1, g2]),
+                "g1": g1,
+                "g2": g2,
                 "sigma_e_int": sigma_e_int,
                 "sigma_e": shape_noise,
                 "mean_logflux": mean_logflux,
