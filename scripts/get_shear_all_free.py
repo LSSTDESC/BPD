@@ -51,8 +51,8 @@ def interim_logprior(post_params: dict[str, Array], sigma_e_int: float):
 
 def main(
     seed: int,
-    tag: str,
-    samples_fname: str,
+    tag: str = typer.Option(),
+    samples_fname: str = typer.Option(),
     mode: str = "",
     initial_step_size: float = 1e-2,
     n_samples: int = 3000,
@@ -78,8 +78,8 @@ def main(
     post_params = {
         "lf": samples["lf"],
         "lhlr": samples["lhlr"],
-        "e1": samples["e_post"][..., 0],
-        "e2": samples["e_post"][..., 1],
+        "e1": samples["e1"],
+        "e2": samples["e2"],
     }
 
     # prior parameters
