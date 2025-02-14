@@ -7,6 +7,7 @@ from pathlib import Path
 import jax.numpy as jnp
 import numpy as np
 from jax import Array
+from jax.typing import ArrayLike
 
 
 def flatten_dict(ds: dict | Array, level: list):
@@ -31,6 +32,47 @@ def unflatten_dict(ds: dict):
             d = d[part]
         d[parts[-1]] = value
     return resultDict
+
+
+def merge_dicts(d1: dict, d2: dict, axis=0):
+    d = {}
+    keys = set(d1.keys()).union(set(d2.keys()))
+    for k in keys:
+        if k in d1:
+            v1 = d1[k]
+            if k in d2:
+                v2 = d2[k]
+                if isinstance(v1, Array) and isinstance(v2, Array):
+                    v = jnp.concatenate([v1, v2], axis=axis)
+                    d[k] = v
+                elif isinstance(v1, dict) and isinstance(v2, dict):
+                    d[k] = merge_dicts(v1, v2, axis=axis)
+                elif (
+                    v1 == v2 and isinstance(v1, ArrayLike) and isinstance(v2, ArrayLike)
+                ):
+                    d[k] = v1
+                else:
+                    raise ValueError
+            else:
+                d[k] = v1
+        else:
+            v2 = d2[k]
+            if k in d1:
+                v1 = d1[k]
+                if isinstance(v1, ArrayLike) and isinstance(v2, ArrayLike):
+                    v = jnp.concatenate([v1, v2], axis=axis)
+                    d[k] = v
+                elif isinstance(v1, dict) and isinstance(v2, dict):
+                    d[k] = merge_dicts(v1, v2, axis=axis)
+                elif (
+                    v1 == v2 and isinstance(v1, ArrayLike) and isinstance(v2, ArrayLike)
+                ):
+                    d[k] = v2
+                else:
+                    raise ValueError
+            else:
+                d[k] = v2
+    return d
 
 
 def convert_dict_to_numpy(ds: dict):
