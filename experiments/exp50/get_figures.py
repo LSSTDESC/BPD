@@ -183,8 +183,8 @@ def main(seed: int, tag: str = typer.Option()):
     g1 = interim_dict["hyper"]["g1"]
     g2 = interim_dict["hyper"]["g2"]
 
-    g_samples_plus = jnp.load(pdir / f"g_samples_{seed}_{seed}_plus.npy")
-    g_samples_minus = jnp.load(pdir / f"g_samples_{seed}_{seed}_minus.npy")
+    g_samples_plus = jnp.load(pdir / f"g_samples_{seed}_plus.npy")
+    g_samples_minus = jnp.load(pdir / f"g_samples_{seed}_minus.npy")
 
     # make plots
     make_scatter_shape_plots(e_post, seed=seed)
