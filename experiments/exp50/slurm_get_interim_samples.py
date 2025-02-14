@@ -28,7 +28,7 @@ def main(
     mode_txt = f"_{mode}" if mode else ""
     jobname = f"{tag}{mode_txt}"
 
-    base_cmd = """python /global/u2/i/imendoza/BPD/experiments/exp40/get_interim_samples.py
+    base_cmd = """python /global/u2/i/imendoza/BPD/experiments/exp50/get_interim_samples.py
                {{seed}} {tag}
                --mode {mode}
                --g1 {g1} --g2 {g2}
