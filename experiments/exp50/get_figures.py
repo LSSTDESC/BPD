@@ -180,7 +180,8 @@ def main(seed: int, tag: str = typer.Option()):
     e1 = interim_dict["samples"]["e1"]
     e2 = interim_dict["samples"]["e2"]
     e_post = np.stack([e1, e2], axis=-1)
-    g1, g2 = interim_dict["true_g"]
+    g1 = interim_dict["hyper"]["g1"]
+    g2 = interim_dict["hyper"]["g2"]
 
     g_samples_plus = jnp.load(pdir / f"g_samples_{seed}_{seed}_plus.npy")
     g_samples_minus = jnp.load(pdir / f"g_samples_{seed}_{seed}_minus.npy")
