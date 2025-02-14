@@ -47,7 +47,7 @@ def main(
     tag: str,
     mode: str = "",
     n_gals: int = 2500,
-    n_samples_per_gal: int = 150,
+    n_samples_per_gal: int = 300,
     mean_logflux: float = 2.6,
     sigma_logflux: float = 0.4,
     g1: float = 0.02,
