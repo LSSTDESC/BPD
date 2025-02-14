@@ -47,7 +47,12 @@ def merge_dicts(d1: dict, d2: dict, axis=0):
         if isinstance(v1, Array) and isinstance(v2, Array):
             v = jnp.concatenate([v1, v2], axis=axis)
             d[k] = v
-        elif isinstance(v1, ndarray) and isinstance(v2, ndarray):
+        elif (
+            isinstance(v1, ndarray)
+            and isinstance(v2, ndarray)
+            and v1.ndim > 0
+            and v2.ndim > 0
+        ):
             v = np.concatenate([v1, v2], axis=axis)
             d[k] = v
         elif isinstance(v1, dict) and isinstance(v2, dict):
