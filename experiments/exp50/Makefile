@@ -19,7 +19,7 @@ QOS := debug
 export JAX_ENABLE_X64=True
 
 figures:
-	../exp40/get_figures.py ${SEED} --tag ${TAG}
+	../exp50/get_figures.py ${SEED} --tag ${TAG}
 
 jackknife:
 	export CUDA_VISIBLE_DEVICES=0

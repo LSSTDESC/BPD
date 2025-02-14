@@ -177,14 +177,16 @@ def main(seed: int, tag: str = typer.Option()):
     # load data
     pdir = DATA_DIR / "cache_chains" / tag
     interim_dict = load_dataset(pdir / f"interim_samples_{seed}_plus.npz")
-    e_post_samples = interim_dict["e_post"]
+    e1 = interim_dict["samples"]["e1"]
+    e2 = interim_dict["samples"]["e2"]
+    e_post = np.stack([e1, e2], axis=-1)
     g1, g2 = interim_dict["true_g"]
 
     g_samples_plus = jnp.load(pdir / f"g_samples_{seed}_{seed}_plus.npy")
     g_samples_minus = jnp.load(pdir / f"g_samples_{seed}_{seed}_minus.npy")
 
     # make plots
-    make_scatter_shape_plots(e_post_samples, seed=seed)
+    make_scatter_shape_plots(e_post, seed=seed)
 
     # plus
     make_trace_plots(g_samples_plus, "plus", seed=seed)
