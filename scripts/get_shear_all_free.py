@@ -53,21 +53,25 @@ def main(
     seed: int,
     tag: str,
     samples_fname: str,
-    initial_step_size: float = 1e-3,
+    mode: str = "",
+    initial_step_size: float = 1e-2,
     n_samples: int = 3000,
     overwrite: bool = False,
 ):
+    assert mode in ("plus", "minus", "")
+    mode_txt = f"_{mode}" if mode else ""
+
     # directory structure
     dirpath = DATA_DIR / "cache_chains" / tag
-    interim_samples_fpath = dirpath / samples_fname
+    samples_fpath = dirpath / samples_fname
     assert dirpath.exists()
-    assert interim_samples_fpath.exists(), "ellipticity samples file does not exist"
-    out_fpath = dirpath / f"g_samples_{seed}.npy"
+    assert samples_fpath.exists(), "ellipticity samples file does not exist"
+    out_fpath = dirpath / f"g_samples_{seed}{mode_txt}.npy"
 
     if out_fpath.exists() and not overwrite:
         raise IOError("overwriting...")
 
-    ds = load_dataset_jax(interim_samples_fpath)
+    ds = load_dataset_jax(samples_fpath)
 
     # data
     samples = ds["samples"]
@@ -79,7 +83,7 @@ def main(
     }
 
     # prior parameters
-    hyper = ds["truth"]
+    hyper = ds["hyper"]
     true_g = hyper["g"]
     sigma_e_int = hyper["sigma_e_int"]
     sigma_e = hyper["sigma_e"]
