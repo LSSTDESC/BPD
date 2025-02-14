@@ -37,7 +37,7 @@ def sample_prior(
     k1, k2, k3 = random.split(rng_key, 3)
 
     lf = random.normal(k1) * sigma_logflux + mean_logflux
-    lhlr = random.normal(k2) * mean_loghlr + sigma_loghlor
+    lhlr = random.normal(k2) * mean_loghlr + sigma_loghlr
     other_params = sample_target_galaxy_params_simple(
         k3, shape_noise=shape_noise, g1=g1, g2=g2
     )
