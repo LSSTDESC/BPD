@@ -30,8 +30,8 @@ jackknife:
 
 shear: 
 	export CUDA_VISIBLE_DEVICES=0
-	../../scripts/get_shear_all_free.py ${SEED} --samples-fname "interim_samples_${SEED}_plus.npz" --tag ${TAG} --overwrite --extra-tag "plus"
-	../../scripts/get_shear_all_free.py ${SEED} --samples-fname "interim_samples_${SEED}_minus.npz" --tag ${TAG} --overwrite --extra-tag "minus"
+	../../scripts/get_shear_all_free.py ${SEED} --samples-fname "interim_samples_${SEED}_plus.npz" --tag ${TAG} --overwrite --mode "plus"
+	../../scripts/get_shear_all_free.py ${SEED} --samples-fname "interim_samples_${SEED}_minus.npz" --tag ${TAG} --overwrite --mode "minus"
 
 collate:
 	../exp50/collate_samples.py ${SEED} --tag ${TAG} --mode "plus"
