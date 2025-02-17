@@ -10,8 +10,8 @@ def run_jackknife_shear_pipeline(
     rng_key,
     *,
     init_g: Array,
-    post_params_pos: dict,
-    post_params_neg: dict,
+    post_params_plus: dict,
+    post_params_minus: dict,
     shear_pipeline: Callable,
     n_gals: int,
     n_jacks: int = 100,
@@ -45,10 +45,12 @@ def run_jackknife_shear_pipeline(
         start, end = ii * batch_size, (ii + 1) * batch_size
 
         _params_jack_pos = {
-            k: jnp.concatenate([v[:start], v[end:]]) for k, v in post_params_pos.items()
+            k: jnp.concatenate([v[:start], v[end:]])
+            for k, v in post_params_plus.items()
         }
         _params_jack_neg = {
-            k: jnp.concatenate([v[:start], v[end:]]) for k, v in post_params_neg.items()
+            k: jnp.concatenate([v[:start], v[end:]])
+            for k, v in post_params_minus.items()
         }
 
         g_pos_ii = pipe(k_ii, _params_jack_pos, init_g)
