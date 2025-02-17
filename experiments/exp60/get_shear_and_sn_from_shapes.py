@@ -11,7 +11,7 @@ from jax.scipy import stats
 
 from bpd import DATA_DIR
 from bpd.chains import run_inference_nuts
-from bpd.io import load_dataset, save_dataset
+from bpd.io import load_dataset_jax, save_dataset
 from bpd.likelihood import shear_loglikelihood
 from bpd.prior import ellip_prior_e1e2, true_ellip_logprior
 
@@ -54,7 +54,7 @@ def main(
     assert interim_samples_fpath.exists(), "ellipticity samples file does not exist"
     fpath = DATA_DIR / "cache_chains" / tag / f"shear_samples_{seed}{extra_txt}.npz"
 
-    samples_dataset = load_dataset(interim_samples_fpath)
+    samples_dataset = load_dataset_jax(interim_samples_fpath)
     e_post = samples_dataset["e_post"][:, ::trim, :]
     true_g = samples_dataset["true_g"]
     true_sigma_e = samples_dataset["sigma_e"]
