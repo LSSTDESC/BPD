@@ -124,7 +124,7 @@ def main(
     initial_step_size: float = 0.1,
     mean_logflux: float = 3.0,
     sigma_logflux: float = 0.4,
-    mean_loghlr: float = 0.0,
+    mean_loghlr: float = -0.1,
     sigma_loghlr: float = 0.05,
     min_logflux: float = 2.4,
     mode: str = "short",

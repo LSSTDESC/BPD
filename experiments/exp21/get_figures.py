@@ -58,12 +58,12 @@ def make_trace_at_indices(
 def make_contour_plots(
     samples: dict[str, np.ndarray],
     truth: dict[str, np.ndarray],
+    fpath: str,
     n_examples: int = 10,
 ) -> None:
     """Make example figure showing example contour plots of galaxy properties"""
-    fname = "figs/contours.pdf"
     n_gals, _, _ = samples["lf"].shape
-    with PdfPages(fname) as pdf:
+    with PdfPages(fpath) as pdf:
         for _ in tqdm(range(n_examples), desc="Making contours"):
             idx = np.random.choice(np.arange(0, n_gals)).item()
             true_params = {p: q[idx].item() for p, q in truth.items()}
@@ -76,9 +76,8 @@ def make_contour_plots(
             plt.close(fig)
 
 
-def make_timing_plots(results: dict, max_n_gal: str) -> None:
+def make_timing_plots(results: dict, max_n_gal: str, fpath: Path) -> None:
     print("INFO: Making timing plots...")
-    fname = "figs/timing.pdf"
     all_n_gals = [n_gals for n_gals in results]
 
     # cycler from blue to red
@@ -105,7 +104,7 @@ def make_timing_plots(results: dict, max_n_gal: str) -> None:
         )
         t_per_obj_dict[n_gals] = t_per_obj_arr
 
-    with PdfPages(fname) as pdf:
+    with PdfPages(fpath) as pdf:
         fig, ax = plt.subplots(1, 1, figsize=(7, 7))
         ax.set_prop_cycle(cycles)
 
@@ -122,13 +121,11 @@ def make_timing_plots(results: dict, max_n_gal: str) -> None:
         plt.close(fig)
 
 
-def make_adaptation_hists(tuned_params: dict, pnames: dict):
-    fname = "figs/tuned_hists.pdf"
-
+def make_adaptation_hists(tuned_params: dict, pnames: dict, fpath: Path):
     step_sizes = tuned_params["step_size"]
     imm = tuned_params["inverse_mass_matrix"]
 
-    with PdfPages(fname) as pdf:
+    with PdfPages(fpath) as pdf:
         fig, ax = plt.subplots(1, 1, figsize=(7, 7))
         ax.hist(step_sizes.flatten(), bins=25)
         ax.axvline(step_sizes.flatten().mean(), linestyle="--", color="k", label="mean")
@@ -150,10 +147,11 @@ def make_adaptation_hists(tuned_params: dict, pnames: dict):
             plt.close(fig)
 
 
-def make_convergence_histograms(conv_results: dict) -> set:
+def make_convergence_histograms(
+    conv_results: dict, fpath: Path, outliers_fpath: Path
+) -> set:
     """One histogram of ESS and R-hat per parameter."""
     print("INFO: Computing convergence plots...")
-    fname = "figs/convergence_hist.pdf"
     ess_dict = conv_results["ess"]
     rhats_dict = conv_results["rhat"]
 
@@ -164,12 +162,12 @@ def make_convergence_histograms(conv_results: dict) -> set:
         _ess = ess_dict[p]
         outliers = (rhat < 0.99) | (rhat > 1.05) | (_ess < 0.25)
         n_outliers = sum(outliers)
-        with open("figs/outliers.txt", "a", encoding="utf-8") as f:
+        with open(outliers_fpath, "a", encoding="utf-8") as f:
             print(f"Number of R-hat outliers for {p}: {n_outliers}", file=f)
         indices = np.argwhere(outliers)
         outliers_indices = outliers_indices.union(set(indices.ravel()))
 
-    with PdfPages(fname) as pdf:
+    with PdfPages(fpath) as pdf:
         for p in rhats_dict:
             rhat_p = rhats_dict[p]
             ess_p = ess_dict[p]
@@ -193,6 +191,8 @@ def make_convergence_histograms(conv_results: dict) -> set:
 
 def main(seed: int, tag: str):
     np.random.seed(seed)
+    figdir = Path("figs") / str(seed)
+    figdir.mkdir(exist_ok=True)
 
     wdir = DATA_DIR / "cache_chains" / tag
     results_fpath = wdir / f"chain_results_{seed}.npz"
@@ -208,26 +208,30 @@ def main(seed: int, tag: str):
     param_names = list(samples.keys())
 
     # make plots
-    make_trace_plots(samples, truth, fpath="figs/traces.pdf")
-    make_contour_plots(samples, truth)
-    make_timing_plots(results, max_n_gal)
-    make_adaptation_hists(tuned_params, param_names)
+    make_trace_plots(samples, truth, fpath=figdir / "traces.pdf")
+    make_contour_plots(samples, truth, fpath=figdir / "contours.pdf")
+    make_timing_plots(results, max_n_gal, fpath=figdir / "timing.pdf")
+    make_adaptation_hists(tuned_params, param_names, fpath=figdir / "adaptation.pdf")
 
     # on adaption too
     adapt_states = results[max_n_gal]["adapt_position"]
-    make_trace_plots(adapt_states, truth, fpath="figs/traces_adapt.pdf")
+    make_trace_plots(adapt_states, truth, fpath=figdir / "traces_adapt.pdf")
 
-    if Path("figs/outliers.txt").exists():
-        os.remove("figs/outliers.txt")
+    outliers_fpath = figdir / "outliers.txt"
+    if Path(outliers_fpath).exists():
+        os.remove(outliers_fpath)
 
-    out_indices = make_convergence_histograms(conv_results)
+    out_indices = make_convergence_histograms(
+        conv_results, fpath=figdir / "convergence.pdf", outliers_fpath=outliers_fpath
+    )
 
     # outliers
+    traces_out_fpath = figdir / "traces_out.pdf"
     if len(out_indices) > 0:
-        make_trace_at_indices(out_indices, samples, truth, fpath="figs/traces_out.pdf")
+        make_trace_at_indices(out_indices, samples, truth, fpath=traces_out_fpath)
     else:  # avoid confusion with previous
-        if Path("figs/traces_out.pdf").exists():
-            os.remove("figs/traces_out.pdf")
+        if traces_out_fpath.exists():
+            os.remove(traces_out_fpath)
 
 
 if __name__ == "__main__":

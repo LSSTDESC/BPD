@@ -1,0 +1,6 @@
+Number of R-hat outliers for dx: 0
+Number of R-hat outliers for dy: 0
+Number of R-hat outliers for e1: 0
+Number of R-hat outliers for e2: 0
+Number of R-hat outliers for lf: 0
+Number of R-hat outliers for lhlr: 0

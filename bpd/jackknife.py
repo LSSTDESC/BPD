@@ -69,8 +69,8 @@ def run_jackknife_vectorized(
     rng_key,
     *,
     init_g: Array,
-    post_params_pos: dict,
-    post_params_neg: dict,
+    post_params_plus: dict,
+    post_params_minus: dict,
     shear_pipeline: Callable,
     n_gals: int,
     n_jacks: int = 100,
@@ -96,9 +96,9 @@ def run_jackknife_vectorized(
         # prepare dictionaries of jackknife samples
         params_jack_pos = {}
         params_jack_neg = {}
-        for k in post_params_pos:
-            v1 = post_params_pos[k]
-            v2 = post_params_neg[k]
+        for k in post_params_plus:
+            v1 = post_params_plus[k]
+            v2 = post_params_minus[k]
             all_jack_params_pos = []
             all_jack_params_neg = []
             for jj in range(start1, end1):
