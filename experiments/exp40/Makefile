@@ -1,5 +1,5 @@
 SHELL=/bin/bash
-SEED := 42
+SEED := 43
 EXP := exp40
 TAG := ${EXP}_${SEED}
 DIR := /pscratch/sd/i/imendoza/data/cache_chains/${TAG}
@@ -14,6 +14,12 @@ SIGMA_LOG_FLUX := 0.4
 SHEAR := 0.02
 QOS := debug
 
+TIME_SAMPLE := 00:25
+NODES_SAMPLE := 1
+NTASKS_SAMPLE := 4
+MEM_PER_GPU := 5G
+
+
 export JAX_ENABLE_X64=True
 
 figures:
@@ -24,7 +30,7 @@ jackknife:
 	../exp40/get_shear_jackknife.py ${SEED} --old-seed ${SEED} \
 	--samples-plus-fname interim_samples_${SEED}_plus.npz \
 	--samples-minus-fname interim_samples_${SEED}_minus.npz \
-	--tag ${TAG} --overwrite
+	--tag ${TAG} --overwrite --n-splits 10 --n-jacks 100
 
 shear: 
 	export CUDA_VISIBLE_DEVICES=0
@@ -36,8 +42,9 @@ collate:
 	../exp40/collate_samples.py ${SEED} --tag ${TAG} --mode "minus"
 
 samples: 
-	../exp40/slurm_get_interim_samples.py ${SEED} --tag ${TAG} --g1 ${SHEAR} --g2 0.0 --n-gals ${N_GALS} --n-samples-per-gal ${N_SAMPLES_PER_GAL} --mean-logflux ${MEAN_LOG_FLUX} --sigma-logflux ${SIGMA_LOG_FLUX} --shape-noise ${SHAPE_NOISE} --sigma-e-int ${SIGMA_E_INT} --time "00:25" --mode "plus" --mem-per-gpu "10G" --qos ${QOS}
-	../exp40/slurm_get_interim_samples.py ${SEED} --tag ${TAG} --g1 -${SHEAR} --g2 0.0 --n-gals ${N_GALS} --n-samples-per-gal ${N_SAMPLES_PER_GAL} --mean-logflux ${MEAN_LOG_FLUX} --sigma-logflux ${SIGMA_LOG_FLUX} --shape-noise ${SHAPE_NOISE} --sigma-e-int ${SIGMA_E_INT} --time "00:25" --mode "minus" --mem-per-gpu "10G" --qos ${QOS}
+	../exp40/slurm_get_interim_samples.py ${SEED} --tag ${TAG} --g1 ${SHEAR} --g2 0.0 --n-gals ${N_GALS} --n-samples-per-gal ${N_SAMPLES_PER_GAL} --mean-logflux ${MEAN_LOG_FLUX} --sigma-logflux ${SIGMA_LOG_FLUX} --shape-noise ${SHAPE_NOISE} --sigma-e-int ${SIGMA_E_INT} --time ${TIME_SAMPLE} --mode "plus" --mem-per-gpu ${MEM_PER_GPU} --qos ${QOS} --nodes ${NODES_SAMPLE} --n-tasks-per-node ${NTASKS_SAMPLE}
+	../exp40/slurm_get_interim_samples.py ${SEED} --tag ${TAG} --g1 -${SHEAR} --g2 0.0 --n-gals ${N_GALS} --n-samples-per-gal ${N_SAMPLES_PER_GAL} --mean-logflux ${MEAN_LOG_FLUX} --sigma-logflux ${SIGMA_LOG_FLUX} --shape-noise ${SHAPE_NOISE} --sigma-e-int ${SIGMA_E_INT} --time ${TIME_SAMPLE} --mode "minus" --mem-per-gpu ${MEM_PER_GPU} --qos ${QOS} --nodes ${NODES_SAMPLE}  --n-tasks-per-node ${NTASKS_SAMPLE}
+
 
 clean: 
 	rm -f ${DIR}/g_samples_*.npy ${DIR}/interim_samples_*.npz ${DIR}/g_samples_*.npz

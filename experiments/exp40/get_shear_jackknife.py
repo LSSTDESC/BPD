@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""This file creates toy samples of ellipticities and saves them to .hdf5 file."""
 
 from functools import partial
 
@@ -66,8 +65,8 @@ def main(
     g_plus, g_minus = run_jackknife_vectorized(
         rng_key,
         init_g=jnp.array([0.0, 0.0]),
-        post_params_pos={"e1e2": e_post_plus},
-        post_params_neg={"e1e2": e_post_minus},
+        post_params_plus={"e1e2": e_post_plus},
+        post_params_minus={"e1e2": e_post_minus},
         shear_pipeline=pipeline,
         n_gals=e_post_plus.shape[0],
         n_jacks=n_jacks,
