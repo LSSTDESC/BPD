@@ -169,6 +169,30 @@ def get_jack_contours(
             plt.close(fig)
 
 
+def get_jack_scatter_plot(
+    g_plus_jack: np.ndarray,
+    g_minus_jack: np.ndarray,
+    g1_true: float,
+    g2_true: float,
+    seed: int,
+):
+    fname = f"figs/{seed}/jack_scatter.pdf"
+    assert g_plus_jack.ndim == 3
+    assert g_plus_jack.shape[-1] == 2
+    with PdfPages(fname) as pdf:
+        fig, ax = plt.subplots(1, 1, figsize=(7, 7))
+        g1p = g_plus_jack[:, :, 0].mean(axis=1)
+        g1m = g_minus_jack[:, :, 0].mean(axis=1)
+
+        x = g1p - g1_true
+        y = g1m + g1_true
+        ax.scatter(x, y, marker="o", color="r")
+        ax.plot([x.min(), x.max()], [y.min(), y.max()], "k--")
+
+        pdf.savefig(fig)
+        plt.close(fig)
+
+
 def main(seed: int, tag: str = typer.Option()):
     np.random.seed(seed)
 
@@ -267,6 +291,7 @@ def main(seed: int, tag: str = typer.Option()):
 
         get_jack_traces(g_plus_jack, g_minus_jack, g1, g2, seed)
         get_jack_contours(g_plus_jack, g_minus_jack, g1, g2, seed)
+        get_jack_scatter_plot(g_plus_jack, g_minus_jack, g1, g2, seed)
 
 
 if __name__ == "__main__":
