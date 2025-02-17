@@ -180,14 +180,20 @@ def get_jack_scatter_plot(
     assert g_plus_jack.ndim == 3
     assert g_plus_jack.shape[-1] == 2
     with PdfPages(fname) as pdf:
-        fig, ax = plt.subplots(1, 1, figsize=(7, 7))
+        fig, ax = plt.subplots(1, 1, figsize=(10, 10))
         g1p = g_plus_jack[:, :, 0].mean(axis=1)
         g1m = g_minus_jack[:, :, 0].mean(axis=1)
 
         x = g1p - g1_true
-        y = g1m + g1_true
-        ax.scatter(x, y, marker="o", color="r")
+        y = g1m - (-g1_true)
+
+        ax.scatter(x, y, marker="x", color="r")
         ax.plot([x.min(), x.max()], [y.min(), y.max()], "k--")
+        ax.set_xlabel(r"$g^{+}_{1} - |g^{t}_{1}|$", fontsize=24)
+        ax.set_ylabel(r"$g^{-}_{1} + |g^{t}_{1}|$", fontsize=24)
+
+        mp = (y.max() - y.min()) / (x.max() - x.min())
+        ax.set_title(f"slope (approx.): {mp:.3g}")
 
         pdf.savefig(fig)
         plt.close(fig)
@@ -279,6 +285,11 @@ def main(seed: int, tag: str = typer.Option()):
         with open(summary_fpath, "a", encoding="utf-8") as f:
             txt = (
                 "#### Jackknife results ####\n"
+                f"g1_jack_mean_plus: {g_plus_jack[..., 0].mean():.4g}\n"
+                f"g1_jack_mean_minus: {g_minus_jack[..., 0].mean():.4g}\n"
+                f"g1_mean_global_plus: {g_samples_plus[..., 0].mean():.4g}\n"
+                f"g1_mean_global_minus: {g_samples_minus[..., 0].mean():.4g}\n\n"
+                "#######################\n"
                 "Units: 1e-3\n"
                 "\n"
                 f"m_mean: {m_jack_mean * 1e3:.4g}\n"
@@ -289,9 +300,8 @@ def main(seed: int, tag: str = typer.Option()):
             )
             print(txt, file=f)
 
-        get_jack_traces(g_plus_jack, g_minus_jack, g1, g2, seed)
-        get_jack_contours(g_plus_jack, g_minus_jack, g1, g2, seed)
         get_jack_scatter_plot(g_plus_jack, g_minus_jack, g1, g2, seed)
+        get_jack_traces(g_plus_jack, g_minus_jack, g1, g2, seed)
 
 
 if __name__ == "__main__":
