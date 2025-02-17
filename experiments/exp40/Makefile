@@ -1,5 +1,5 @@
 SHELL=/bin/bash
-SEED := 42
+SEED := 43
 EXP := exp40
 TAG := ${EXP}_${SEED}
 DIR := /pscratch/sd/i/imendoza/data/cache_chains/${TAG}

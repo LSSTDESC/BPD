@@ -1,18 +1,24 @@
 #### Full results ####
 Units: 1e-3
 
-m_mean: -15.89
-m_std: 10.99
+m_mean: -18.68
+3 * m_std: 40.83
 
-c_mean: -1.437
-c_std: 1.213
+c_mean: 2.172
+3 * c_std: 3.594
 
 #### Jackknife results ####
+g1_jack_mean_plus: 0.02058
+g1_jack_mean_minus: -0.01867
+g1_mean_global_plus: 0.02052
+g1_mean_global_minus: -0.01873
+
+#######################
 Units: 1e-3
 
-m_mean: -15.89
-m_std: 4.515
+m_mean: -18.87
+3 * m_std: 19.74
 
-c_mean: -1.442
-c_std: 1.241
+c_mean: 2.17
+3 * c_std: 4.153
 
