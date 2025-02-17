@@ -91,18 +91,28 @@ def make_hists(g_samples: Array, mode: str, seed: int) -> None:
 
 
 def make_contour_plots(
-    g_samples: Array,
-    mode: str,
+    g_plus: Array,
+    g_minus: Array,
     g1_true: float,
     g2_true: float,
     seed: int,
 ) -> None:
     """Make figure of contour plot on g1, g2."""
-    fname = f"figs/{seed}/contours_{mode}.pdf"
+    fname = f"figs/{seed}/contours.pdf"
     with PdfPages(fname) as pdf:
-        truth = {"g1": g1_true, "g2": g2_true}
-        g_dict = {"g1": g_samples[:, 0], "g2": g_samples[:, 1]}
-        fig = get_contour_plot([g_dict], ["post"], truth)
+        truth = {
+            "g1+": g1_true,
+            "g1-": -g1_true,
+            "g2+": g2_true,
+            "g2-": -g2_true,
+        }
+        g_dict = {
+            "g1+": g_plus[:, 0],
+            "g1-": g_minus[:, 0],
+            "g2+": g_plus[:, 1],
+            "g2-": g_minus[:, 1],
+        }
+        fig = get_contour_plot([g_dict], ["post"], truth, figsize=(10, 10))
         pdf.savefig(fig)
         plt.close(fig)
 
@@ -152,14 +162,14 @@ def get_jack_contours(
 
             truth = {
                 "g1+": g1_true,
-                "g2+": g2_true,
                 "g1-": -g1_true,
+                "g2+": g2_true,
                 "g2-": -g2_true,
             }
             g_dict = {
                 "g1+": g_plus_jack[idx, :, 0],
-                "g2+": g_plus_jack[idx, :, 1],
                 "g1-": g_minus_jack[idx, :, 0],
+                "g2+": g_plus_jack[idx, :, 1],
                 "g2-": g_minus_jack[idx, :, 1],
             }
             fig = get_contour_plot([g_dict], ["post"], truth, figsize=(10, 10))
@@ -192,12 +202,15 @@ def main(seed: int, tag: str = typer.Option()):
     # plus
     make_trace_plots(g_samples_plus, "plus", seed=seed)
     make_hists(g_samples_plus, "plus", seed=seed)
-    make_contour_plots(g_samples_plus, "plus", g1_true=g1, g2_true=g2, seed=seed)
 
     # minus
     make_trace_plots(g_samples_minus, "minus", seed=seed)
     make_hists(g_samples_minus, "minus", seed=seed)
-    make_contour_plots(g_samples_minus, "minus", g1_true=-g1, g2_true=g2, seed=seed)
+
+    # both
+    make_contour_plots(
+        g_samples_plus, g_samples_minus, g1_true=g1, g2_true=g2, seed=seed
+    )
 
     # bias
     m_samples = (g_samples_plus[:, 0] - g_samples_minus[:, 0]) / 2 / g1 - 1
