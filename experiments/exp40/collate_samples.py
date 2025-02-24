@@ -25,7 +25,7 @@ def main(
     fps = []
     for fp in dirpath.iterdir():
         cond1 = fp.name.startswith(start_string)
-        cond2 = fp.name != newpath.name
+        cond2 = fp.name != newpath.name  # technically not necessary
         cond3 = mode in fp.name
         if cond1 and cond2 and cond3:
             fps.append(fp)

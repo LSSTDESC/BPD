@@ -259,14 +259,10 @@ def main(seed: int, tag: str = typer.Option()):
         )
         print(txt, file=f)
 
-    jack_fpath1 = pdir / f"g_samples_jack_{seed}_{seed}.npz"
-    jack_fpath2 = pdir / f"g_samples_jack{seed}.npz"
-    jack_fpath = jack_fpath1 if jack_fpath1.exists() else jack_fpath2
+    jack_fpath = pdir / f"g_samples_jack_{seed}.npz"
 
-    cond1 = jack_fpath1.exists() and not jack_fpath2.exists()
-    cond2 = jack_fpath2.exists() and not jack_fpath1.exists()
-    assert cond1 or cond2
     if jack_fpath.exists():
+        print("INFO: Jackknife file found, producing figures...")
         jack_ds = load_dataset(jack_fpath)
         g_plus_jack = jack_ds["g_plus"]
         g_minus_jack = jack_ds["g_minus"]
