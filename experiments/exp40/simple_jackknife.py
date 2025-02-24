@@ -23,12 +23,18 @@ def main(
     overwrite: bool = False,
     n_jacks: int = 100,
     no_bar: bool = False,
+    start: int = 0,
+    end: int = 100,
 ):
     dirpath = DATA_DIR / "cache_chains" / tag
     samples_plus_fpath = dirpath / samples_plus_fname
     samples_minus_fpath = dirpath / samples_minus_fname
     assert samples_plus_fpath.exists() and samples_minus_fpath.exists()
-    fpath = dirpath / f"g_samples_jack_{seed}.npz"
+
+    if start == 0 and end == n_jacks:
+        fpath = dirpath / f"g_samples_jack_{seed}.npz"
+    else:
+        fpath = dirpath / f"g_samples_jack_{seed}_{start}.npz"
 
     if fpath.exists() and not overwrite:
         raise IOError("overwriting...")
@@ -67,11 +73,13 @@ def main(
         shear_pipeline=pipeline,
         n_gals=e_post_plus.shape[0],
         n_jacks=n_jacks,
+        start=start,
+        end=end,
         no_bar=no_bar,
     )
 
-    assert g_plus.shape == (n_jacks, n_samples, 2)
-    assert g_minus.shape == (n_jacks, n_samples, 2)
+    assert g_plus.shape[1:] == (n_samples, 2)
+    assert g_minus.shape[1:] == (n_samples, 2)
 
     save_dataset({"g_plus": g_plus, "g_minus": g_minus}, fpath, overwrite=True)
 
