@@ -46,10 +46,16 @@ def main(
         g2=g2,
     )
 
+    cmds = []
+    for ii in range(1):
+        for jj in range(4):
+            _seed = f"{seed}{ii}{jj}"
+            cmd = base_cmd.format(seed=_seed)
+            cmds.append(cmd)
+
     run_multi_gpu_job(
-        base_cmd,
+        cmds,
         jobname=tag,
-        base_seed=seed,
         time=time,
         mem_per_gpu=mem_per_gpu,
         qos=qos,

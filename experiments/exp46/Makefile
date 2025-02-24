@@ -25,12 +25,12 @@ export JAX_ENABLE_X64=True
 figures:
 	../exp40/get_figures.py ${SEED} --tag ${TAG}
 
+collate_jack:
+	../exp40/collate_samples.py ${SEED} --tag ${TAG} --mode "" --start-string "g_samples_jack"
+
 jackknife:
 	export CUDA_VISIBLE_DEVICES=0
-	../exp40/get_shear_jackknife.py ${SEED} --old-seed ${SEED} \
-	--samples-plus-fname interim_samples_${SEED}_plus.npz \
-	--samples-minus-fname interim_samples_${SEED}_minus.npz \
-	--tag ${TAG} --overwrite --n-splits 5 --n-jacks 50
+	./slurm_jackknife.py ${SEED} --tag ${TAG}
 
 shear: 
 	export CUDA_VISIBLE_DEVICES=0
