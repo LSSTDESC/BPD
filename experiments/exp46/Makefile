@@ -25,6 +25,9 @@ export JAX_ENABLE_X64=True
 figures:
 	../exp40/get_figures.py ${SEED} --tag ${TAG}
 
+collate_jack:
+	../exp40/collate_samples.py ${SEED} --tag ${TAG} --mode "" --start-string "g_samples_jack"
+
 jackknife:
 	export CUDA_VISIBLE_DEVICES=0
 	./slurm_jackknife.py ${SEED} --tag ${TAG}
