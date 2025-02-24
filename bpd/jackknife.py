@@ -15,6 +15,8 @@ def run_jackknife_shear_pipeline(
     shear_pipeline: Callable,
     n_gals: int,
     n_jacks: int = 100,
+    start: int = 0,
+    end: int | None = None,
     no_bar: bool = True,
 ):
     """Use jackknife+shape noise cancellation to estimate the mean and std of the shear posterior.
@@ -32,6 +34,9 @@ def run_jackknife_shear_pipeline(
     Returns:
         Jackknife samples of shear posterior mean combined with shape noise cancellation trick.
     """
+    if end is None:
+        end = n_jacks
+
     batch_size = ceil(n_gals / n_jacks)
 
     results_plus = []
@@ -40,16 +45,16 @@ def run_jackknife_shear_pipeline(
 
     pipe = jit(shear_pipeline)
 
-    for ii in tqdm(range(n_jacks), desc="Jackknife #", disable=no_bar):
+    for ii in tqdm(range(start, end), desc="Jackknife #", disable=no_bar):
         k_ii = keys[ii]
-        start, end = ii * batch_size, (ii + 1) * batch_size
+        idx1, idx2 = ii * batch_size, (ii + 1) * batch_size
 
         _params_jack_pos = {
-            k: jnp.concatenate([v[:start], v[end:]])
+            k: jnp.concatenate([v[:idx1], v[idx2:]])
             for k, v in post_params_plus.items()
         }
         _params_jack_neg = {
-            k: jnp.concatenate([v[:start], v[end:]])
+            k: jnp.concatenate([v[:idx1], v[idx2:]])
             for k, v in post_params_minus.items()
         }
 
@@ -61,8 +66,8 @@ def run_jackknife_shear_pipeline(
 
     g_pos_samples = jnp.stack(results_plus, axis=0)
     g_neg_samples = jnp.stack(results_minus, axis=0)
-    assert g_pos_samples.shape[0] == n_jacks and g_pos_samples.shape[-1] == 2
-    assert g_neg_samples.shape[0] == n_jacks and g_neg_samples.shape[-1] == 2
+    assert g_pos_samples.shape[-1] == 2
+    assert g_neg_samples.shape[-1] == 2
 
     return g_pos_samples, g_neg_samples
 
