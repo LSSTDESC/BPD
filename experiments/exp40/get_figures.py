@@ -174,7 +174,6 @@ def get_jack_scatter_plot(
     g_plus_jack: np.ndarray,
     g_minus_jack: np.ndarray,
     g1_true: float,
-    g2_true: float,
     seed: int,
 ):
     fname = f"figs/{seed}/jack_scatter.pdf"
@@ -317,7 +316,7 @@ def main(seed: int, tag: str = typer.Option()):
             )
             print(txt, file=f)
 
-        get_jack_scatter_plot(g_plus_jack, g_minus_jack, g1, g2, seed)
+        get_jack_scatter_plot(g_plus_jack, g_minus_jack, g1, seed)
         get_jack_traces(g_plus_jack, g_minus_jack, g1, g2, seed)
 
 

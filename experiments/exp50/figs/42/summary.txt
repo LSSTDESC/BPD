@@ -8,6 +8,12 @@ c_mean: 0.1915
 3 * c_std: 0.3263
 
 #### Jackknife results ####
+g1_jack_mean_plus: 0.02011
+g1_jack_mean_minus: -0.01988
+g1_mean_global_plus: 0.02011
+g1_mean_global_minus: -0.01988
+
+#######################
 Units: 1e-3
 
 m_mean: -0.1998

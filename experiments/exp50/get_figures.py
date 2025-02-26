@@ -1,19 +1,13 @@
 #!/usr/bin/env python3
 
-import os
-
-os.environ["CUDA_VISIBLE_DEVICES"] = ""
-os.environ["JAX_PLATFORMS"] = "cpu"
-os.environ["JAX_ENABLE_X64"] = "True"
-
 from pathlib import Path
 
-import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
 import typer
 from jax import Array
 from matplotlib.backends.backend_pdf import PdfPages
+from scipy.stats import linregress, t
 
 from bpd import DATA_DIR
 from bpd.diagnostics import get_contour_plot
@@ -148,33 +142,47 @@ def get_jack_traces(
             plt.close(fig)
 
 
-def get_jack_contours(
-    g_plus_jack: Array, g_minus_jack: Array, g1_true: float, g2_true: float, seed: int
+def get_jack_scatter_plot(
+    g_plus_jack: np.ndarray,
+    g_minus_jack: np.ndarray,
+    g1_true: float,
+    seed: int,
 ):
-    fname = f"figs/{seed}/jack_traces.pdf"
+    fname = f"figs/{seed}/jack_scatter.pdf"
     assert g_plus_jack.ndim == 3
     assert g_plus_jack.shape[-1] == 2
-    n_jacks = g_plus_jack.shape[0]
-    fname = f"figs/{seed}/contours_jack.pdf"
     with PdfPages(fname) as pdf:
-        for _ in range(10):
-            idx = np.random.choice(np.arange(0, n_jacks))
+        fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+        g1p = g_plus_jack[:, :, 0].mean(axis=1)
+        g1m = g_minus_jack[:, :, 0].mean(axis=1)
 
-            truth = {
-                "g1+": g1_true,
-                "g1-": -g1_true,
-                "g2+": g2_true,
-                "g2-": -g2_true,
-            }
-            g_dict = {
-                "g1+": g_plus_jack[idx, :, 0],
-                "g1-": g_minus_jack[idx, :, 0],
-                "g2+": g_plus_jack[idx, :, 1],
-                "g2-": g_minus_jack[idx, :, 1],
-            }
-            fig = get_contour_plot([g_dict], ["post"], truth, figsize=(10, 10))
-            pdf.savefig(fig)
-            plt.close(fig)
+        x = g1m - (-g1_true)
+        y = g1p - g1_true
+
+        res = linregress(x, y)
+        m = res.slope
+        b = res.intercept
+        r = res.rvalue
+        m_err = res.stderr
+        b_err = res.intercept_stderr
+
+        ax.scatter(x, y, marker="x", color="r")
+        ax.plot(x, m * x + b, "k-")
+        ax.set_ylabel(r"$g^{+}_{1} - |g^{t}_{1}|$", fontsize=24)
+        ax.set_xlabel(r"$g^{-}_{1} + |g^{t}_{1}|$", fontsize=24)
+
+        m_est = b / (2 * g1_true)
+        m_est_err = b_err / (2 * g1_true)
+
+        # get 95% confidence intervals
+        tinv = lambda p, df: abs(t.ppf(p / 2, df))
+        ts = tinv(0.05, len(x) - 2)
+        ax.set_title(
+            f"slope: {m:.3g}+/-{ts * m_err:.3g}, \n m_intercept:{m_est:.3g}+/-{ts * m_est_err:.3g},\n r:{r:.3g}"
+        )
+
+        pdf.savefig(fig)
+        plt.close(fig)
 
 
 def main(seed: int, tag: str = typer.Option()):
@@ -193,8 +201,8 @@ def main(seed: int, tag: str = typer.Option()):
     g1 = interim_dict["hyper"]["g1"]
     g2 = interim_dict["hyper"]["g2"]
 
-    g_samples_plus = jnp.load(pdir / f"g_samples_{seed}_plus.npy")
-    g_samples_minus = jnp.load(pdir / f"g_samples_{seed}_minus.npy")
+    g_samples_plus = np.load(pdir / f"g_samples_{seed}_plus.npy")
+    g_samples_minus = np.load(pdir / f"g_samples_{seed}_minus.npy")
 
     # make plots
     make_scatter_shape_plots(e_post, seed=seed)
@@ -226,7 +234,6 @@ def main(seed: int, tag: str = typer.Option()):
 
     # summary of multiplicative/additive bias results (both JK and not)
     # save to a text file
-
     summary_fpath = f"figs/{seed}/summary.txt"
     with open(summary_fpath, "w", encoding="utf-8") as f:
         txt = (
@@ -242,8 +249,9 @@ def main(seed: int, tag: str = typer.Option()):
         )
         print(txt, file=f)
 
-    jack_fpath = pdir / f"g_samples_jack_{seed}_{seed}.npz"
+    jack_fpath = pdir / f"g_samples_jack_{seed}.npz"
     if jack_fpath.exists():
+        print("INFO: Jackknife file found, producing figures...")
         jack_ds = load_dataset(jack_fpath)
         g_plus_jack = jack_ds["g_plus"]
         g_minus_jack = jack_ds["g_minus"]
@@ -259,14 +267,19 @@ def main(seed: int, tag: str = typer.Option()):
         ) / 2
 
         m_jack_mean = m_jack.mean().item()
-        m_jack_std = jnp.sqrt(m_jack.var() * (n_jack - 1)).item()
+        m_jack_std = np.sqrt(m_jack.var() * (n_jack - 1)).item()
 
         c_jack_mean = c_jack.mean().item()
-        c_jack_std = jnp.sqrt(c_jack.var() * (n_jack - 1)).item()
+        c_jack_std = np.sqrt(c_jack.var() * (n_jack - 1)).item()
 
         with open(summary_fpath, "a", encoding="utf-8") as f:
             txt = (
                 "#### Jackknife results ####\n"
+                f"g1_jack_mean_plus: {g_plus_jack[..., 0].mean():.4g}\n"
+                f"g1_jack_mean_minus: {g_minus_jack[..., 0].mean():.4g}\n"
+                f"g1_mean_global_plus: {g_samples_plus[..., 0].mean():.4g}\n"
+                f"g1_mean_global_minus: {g_samples_minus[..., 0].mean():.4g}\n\n"
+                "#######################\n"
                 "Units: 1e-3\n"
                 "\n"
                 f"m_mean: {m_jack_mean * 1e3:.4g}\n"
@@ -277,8 +290,8 @@ def main(seed: int, tag: str = typer.Option()):
             )
             print(txt, file=f)
 
+        get_jack_scatter_plot(g_plus_jack, g_minus_jack, g1, seed)
         get_jack_traces(g_plus_jack, g_minus_jack, g1, g2, seed)
-        get_jack_contours(g_plus_jack, g_minus_jack, g1, g2, seed)
 
 
 if __name__ == "__main__":
