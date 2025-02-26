@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import typer
 from matplotlib.backends.backend_pdf import PdfPages
+from scipy.stats import linregress, t
 
 from bpd import DATA_DIR
 from bpd.diagnostics import get_contour_plot
@@ -173,7 +174,6 @@ def get_jack_scatter_plot(
     g_plus_jack: np.ndarray,
     g_minus_jack: np.ndarray,
     g1_true: float,
-    g2_true: float,
     seed: int,
 ):
     fname = f"figs/{seed}/jack_scatter.pdf"
@@ -184,16 +184,30 @@ def get_jack_scatter_plot(
         g1p = g_plus_jack[:, :, 0].mean(axis=1)
         g1m = g_minus_jack[:, :, 0].mean(axis=1)
 
-        x = g1p - g1_true
-        y = g1m - (-g1_true)
+        x = g1m - (-g1_true)
+        y = g1p - g1_true
+
+        res = linregress(x, y)
+        m = res.slope
+        b = res.intercept
+        r = res.rvalue
+        m_err = res.stderr
+        b_err = res.intercept_stderr
 
         ax.scatter(x, y, marker="x", color="r")
-        ax.plot([x.min(), x.max()], [y.min(), y.max()], "k--")
-        ax.set_xlabel(r"$g^{+}_{1} - |g^{t}_{1}|$", fontsize=24)
-        ax.set_ylabel(r"$g^{-}_{1} + |g^{t}_{1}|$", fontsize=24)
+        ax.plot(x, m * x + b, "k-")
+        ax.set_ylabel(r"$g^{+}_{1} - |g^{t}_{1}|$", fontsize=24)
+        ax.set_xlabel(r"$g^{-}_{1} + |g^{t}_{1}|$", fontsize=24)
 
-        mp = (y.max() - y.min()) / (x.max() - x.min())
-        ax.set_title(f"slope (approx.): {mp:.3g}")
+        m_est = b / (2 * g1_true)
+        m_est_err = b_err / (2 * g1_true)
+
+        # get 95% confidence intervals
+        tinv = lambda p, df: abs(t.ppf(p / 2, df))
+        ts = tinv(0.05, len(x) - 2)
+        ax.set_title(
+            f"slope: {m:.3g}+/-{ts * m_err:.3g}, \n m_intercept:{m_est:.3g}+/-{ts * m_est_err:.3g},\n r:{r:.3g}"
+        )
 
         pdf.savefig(fig)
         plt.close(fig)
@@ -302,7 +316,7 @@ def main(seed: int, tag: str = typer.Option()):
             )
             print(txt, file=f)
 
-        get_jack_scatter_plot(g_plus_jack, g_minus_jack, g1, g2, seed)
+        get_jack_scatter_plot(g_plus_jack, g_minus_jack, g1, seed)
         get_jack_traces(g_plus_jack, g_minus_jack, g1, g2, seed)
 
 
