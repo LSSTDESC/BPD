@@ -5,29 +5,37 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import typer
+import ultraplot as uplt
 from matplotlib.backends.backend_pdf import PdfPages
 from scipy.stats import linregress, t
 
 from bpd import DATA_DIR
 from bpd.diagnostics import get_contour_plot
 from bpd.io import load_dataset
+from bpd.plotting import update_settings
 
 
 def make_trace_plots(g_samples: np.ndarray, mode: str, seed: int) -> None:
     """Make trace plots of g1, g2."""
     fname = f"figs/{seed}/traces_{mode}.pdf"
     with PdfPages(fname) as pdf:
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 5))
+        fig, axs = uplt.subplots(nrows=2, wratios=(4,))
+
         g1 = g_samples[:, 0]
         g2 = g_samples[:, 1]
 
-        ax1.plot(g1)
-        ax1.axhline(g1.mean(), color="r", linestyle="--")
-        ax1.axhline(0.02 if mode == "plus" else -0.02, color="k", linestyle="--")
+        axs[0].plot(g1)
+        axs[0].axhline(g1.mean(), color="r", linestyle="--", label="mean")
+        axs[0].axhline(
+            0.02 if mode == "plus" else -0.02, color="k", linestyle="--", label="truth"
+        )
+        axs[0].legend()
 
-        ax2.plot(g2)
-        ax2.axhline(g2.mean(), color="r", linestyle="--")
-        ax2.axhline(0.0, color="k", linestyle="--")
+        axs[1].plot(g2)
+        axs[1].axhline(g2.mean(), color="r", linestyle="--")
+        axs[1].axhline(0.0, color="k", linestyle="--")
+
+        axs.format(leftlabels=("$g_1$", "$g_2$"))
 
         pdf.savefig(fig)
         plt.close(fig)
@@ -214,6 +222,8 @@ def get_jack_scatter_plot(
 
 
 def main(seed: int, tag: str = typer.Option()):
+    update_settings()
+
     np.random.seed(seed)
 
     fig_path = Path(f"figs/{seed}")
@@ -243,81 +253,81 @@ def main(seed: int, tag: str = typer.Option()):
     make_hists(g_samples_minus, "minus", seed=seed)
     make_contour_plots(g_samples_minus, "minus", g1_true=-g1, g2_true=g2, seed=seed)
 
-    # bias
-    m_samples = (g_samples_plus[:, 0] - g_samples_minus[:, 0]) / 2 / g1 - 1
-    c_samples = (g_samples_plus[:, 1] + g_samples_minus[:, 1]) / 2
+    # # bias
+    # m_samples = (g_samples_plus[:, 0] - g_samples_minus[:, 0]) / 2 / g1 - 1
+    # c_samples = (g_samples_plus[:, 1] + g_samples_minus[:, 1]) / 2
 
-    fname = f"figs/{seed}/contours_bias.pdf"
-    with PdfPages(fname) as pdf:
-        ct_fig = get_contour_plot(
-            [{"m": m_samples, "c": c_samples}], ["m", "c"], {"m": 0.0, "c": 0.0}
-        )
-        pdf.savefig(ct_fig)
-        plt.close(ct_fig)
+    # fname = f"figs/{seed}/contours_bias.pdf"
+    # with PdfPages(fname) as pdf:
+    #     ct_fig = get_contour_plot(
+    #         [{"m": m_samples, "c": c_samples}], ["m", "c"], {"m": 0.0, "c": 0.0}
+    #     )
+    #     pdf.savefig(ct_fig)
+    #     plt.close(ct_fig)
 
-    # summary of multiplicative/additive bias results (both JK and not)
-    # save to a text file
+    # # summary of multiplicative/additive bias results (both JK and not)
+    # # save to a text file
 
-    summary_fpath = f"figs/{seed}/summary.txt"
-    with open(summary_fpath, "w", encoding="utf-8") as f:
-        txt = (
-            "#### Full results ####\n"
-            "Units: 1e-3\n"
-            "\n"
-            f"m_mean: {m_samples.mean() * 1e3:.4g}\n"
-            f"3 * m_std: {m_samples.std() * 3 * 1e3:.4g}\n"
-            "\n"
-            f"c_mean: {c_samples.mean() * 1e3:.4g}\n"
-            f"3 * c_std: {c_samples.std() * 3 * 1e3:.4g}\n"
-            ""
-        )
-        print(txt, file=f)
+    # summary_fpath = f"figs/{seed}/summary.txt"
+    # with open(summary_fpath, "w", encoding="utf-8") as f:
+    #     txt = (
+    #         "#### Full results ####\n"
+    #         "Units: 1e-3\n"
+    #         "\n"
+    #         f"m_mean: {m_samples.mean() * 1e3:.4g}\n"
+    #         f"3 * m_std: {m_samples.std() * 3 * 1e3:.4g}\n"
+    #         "\n"
+    #         f"c_mean: {c_samples.mean() * 1e3:.4g}\n"
+    #         f"3 * c_std: {c_samples.std() * 3 * 1e3:.4g}\n"
+    #         ""
+    #     )
+    #     print(txt, file=f)
 
-    jack_fpath = pdir / f"g_samples_jack_{seed}.npz"
+    # jack_fpath = pdir / f"g_samples_jack_{seed}.npz"
 
-    if jack_fpath.exists():
-        print("INFO: Jackknife file found, producing figures...")
-        jack_ds = load_dataset(jack_fpath)
-        g_plus_jack = jack_ds["g_plus"]
-        g_minus_jack = jack_ds["g_minus"]
-        assert g_plus_jack.ndim == 3
-        assert g_plus_jack.shape[-1] == 2
-        assert isinstance(g_plus_jack, np.ndarray)
-        n_jack = g_plus_jack.shape[0]
+    # if jack_fpath.exists():
+    #     print("INFO: Jackknife file found, producing figures...")
+    #     jack_ds = load_dataset(jack_fpath)
+    #     g_plus_jack = jack_ds["g_plus"]
+    #     g_minus_jack = jack_ds["g_minus"]
+    #     assert g_plus_jack.ndim == 3
+    #     assert g_plus_jack.shape[-1] == 2
+    #     assert isinstance(g_plus_jack, np.ndarray)
+    #     n_jack = g_plus_jack.shape[0]
 
-        m_jack = (
-            g_plus_jack[..., 0].mean(axis=1) - g_minus_jack[..., 0].mean(axis=1)
-        ) / 2 / g1 - 1
-        c_jack = (
-            g_plus_jack[..., 1].mean(axis=1) + g_minus_jack[..., 1].mean(axis=1)
-        ) / 2
+    #     m_jack = (
+    #         g_plus_jack[..., 0].mean(axis=1) - g_minus_jack[..., 0].mean(axis=1)
+    #     ) / 2 / g1 - 1
+    #     c_jack = (
+    #         g_plus_jack[..., 1].mean(axis=1) + g_minus_jack[..., 1].mean(axis=1)
+    #     ) / 2
 
-        m_jack_mean = m_jack.mean().item()
-        m_jack_std = np.sqrt(m_jack.var() * (n_jack - 1)).item()
+    #     m_jack_mean = m_jack.mean().item()
+    #     m_jack_std = np.sqrt(m_jack.var() * (n_jack - 1)).item()
 
-        c_jack_mean = c_jack.mean().item()
-        c_jack_std = np.sqrt(c_jack.var() * (n_jack - 1)).item()
+    #     c_jack_mean = c_jack.mean().item()
+    #     c_jack_std = np.sqrt(c_jack.var() * (n_jack - 1)).item()
 
-        with open(summary_fpath, "a", encoding="utf-8") as f:
-            txt = (
-                "#### Jackknife results ####\n"
-                f"g1_jack_mean_plus: {g_plus_jack[..., 0].mean():.4g}\n"
-                f"g1_jack_mean_minus: {g_minus_jack[..., 0].mean():.4g}\n"
-                f"g1_mean_global_plus: {g_samples_plus[..., 0].mean():.4g}\n"
-                f"g1_mean_global_minus: {g_samples_minus[..., 0].mean():.4g}\n\n"
-                "#######################\n"
-                "Units: 1e-3\n"
-                "\n"
-                f"m_mean: {m_jack_mean * 1e3:.4g}\n"
-                f"3 * m_std: {m_jack_std * 3 * 1e3:.4g}\n"
-                "\n"
-                f"c_mean: {c_jack_mean * 1e3:.4g}\n"
-                f"3 * c_std: {c_jack_std * 3 * 1e3:.4g}\n"
-            )
-            print(txt, file=f)
+    #     with open(summary_fpath, "a", encoding="utf-8") as f:
+    #         txt = (
+    #             "#### Jackknife results ####\n"
+    #             f"g1_jack_mean_plus: {g_plus_jack[..., 0].mean():.4g}\n"
+    #             f"g1_jack_mean_minus: {g_minus_jack[..., 0].mean():.4g}\n"
+    #             f"g1_mean_global_plus: {g_samples_plus[..., 0].mean():.4g}\n"
+    #             f"g1_mean_global_minus: {g_samples_minus[..., 0].mean():.4g}\n\n"
+    #             "#######################\n"
+    #             "Units: 1e-3\n"
+    #             "\n"
+    #             f"m_mean: {m_jack_mean * 1e3:.4g}\n"
+    #             f"3 * m_std: {m_jack_std * 3 * 1e3:.4g}\n"
+    #             "\n"
+    #             f"c_mean: {c_jack_mean * 1e3:.4g}\n"
+    #             f"3 * c_std: {c_jack_std * 3 * 1e3:.4g}\n"
+    #         )
+    #         print(txt, file=f)
 
-        get_jack_scatter_plot(g_plus_jack, g_minus_jack, g1, seed)
-        get_jack_traces(g_plus_jack, g_minus_jack, g1, g2, seed)
+    #     get_jack_scatter_plot(g_plus_jack, g_minus_jack, g1, seed)
+    #     get_jack_traces(g_plus_jack, g_minus_jack, g1, g2, seed)
 
 
 if __name__ == "__main__":

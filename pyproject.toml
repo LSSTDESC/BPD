@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=45"]
+requires      = ["setuptools>=45"]
 build-backend = "setuptools.build_meta"
 
 
@@ -18,6 +18,7 @@ dependencies = [
     "blackjax >=1.2.0",
     "optax >=0.2.0",
     "numpyro >=0.13.0",
+    "ultraplot>=1.0.0",
 ]
 
 
@@ -63,7 +64,7 @@ exclude = [
 ]
 
 # Same as Black.
-line-length = 88
+line-length  = 88
 indent-width = 4
 
 # Assume Python 3.12
@@ -100,7 +101,7 @@ exclude = ["*.ipynb", "scripts/one_galaxy_shear.py", "scripts/benchmarks/*.py"]
 
 
 [tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "-ra -v --strict-markers"
+minversion     = "6.0"
+addopts        = "-ra -v --strict-markers"
 filterwarnings = ["ignore::DeprecationWarning:tensorflow.*"]
-markers = ["slow: marks tests as slow (deselect with '-m \"not slow\"')"]
+markers        = ["slow: marks tests as slow (deselect with '-m \"not slow\"')"]
