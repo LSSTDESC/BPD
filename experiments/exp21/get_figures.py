@@ -4,7 +4,6 @@ import os
 from pathlib import Path
 from typing import Iterable
 
-import cycler
 import matplotlib.pyplot as plt
 import numpy as np
 import typer
@@ -14,6 +13,7 @@ from tqdm import tqdm
 from bpd import DATA_DIR
 from bpd.diagnostics import get_contour_plot
 from bpd.io import load_dataset
+from bpd.plotting import get_timing_figure
 
 
 def make_trace_plots(
@@ -74,51 +74,6 @@ def make_contour_plots(
             fig = get_contour_plot(samples_list, names, true_params, figsize=(12, 12))
             pdf.savefig(fig)
             plt.close(fig)
-
-
-def make_timing_plots(results: dict, max_n_gal: str, fpath: Path) -> None:
-    print("INFO: Making timing plots...")
-    all_n_gals = [n_gals for n_gals in results]
-
-    # cycler from blue to red
-    color = plt.cm.coolwarm(np.linspace(0, 1, len(all_n_gals)))
-    cycles = cycler.cycler("color", color)
-
-    t_per_obj_dict = {}
-    n_samples_array = np.arange(0, 1001, 1)
-
-    _, n_chains_per_gal, n_samples = results[max_n_gal]["samples"]["lf"].shape
-
-    for n_gals_str in all_n_gals:
-        t_warmup = results[n_gals_str]["t_warmup"]
-        t_sampling = results[n_gals_str]["t_sampling"]
-
-        n_gals = int(n_gals_str)
-
-        n_chains = n_gals * n_chains_per_gal
-
-        t_per_obj_warmup = t_warmup / n_chains
-        t_per_obj_per_sample_sampling = t_sampling / (n_chains * n_samples)
-        t_per_obj_arr = (
-            t_per_obj_warmup + t_per_obj_per_sample_sampling * n_samples_array
-        )
-        t_per_obj_dict[n_gals] = t_per_obj_arr
-
-    with PdfPages(fpath) as pdf:
-        fig, ax = plt.subplots(1, 1, figsize=(7, 7))
-        ax.set_prop_cycle(cycles)
-
-        ax.set_ylabel("Time per obj per GPU core (sec)", fontsize=14)
-        ax.set_xlabel("# samples", fontsize=14)
-
-        for n_gals, t_per_obj_array in t_per_obj_dict.items():
-            n_chains = 4 * n_gals
-            ax.plot(n_samples_array, t_per_obj_array, label=f"n_chains:{n_chains}")
-
-        ax.legend()
-
-        pdf.savefig(fig)
-        plt.close(fig)
 
 
 def make_adaptation_hists(tuned_params: dict, pnames: dict, fpath: Path):
@@ -187,6 +142,14 @@ def make_convergence_histograms(
             plt.close(fig)
 
     return outliers_indices
+
+
+def make_timing_plots(results, max_n_gal, fpath: str | Path):
+    fig = get_timing_figure(results, max_n_gal)
+
+    with PdfPages(fpath) as pdf:
+        pdf.savefig(fig)
+        plt.close(fig)
 
 
 def main(seed: int, tag: str):
