@@ -73,7 +73,7 @@ def set_rc_params(
     )
 
 
-def make_timing_plots(results: dict, max_n_gal: str) -> Figure:
+def get_timing_figure(results: dict, max_n_gal: str) -> Figure:
     all_n_gals = [n_gals for n_gals in results]
 
     # cycler from blue to red
@@ -115,7 +115,9 @@ def make_timing_plots(results: dict, max_n_gal: str) -> Figure:
     return fig
 
 
-def get_jack_bias(g_plus_jack: np.ndarray, g_minus_jack: np.ndarray, g1_true: float):
+def get_jack_bias(
+    g_plus_jack: np.ndarray, g_minus_jack: np.ndarray, g1_true: float
+) -> tuple:
     assert g_plus_jack.ndim == 3 and g_minus_jack.ndim == 3
     assert g_plus_jack.shape[-1] == 2 and g_minus_jack.shape[-1] == 2
     assert g1_true > 0
