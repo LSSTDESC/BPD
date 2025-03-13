@@ -44,7 +44,7 @@ def sample_noisy_ellipticities_unclipped(
     return e_obs, e_sheared, e_int
 
 
-def sample_target_galaxy_params_simple(
+def sample_shapes_and_centroids(
     rng_key: PRNGKeyArray,
     *,
     shape_noise: float,
@@ -69,6 +69,29 @@ def sample_target_galaxy_params_simple(
         "g1": g1,
         "g2": g2,
     }
+
+
+def sample_galaxy_params_simple(
+    rng_key: PRNGKeyArray,
+    *,
+    shape_noise: float,
+    mean_logflux: float,
+    sigma_logflux: float,
+    mean_loghlr: float,
+    sigma_loghlr: float,
+    g1: float = 0.02,
+    g2: float = 0.0,
+) -> dict[str, float]:
+    k1, k2, k3 = random.split(rng_key, 3)
+
+    lf = random.normal(k1) * sigma_logflux + mean_logflux
+    lhlr = random.normal(k2) * sigma_loghlr + mean_loghlr
+
+    other_params = sample_shapes_and_centroids(
+        k3, shape_noise=shape_noise, g1=g1, g2=g2
+    )
+
+    return {"lf": lf, "lhlr": lhlr, **other_params}
 
 
 def get_true_params_from_galaxy_params(galaxy_params: dict[str, Array]):
