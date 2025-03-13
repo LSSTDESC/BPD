@@ -2,7 +2,7 @@ import jax.numpy as jnp
 from jax import Array, random
 from jax._src.prng import PRNGKeyArray
 
-from bpd.draw import add_noise, draw_gaussian_galsim
+from bpd.draw import add_noise, draw_exponential_galsim, draw_gaussian_galsim
 from bpd.prior import ellip_mag_prior
 from bpd.shear import scalar_shear_transformation, shear_transformation
 
@@ -88,16 +88,25 @@ def get_true_params_from_galaxy_params(galaxy_params: dict[str, Array]):
     return true_params
 
 
-def get_target_images_single(
+def get_target_image_single(
     rng_key: PRNGKeyArray,
     *,
     single_galaxy_params: dict[str, float],
     background: float,
     slen: int,
-    n_samples: int = 1,  # single noise realization
-):
+    n_samples: int = 1,  # single noise realization,
+    draw_type: str = "gaussian",
+) -> Array:
     """Multiple noise realizations of single galaxy (GalSim)."""
-    noiseless = draw_gaussian_galsim(**single_galaxy_params, slen=slen)
+    assert draw_type in ("gaussian", "exponential")
+
+    if draw_type == "gaussian":
+        noiseless = draw_gaussian_galsim(**single_galaxy_params, slen=slen)
+    elif draw_type == "exponential":
+        noiseless = draw_exponential_galsim(**single_galaxy_params, slen=slen)
+    else:
+        raise NotImplementedError("The galaxy type selected has not been implemented.")
+
     return add_noise(rng_key, noiseless, bg=background, n=n_samples)
 
 
@@ -107,7 +116,8 @@ def get_target_images(
     *,
     background: float,
     slen: int,
-):
+    draw_type: str = "gaussian",
+) -> Array:
     """Single noise realization of multiple galaxies (GalSim)."""
     n_gals = galaxy_params["f"].shape[0]
     nkeys = random.split(rng_key, n_gals)
@@ -115,9 +125,15 @@ def get_target_images(
     target_images = []
     for ii in range(n_gals):
         _params = {k: v[ii].item() for k, v in galaxy_params.items()}
-        noiseless = draw_gaussian_galsim(**_params, slen=slen)
-        target_image = add_noise(nkeys[ii], noiseless, bg=background, n=1)
-        assert target_image.shape == (1, slen, slen)
-        target_images.append(target_image)
+        one_image = get_target_image_single(
+            nkeys[ii],
+            single_galaxy_params=_params,
+            background=background,
+            slen=slen,
+            n_samples=1,
+            draw_type=draw_type,
+        )
+        assert one_image.shape == (1, slen, slen)
+        target_images.append(jnp.asarray(one_image))
 
     return jnp.concatenate(target_images, axis=0)
