@@ -73,7 +73,7 @@ def make_contour_shear_figure(fpath: str | Path):
 
     c.add_chain(chain)
     c.set_override(ChainConfig(sigmas=[0, 1, 2]))
-    c.add_truth(Truth(location={"g1": 0.02, "g2": 0.0}, color="k"))
+    c.add_truth(Truth(location={"g1": 0.02, "g2": 0.0}, color="k", line_width=2.0))
 
     c.set_plot_config(
         PlotConfig(
@@ -81,7 +81,7 @@ def make_contour_shear_figure(fpath: str | Path):
             plot_hists=False,
             labels={"g1": "$g_{1}$", "g2": "$g_{2}$"},
             label_font_size=34,
-            tick_font_size=22,
+            tick_font_size=24,
             diagonal_tick_labels=False,
         )
     )
