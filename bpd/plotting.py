@@ -103,7 +103,7 @@ def get_timing_figure(results: dict, max_n_gal: str) -> Figure:
     fig, ax = plt.subplots(1, 1)
     ax.set_prop_cycle(cycles)
 
-    ax.set_ylabel(r"\rm Time per obj. per GPU core (sec)")
+    ax.set_ylabel(r"\rm Time per galaxy in a single A100 GPU (sec)")
     ax.set_xlabel(r"\rm \# of samples")
 
     for n_gals, t_per_obj_array in t_per_obj_dict.items():
