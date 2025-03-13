@@ -138,7 +138,7 @@ def make_contour_hyper_figure(fpath: str | Path):
     fig.savefig(fpath, format="png")
 
 
-def make_multiplicative_bias_figure(fpath: str | Path):
+def make_bias_figure(fpath: str | Path):
     jack_ds1 = load_dataset(INPUT_PATHS["shear_jack_1"])
     g_plus_jack = jack_ds1["g_plus"]
     g_minus_jack = jack_ds1["g_minus"]
@@ -147,26 +147,24 @@ def make_multiplicative_bias_figure(fpath: str | Path):
         g_plus_jack, g_minus_jack, g1_true=0.02
     )
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 7))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6), sharey=True)
 
     # multiplicative bias
-    ax1.errorbar(x=m_mean, y=0, xerr=m_std, color="k", fmt="-o", capsize=10.0)
+    ax1.errorbar(x=m_mean, y=0, xerr=m_std * 3, color="k", fmt="-o", capsize=10.0)
 
     ax1.set_yticks([0.0, 0.25, 0.5])
     ax1.set_yticklabels([r"\rm Only Shear", r"\rm Example 1", r"\rm Example 2"])
-    ax1.set_ylim(-0.1, 0.6)
+    ax1.set_ylim(-0.1, 0.75)
     ax1.set_title(r"\rm Multiplicative bias $m$")
-    ax1.set_xlim(-0.005, 0.005)
+    ax1.set_xlim(-0.01, 0.01)
 
     area = np.linspace(-2e-3, 2e-3, 1000)
-    ax1.fill_between(area, y1=-0.1, y2=1.1, alpha=0.25, color="k")
+    ax1.fill_between(area, y1=-0.1, y2=1.1, alpha=0.25, color="k", label="Requirement")
+    ax1.legend()
 
     # additive bias
-    ax2.errorbar(x=c_mean, y=0, xerr=c_std, color="k", fmt="-o", capsize=10.0)
+    ax2.errorbar(x=c_mean, y=0, xerr=c_std * 3, color="k", fmt="-o", capsize=10.0)
 
-    ax2.set_yticks([0.0, 0.25, 0.5])
-    ax2.set_yticklabels([r"\rm Only Shear", r"\rm Example 1", r"\rm Example 2"])
-    ax2.set_ylim(-0.1, 0.6)
     ax2.set_title(r"\rm Additive bias $c$")
     ax2.set_xlim(-0.005, 0.005)
 
@@ -180,7 +178,7 @@ def main():
     make_timing_figure(OUT_PATHS["timing"])
     make_contour_shear_figure(OUT_PATHS["contour_shear"])
     make_contour_hyper_figure(OUT_PATHS["contour_hyper"])
-    make_multiplicative_bias_figure(OUT_PATHS["bias"])
+    make_bias_figure(OUT_PATHS["bias"])
 
 
 if __name__ == "__main__":
