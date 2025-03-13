@@ -11,7 +11,11 @@ from chainconsumer.plotting.config import PlotConfig
 
 from bpd import DATA_DIR, HOME_DIR
 from bpd.io import load_dataset
-from bpd.plotting import get_jack_bias, make_timing_plots, set_rc_params
+from bpd.plotting import (
+    get_jack_bias,
+    get_timing_figure,
+    set_rc_params,
+)
 
 set_rc_params()
 
@@ -44,7 +48,7 @@ def make_timing_figure(fpath: str | Path):
     timing_results = load_dataset(INPUT_PATHS["timing_results"])
 
     max_n_gal = str(max(int(k) for k in timing_results))
-    fig = make_timing_plots(timing_results, max_n_gal)
+    fig = get_timing_figure(results=timing_results, max_n_gal=max_n_gal)
     fig.savefig(fpath, format="png")
 
 
