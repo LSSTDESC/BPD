@@ -177,10 +177,10 @@ def make_multiplicative_bias_figure(fpath: str | Path):
 
 
 def main():
-    # make_timing_figure(OUT_PATHS["timing"])
-    # make_contour_shear_figure(OUT_PATHS["contour_shear"])
+    make_timing_figure(OUT_PATHS["timing"])
+    make_contour_shear_figure(OUT_PATHS["contour_shear"])
     make_contour_hyper_figure(OUT_PATHS["contour_hyper"])
-    # make_multiplicative_bias_figure(OUT_PATHS["bias"])
+    make_multiplicative_bias_figure(OUT_PATHS["bias"])
 
 
 if __name__ == "__main__":
