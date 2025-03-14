@@ -9,14 +9,14 @@ from bpd.slurm import run_multi_gpu_job
 def main(
     seed: int,
     tag: str,
-    time: str = "00:29",  # HH:MM
+    time: str = "00:25",  # HH:MM
     mem_per_gpu: str = "10G",
     qos: str = "debug",
 ):
     base_cmd = "python /global/u2/i/imendoza/BPD/experiments/exp22/get_samples_full.py {seed} {tag}"
     cmds = []
 
-    for ii in range(8):
+    for ii in range(16):
         cmds.append(base_cmd.format(seed=f"{seed}{ii}", tag=tag))
 
     run_multi_gpu_job(
@@ -25,7 +25,7 @@ def main(
         time=time,
         mem_per_gpu=mem_per_gpu,
         qos=qos,
-        nodes=2,
+        nodes=4,
         n_tasks_per_node=4,
     )
 
