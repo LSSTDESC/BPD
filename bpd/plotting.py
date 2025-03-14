@@ -21,10 +21,10 @@ CB_color_cycle = [
 
 def set_rc_params(
     figsize=(10, 10),
-    fontsize=28,
+    fontsize=32,
     title_size="large",
     label_size="medium",
-    legend_fontsize="small",
+    legend_fontsize="medium",
     tick_label_size="small",
     major_tick_size=10,
     minor_tick_size=5,
