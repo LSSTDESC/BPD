@@ -115,7 +115,7 @@ def pipeline_interim_samples_one_galaxy(
     initialization_fnc: Callable,
     logprior: Callable,
     loglikelihood: Callable,
-    n_samples: int = 100,
+    n_samples: int = 300,
     max_num_doublings: int = 5,
     initial_step_size: float = 1e-3,
     n_warmup_steps: int = 500,
