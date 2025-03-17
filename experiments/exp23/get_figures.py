@@ -210,7 +210,7 @@ def main(seed: int, tag: str):
     if timing_fpath.exists():
         print("Making timing figures...")
         timing_results = load_dataset(timing_fpath)
-        max_n_gal = max(int(k) for k in timing_results)
+        max_n_gal = str(max(int(k) for k in timing_results))
         tuned_params = timing_results[max_n_gal]["tuned_params"]
 
         # make plots of full samples
