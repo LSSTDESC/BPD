@@ -164,49 +164,66 @@ def main(seed: int, tag: str):
     figdir.mkdir(exist_ok=True)
 
     wdir = DATA_DIR / "cache_chains" / tag
+
     full_fpath = wdir / f"full_samples_{seed}.npz"
     conv_fpath = wdir / f"convergence_results_{seed}.npz"
     timing_fpath = wdir / f"timing_results{seed}.npz"
 
-    assert full_fpath.exists()
-    assert conv_fpath.exists()
-    assert timing_fpath.exists()
-
-    full_results = load_dataset(full_fpath)
-    conv_results = load_dataset(conv_fpath)
-    timing_results = load_dataset(timing_fpath)
-
-    samples = full_results["samples"]
-    truth = full_results["truth"]
-    max_n_gal = max(int(k) for k in timing_results)
-    tuned_params = timing_results[max_n_gal]["tuned_params"]
-    param_names = list(samples.keys())
-
-    # make plots of full samples
-    make_trace_plots(samples, truth, fpath=figdir / "traces.pdf")
-    make_contour_plots(samples, truth, fpath=figdir / "contours.pdf")
-    make_timing_plots(timing_results, max_n_gal, fpath=figdir / "timing.pdf")
-    make_adaptation_hists(tuned_params, param_names, fpath=figdir / "adaptation.pdf")
-
-    # on adaption too
-    adapt_states = timing_results[max_n_gal]["adapt_position"]
-    make_trace_plots(adapt_states, truth, fpath=figdir / "traces_adapt.pdf")
-
     outliers_fpath = figdir / "outliers.txt"
-    if Path(outliers_fpath).exists():
-        os.remove(outliers_fpath)
 
-    out_indices = make_convergence_histograms(
-        conv_results, fpath=figdir / "convergence.pdf", outliers_fpath=outliers_fpath
-    )
+    # full results
+    if full_fpath.exists() and conv_fpath.exists():
+        print("Making full figures...")
+        full_results = load_dataset(full_fpath)
+        conv_results = load_dataset(conv_fpath)
 
-    # outliers
-    traces_out_fpath = figdir / "traces_out.pdf"
-    if len(out_indices) > 0:
-        make_trace_at_indices(out_indices, samples, truth, fpath=traces_out_fpath)
-    else:  # avoid confusion with previous
-        if traces_out_fpath.exists():
-            os.remove(traces_out_fpath)
+        samples = full_results["samples"]
+        param_names = list(samples.keys())
+
+        # need to modify slightly
+        truth = full_results["truth"]
+        truth["lf"] = np.log10(truth.pop("f"))
+        truth["lhlr"] = np.log10(truth.pop("hlr"))
+        truth["dx"] = np.zeros_like(truth["lf"])
+        truth["dy"] = np.zeros_like(truth["dx"])
+
+        make_trace_plots(samples, truth, fpath=figdir / "traces.pdf")
+        make_contour_plots(samples, truth, fpath=figdir / "contours.pdf")
+
+        out_indices = make_convergence_histograms(
+            conv_results,
+            fpath=figdir / "convergence.pdf",
+            outliers_fpath=outliers_fpath,
+        )
+
+        # outliers
+        if Path(outliers_fpath).exists():
+            os.remove(outliers_fpath)
+
+        traces_out_fpath = figdir / "traces_out.pdf"
+        if len(out_indices) > 0:
+            make_trace_at_indices(out_indices, samples, truth, fpath=traces_out_fpath)
+        else:  # avoid confusion with previous
+            if traces_out_fpath.exists():
+                os.remove(traces_out_fpath)
+
+    if timing_fpath.exists():
+        print("Making timing figures...")
+        timing_results = load_dataset(timing_fpath)
+        max_n_gal = max(int(k) for k in timing_results)
+        tuned_params = timing_results[max_n_gal]["tuned_params"]
+
+        # make plots of full samples
+        timing_results = load_dataset(timing_fpath)
+
+        make_timing_plots(timing_results, max_n_gal, fpath=figdir / "timing.pdf")
+        make_adaptation_hists(
+            tuned_params, param_names, fpath=figdir / "adaptation.pdf"
+        )
+
+        # on adaption too
+        adapt_states = timing_results[max_n_gal]["adapt_position"]
+        make_trace_plots(adapt_states, truth, fpath=figdir / "traces_adapt.pdf")
 
 
 if __name__ == "__main__":
