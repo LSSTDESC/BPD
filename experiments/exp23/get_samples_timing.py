@@ -111,7 +111,7 @@ def main(
     dirpath = DATA_DIR / "cache_chains" / tag
     if not dirpath.exists():
         dirpath.mkdir(exist_ok=True)
-    fpath = dirpath / f"timing_results{seed}.npz"
+    fpath = dirpath / f"timing_results_{seed}.npz"
 
     # setup target density
     draw_fnc = partial(draw_exponential, slen=slen, fft_size=fft_size)
