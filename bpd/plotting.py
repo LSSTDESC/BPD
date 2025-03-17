@@ -83,22 +83,20 @@ def get_timing_figure(results: dict, max_n_gal: str) -> Figure:
     t_per_obj_dict = {}
     n_samples_array = np.arange(0, 1001, 1)
 
-    _, n_chains_per_gal, n_samples = results[max_n_gal]["samples"]["lf"].shape
+    _, n_samples = results[max_n_gal]["samples"]["lf"].shape
 
     for n_gals_str in all_n_gals:
         t_warmup = results[n_gals_str]["t_warmup"]
         t_sampling = results[n_gals_str]["t_sampling"]
 
-        n_gals = int(n_gals_str)
-
-        n_chains = n_gals * n_chains_per_gal
+        n_chains = int(n_gals_str)  # new fmt
 
         t_per_obj_warmup = t_warmup / n_chains
         t_per_obj_per_sample_sampling = t_sampling / (n_chains * n_samples)
         t_per_obj_arr = (
             t_per_obj_warmup + t_per_obj_per_sample_sampling * n_samples_array
         )
-        t_per_obj_dict[n_gals] = t_per_obj_arr
+        t_per_obj_dict[n_chains] = t_per_obj_arr
 
     fig, ax = plt.subplots(1, 1)
     ax.set_prop_cycle(cycles)
@@ -106,8 +104,7 @@ def get_timing_figure(results: dict, max_n_gal: str) -> Figure:
     ax.set_ylabel(r"\rm Time per galaxy in a single A100 GPU (sec)")
     ax.set_xlabel(r"\rm \# of samples")
 
-    for n_gals, t_per_obj_array in t_per_obj_dict.items():
-        n_chains = 4 * n_gals
+    for n_chains, t_per_obj_array in t_per_obj_dict.items():
         ax.plot(n_samples_array, t_per_obj_array, label=f"${n_chains}$")
 
     plt.legend(title=r"\rm Number of chains", loc="best")
