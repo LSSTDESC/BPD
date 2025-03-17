@@ -14,8 +14,9 @@ from bpd.io import load_dataset, save_dataset
 def get_ess_all(samples: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
     """Obtain ESS for all chains and parameters."""
     print("INFO: Computing ESS...")
-    n_gals, _, _ = samples["lf"].shape
+    n_gals, n_chains_per_gal, n_samples_per_gal = samples["lf"].shape
 
+    n_samples = n_chains_per_gal * n_samples_per_gal
     ess_dict = {}
 
     for ii in tqdm(range(n_gals)):
@@ -23,7 +24,7 @@ def get_ess_all(samples: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
         value = ess(params)
 
         for k in samples:
-            kval = value[k].data.item()
+            kval = value[k].data.item() / n_samples
             if k not in ess_dict:
                 ess_dict[k] = [kval]
             else:
