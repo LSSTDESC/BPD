@@ -73,7 +73,7 @@ def set_rc_params(
     )
 
 
-def get_timing_figure(results: dict, max_n_gal: str) -> Figure:
+def get_timing_figure(results: dict, max_n_gal_str: str) -> Figure:
     all_n_gals = [n_gals for n_gals in results]
 
     # cycler from blue to red
@@ -83,7 +83,7 @@ def get_timing_figure(results: dict, max_n_gal: str) -> Figure:
     t_per_obj_dict = {}
     n_samples_array = np.arange(0, 1001, 1)
 
-    _, n_samples = results[max_n_gal]["samples"]["lf"].shape
+    _, n_samples = results[max_n_gal_str]["samples"]["lf"].shape
 
     for n_gals_str in all_n_gals:
         t_warmup = results[n_gals_str]["t_warmup"]
