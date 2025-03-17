@@ -101,13 +101,13 @@ def sample_galaxy_params_simple(
 def sample_galaxy_params_trunc(
     rng_key: PRNGKeyArray,
     *,
+    n: int,
     shape_noise: float,
     mean_logflux: float,
     sigma_logflux: float,
     min_logflux: float,
     mean_loghlr: float,
     sigma_loghlr: float,
-    n: int,
     g1: float = 0.02,
     g2: float = 0.0,
 ) -> Array:
