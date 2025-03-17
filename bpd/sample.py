@@ -1,6 +1,10 @@
+from functools import partial
+
 import jax.numpy as jnp
-from jax import Array, random
+import numpy as np
+from jax import Array, random, vmap
 from jax._src.prng import PRNGKeyArray
+from scipy.stats import truncnorm
 
 from bpd.draw import add_noise, draw_exponential_galsim, draw_gaussian_galsim
 from bpd.prior import ellip_mag_prior
@@ -90,6 +94,41 @@ def sample_galaxy_params_simple(
     other_params = sample_shapes_and_centroids(
         k3, shape_noise=shape_noise, g1=g1, g2=g2
     )
+
+    return {"lf": lf, "lhlr": lhlr, **other_params}
+
+
+def sample_galaxy_params_trunc(
+    rng_key: PRNGKeyArray,
+    *,
+    shape_noise: float,
+    mean_logflux: float,
+    sigma_logflux: float,
+    min_logflux: float,
+    mean_loghlr: float,
+    sigma_loghlr: float,
+    n: int,
+    g1: float = 0.02,
+    g2: float = 0.0,
+) -> Array:
+    """Same as the above but it generates fluxes a truncted log normal distribution."""
+    k1, k2, k3 = random.split(rng_key, 3)
+
+    a = (min_logflux - mean_logflux) / sigma_logflux
+    b = np.inf
+    rv = truncnorm(a, b, loc=mean_logflux, scale=sigma_logflux)
+    rng = np.random.default_rng(np.array(random.key_data(k1)))
+    lf = rv.rvs(size=n, random_state=rng)
+    lf = jnp.array(lf)
+
+    k2s = random.split(k2, n)
+    lhlr = vmap(random.normal)(k2s) * sigma_loghlr + mean_loghlr
+
+    k3s = random.split(k3, n)
+    _samples_fnc = partial(
+        sample_shapes_and_centroids, shape_noise=shape_noise, g1=g1, g2=g2
+    )
+    other_params = vmap(_samples_fnc)(k3s)
 
     return {"lf": lf, "lhlr": lhlr, **other_params}
 
