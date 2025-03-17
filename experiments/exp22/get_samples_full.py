@@ -61,7 +61,7 @@ def main(
     sigma_logflux: float = 0.4,
     mean_loghlr: float = -0.4,
     sigma_loghlr: float = 0.05,
-    n_gals: int = 10000,
+    n_gals: int = 500,
 ):
     rng_key = random.key(seed)
     pkey, nkey, gkey = random.split(rng_key, 3)
