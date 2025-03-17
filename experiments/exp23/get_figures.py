@@ -91,7 +91,7 @@ def make_adaptation_hists(tuned_params: dict, pnames: dict, fpath: Path):
         plt.close(fig)
 
         for ii, p in enumerate(pnames):
-            diag_elems = imm[:, :, ii].flatten()
+            diag_elems = imm[:, ii].flatten()
             fig, ax = plt.subplots(1, 1, figsize=(7, 7))
             ax.hist(diag_elems, bins=25)
             ax.axvline(diag_elems.mean(), linestyle="--", color="k", label="mean")
@@ -150,8 +150,8 @@ def make_convergence_histograms(
     return outliers_indices
 
 
-def make_timing_plots(results, max_n_gal, fpath: str | Path):
-    fig = get_timing_figure(results, max_n_gal)
+def make_timing_plots(results, max_n_gal_str: str, fpath: str | Path):
+    fig = get_timing_figure(results, max_n_gal_str)
 
     with PdfPages(fpath) as pdf:
         pdf.savefig(fig)
@@ -167,18 +167,17 @@ def main(seed: int, tag: str):
 
     full_fpath = wdir / f"full_samples_{seed}.npz"
     conv_fpath = wdir / f"convergence_results_{seed}.npz"
-    timing_fpath = wdir / f"timing_results{seed}.npz"
+    timing_fpath = wdir / f"timing_results_{seed}.npz"
 
     outliers_fpath = figdir / "outliers.txt"
 
-    # full results
+    # convergence results
     if full_fpath.exists() and conv_fpath.exists():
         print("Making full figures...")
         full_results = load_dataset(full_fpath)
         conv_results = load_dataset(conv_fpath)
 
         samples = full_results["samples"]
-        param_names = list(samples.keys())
 
         # need to modify slightly
         truth = full_results["truth"]
@@ -204,26 +203,22 @@ def main(seed: int, tag: str):
         if len(out_indices) > 0:
             make_trace_at_indices(out_indices, samples, truth, fpath=traces_out_fpath)
         else:  # avoid confusion with previous
+            print("No outliers found 🎉!")
             if traces_out_fpath.exists():
                 os.remove(traces_out_fpath)
 
     if timing_fpath.exists():
         print("Making timing figures...")
-        timing_results = load_dataset(timing_fpath)
-        max_n_gal = str(max(int(k) for k in timing_results))
-        tuned_params = timing_results[max_n_gal]["tuned_params"]
 
-        # make plots of full samples
         timing_results = load_dataset(timing_fpath)
+        max_n_gal_str = str(max(int(k) for k in timing_results))
+        param_names = list(timing_results[max_n_gal_str]["samples"].keys())
+        tuned_params = timing_results[max_n_gal_str]["tuned_params"]
 
-        make_timing_plots(timing_results, max_n_gal, fpath=figdir / "timing.pdf")
+        make_timing_plots(timing_results, max_n_gal_str, fpath=figdir / "timing.pdf")
         make_adaptation_hists(
             tuned_params, param_names, fpath=figdir / "adaptation.pdf"
         )
-
-        # on adaption too
-        adapt_states = timing_results[max_n_gal]["adapt_position"]
-        make_trace_plots(adapt_states, truth, fpath=figdir / "traces_adapt.pdf")
 
 
 if __name__ == "__main__":
