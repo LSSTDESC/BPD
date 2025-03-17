@@ -35,8 +35,8 @@ FIG_DIR = HOME_DIR / "paper"
 CHAIN_DIR = DATA_DIR / "cache_chains"
 
 INPUT_PATHS = {
-    "timing_results": CHAIN_DIR / "exp21_42" / "chain_results_42.npz",
-    "timing_conv": CHAIN_DIR / "exp21_42" / "convergence_results_42.npz",
+    "timing_results": CHAIN_DIR / "exp23_42" / "timing_results_42.npz",
+    "timing_conv": CHAIN_DIR / "exp23_42" / "convergence_results_42.npz",
     "only_shear_post": CHAIN_DIR / "exp46_43" / "g_samples_43_43_plus.npy",
     "shear_jack_1": CHAIN_DIR / "exp46_43" / "g_samples_jack_43.npz",
     "samples_all_free": CHAIN_DIR / "exp61_42" / "shear_samples_42_plus.npz",
@@ -50,11 +50,6 @@ OUT_PATHS = {
     "contour_hyper": FIG_DIR / "contour_hyper.png",
     "bias": FIG_DIR / "bias.png",
 }
-
-# config = PlotConfig(plot_hists=False, usetex=True, show_legend=True)
-# plot_contour(ax, Chain(samples=df, name="post1"), px="g1", py="g2", config=config)
-# ax.axvline(0.02, linestyle="--", color="k")
-# ax.axhline(0.0, linestyle="--", color="k")
 
 
 def make_snr_figure(fpath: str | Path, overwrite: bool = False):
@@ -237,10 +232,10 @@ def make_bias_figure(fpath: str | Path):
 
 def main(overwrite: bool = False):
     make_snr_figure(OUT_PATHS["snr"], overwrite=overwrite)
-    # make_timing_figure(OUT_PATHS["timing"])
-    # make_contour_shear_figure(OUT_PATHS["contour_shear"])
-    # make_contour_hyper_figure(OUT_PATHS["contour_hyper"])
-    # make_bias_figure(OUT_PATHS["bias"])
+    make_timing_figure(OUT_PATHS["timing"])
+    make_contour_shear_figure(OUT_PATHS["contour_shear"])
+    make_contour_hyper_figure(OUT_PATHS["contour_hyper"])
+    make_bias_figure(OUT_PATHS["bias"])
 
 
 if __name__ == "__main__":
