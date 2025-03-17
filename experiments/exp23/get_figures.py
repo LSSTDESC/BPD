@@ -165,9 +165,8 @@ def main(seed: int, tag: str):
 
     wdir = DATA_DIR / "cache_chains" / tag
     full_fpath = wdir / f"full_samples_{seed}.npz"
-    timing_fpath = wdir / f"timing_results{seed}.npz"
-
     conv_fpath = wdir / f"convergence_results_{seed}.npz"
+    timing_fpath = wdir / f"timing_results{seed}.npz"
 
     assert full_fpath.exists()
     assert conv_fpath.exists()
