@@ -59,7 +59,7 @@ def pipeline_shear_inference(
 
 def pipeline_shear_inference_simple(
     rng_key: PRNGKeyArray,
-    e_post: Array,
+    e1e2: Array,
     init_g: Array,
     *,
     sigma_e: float,
@@ -84,7 +84,7 @@ def pipeline_shear_inference_simple(
 
     _do_inference = partial(
         run_inference_nuts,
-        data=e_post,
+        data=e1e2,
         logtarget=_logtarget,
         n_samples=n_samples,
         n_warmup_steps=n_warmup_steps,
