@@ -66,14 +66,14 @@ def main(
         initial_step_size=initial_step_size,
     )
     raw_pipeline_jitted = jit(raw_pipeline)
-    pipeline = lambda k, d, g: raw_pipeline_jitted(k, d["e1e2"], g)
+    pipe = lambda k, d1, d2: raw_pipeline_jitted(k, d1["g"], d2["e1e2"])
 
     g_plus, g_minus = run_jackknife_shear_pipeline(
         rng_key,
-        init_g=jnp.array([0.0, 0.0]),
+        init_params={"g": jnp.array([0.0, 0.0])},
         post_params_plus={"e1e2": e1e2p},
         post_params_minus={"e1e2": e1e2m},
-        shear_pipeline=pipeline,
+        shear_pipeline=pipe,
         n_gals=e1e2p.shape[0],
         n_jacks=n_jacks,
         start=start,
