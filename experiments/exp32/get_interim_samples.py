@@ -89,7 +89,7 @@ def main(
     draw_params["f"] = 10 ** draw_params.pop("lf")
     draw_params["hlr"] = 10 ** draw_params.pop("lhlr")
     target_images = get_target_images(
-        nkey, draw_params, background=background, slen=slen
+        nkey, draw_params, background=background, slen=slen, draw_type="gaussian"
     )
     assert target_images.shape == (n_gals, slen, slen)
 

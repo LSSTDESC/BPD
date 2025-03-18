@@ -53,7 +53,7 @@ def main(
     # now get corresponding target images
     draw_params = {**galaxy_params, **fixed_params}
     target_images = get_target_images(
-        nkey, draw_params, background=background, slen=slen
+        nkey, draw_params, background=background, slen=slen, draw_type="gaussian"
     )
     assert target_images.shape == (n_gals, slen, slen)
 

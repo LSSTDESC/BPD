@@ -160,7 +160,7 @@ def main(
         draw_params = {**galaxy_params}
         draw_params["f"] = 10 ** draw_params.pop("lf")
         target_images = get_target_images(
-            nkey, draw_params, background=background, slen=slen
+            nkey, draw_params, background=background, slen=slen, draw_type="gaussian"
         )
         assert target_images.shape == (n_gals, slen, slen)
         true_params = vmap(get_true_params_from_galaxy_params)(galaxy_params)
