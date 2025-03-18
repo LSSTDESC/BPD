@@ -156,8 +156,8 @@ def get_target_image_single(
     single_galaxy_params: dict[str, float],
     background: float,
     slen: int,
+    draw_type: str,
     n_samples: int = 1,  # single noise realization,
-    draw_type: str = "gaussian",
 ) -> Array:
     """Multiple noise realizations of single galaxy (GalSim)."""
     assert draw_type in ("gaussian", "exponential")
@@ -178,7 +178,7 @@ def get_target_images(
     *,
     background: float,
     slen: int,
-    draw_type: str = "gaussian",
+    draw_type: str,
 ) -> Array:
     """Single noise realization of multiple galaxies (GalSim)."""
     n_gals = galaxy_params["f"].shape[0]
