@@ -42,7 +42,7 @@ def main(
     seed: int,
     tag: str,
     mode: str = "",
-    n_gals: int = 2500,
+    n_gals: int = 6250,
     n_samples_per_gal: int = 300,
     mean_logflux: float = 2.5,
     sigma_logflux: float = 0.4,
@@ -67,6 +67,8 @@ def main(
     dirpath = DATA_DIR / "cache_chains" / tag
     if not dirpath.exists():
         dirpath.mkdir(exist_ok=True)
+    extra_tag = f"_{mode}" if mode else ""
+    out_fpath = dirpath / f"interim_samples_{seed}{extra_tag}.npz"
 
     # galaxy parameters from prior
     galaxy_params = sample_galaxy_params_trunc(
@@ -89,7 +91,7 @@ def main(
     draw_params["f"] = 10 ** draw_params.pop("lf")
     draw_params["hlr"] = 10 ** draw_params.pop("lhlr")
     target_images = get_target_images(
-        nkey, draw_params, background=background, slen=slen
+        nkey, draw_params, background=background, slen=slen, draw_type="exponential"
     )
     assert target_images.shape == (n_gals, slen, slen)
 
@@ -140,9 +142,6 @@ def main(
 
     samples = vpipe(gkeys, true_params, target_images, fixed_params)
 
-    extra_tag = f"_{mode}" if mode else ""
-    fpath = dirpath / f"interim_samples_{seed}{extra_tag}.npz"
-
     save_dataset(
         {
             "samples": {
@@ -150,10 +149,12 @@ def main(
                 "e2": samples["e2"],
             },
             "truth": {
-                "e1": draw_params["e1"],
-                "e2": draw_params["e2"],
-                "f": draw_params["f"],
-                "hlr": draw_params["hlr"],
+                "e1": galaxy_params["e1"],
+                "e2": galaxy_params["e2"],
+                "lf": galaxy_params["lf"],
+                "lhlr": galaxy_params["lhlr"],
+                "x": galaxy_params["x"],
+                "y": galaxy_params["y"],
             },
             "hyper": {
                 "g1": g1,
@@ -167,7 +168,7 @@ def main(
                 "sigma_loghlr": sigma_loghlr,
             },
         },
-        fpath,
+        out_fpath,
         overwrite=True,
     )
 
