@@ -13,6 +13,26 @@ from bpd.prior import ellip_prior_e1e2, true_ellip_logprior
 from bpd.sample import sample_noisy_ellipticities_unclipped
 
 
+def logtarget_shear_and_sn(
+    params,
+    *,
+    data: Array | dict[str, Array],
+    sigma_e_int: float,
+    sigma_g: float = 0.01,
+):
+    g = params["g"]
+    sigma_e = params["sigma_e"]
+
+    _logprior = lambda e, g: true_ellip_logprior(e, g, sigma_e=sigma_e)
+    _interim_logprior = lambda e: jnp.log(ellip_prior_e1e2(e, sigma=sigma_e_int))
+    loglike = shear_loglikelihood(
+        g, post_params=data, logprior=_logprior, interim_logprior=_interim_logprior
+    )
+    logprior1 = stats.norm.logpdf(g, loc=0.0, scale=sigma_g).sum()
+    logprior2 = stats.uniform.logpdf(sigma_e, 1e-4, 1.0 - 1e-4)  # uninformative
+    return logprior1 + logprior2 + loglike
+
+
 def logtarget_shear(
     g: Array, *, data: Array | dict[str, Array], loglikelihood: Callable, sigma_g: float
 ):
