@@ -9,7 +9,7 @@ def main(
     seed: int,
     tag: str,
     time: str = "00:20",  # HH:MM
-    mem_per_gpu: str = "20G",
+    mem_per_gpu: str = "10G",
     qos: str = "debug",
     n_vec: int = 50,
     n_exps: int = 250,  # per gpu
