@@ -2,49 +2,46 @@
 """This file creates toy samples of ellipticities and saves them to .hdf5 file."""
 
 import jax
+import jax.numpy as jnp
 import numpy as np
 import typer
 
 from bpd import DATA_DIR
-from bpd.io import load_dataset
+from bpd.io import load_dataset_jax
 from bpd.pipelines import pipeline_shear_inference_simple
 
 
 def main(
     seed: int,
-    old_seed: int = typer.Option(),
     interim_samples_fname: str = typer.Option(),
     tag: str = typer.Option(),
     initial_step_size: float = 1e-3,
     n_samples: int = 3000,
-    trim: int = 1,
     overwrite: bool = False,
     extra_tag: str = "",
 ):
     extra_txt = f"_{extra_tag}" if extra_tag else ""
-    # directory structure
     dirpath = DATA_DIR / "cache_chains" / tag
-    assert dirpath.exists()
     interim_samples_fpath = DATA_DIR / "cache_chains" / tag / interim_samples_fname
-    assert interim_samples_fpath.exists(), "ellipticity samples file does not exist"
-    fpath = (
-        DATA_DIR / "cache_chains" / tag / f"g_samples_{old_seed}_{seed}{extra_txt}.npy"
-    )
+    fpath = DATA_DIR / "cache_chains" / tag / f"g_samples_{seed}{extra_txt}.npy"
 
+    assert dirpath.exists()
+    assert interim_samples_fpath.exists(), "ellipticity samples file does not exist"
     if fpath.exists() and not overwrite:
         raise IOError("overwriting...")
 
-    samples_dataset = load_dataset(interim_samples_fpath)
-    e_post = samples_dataset["e_post"][:, ::trim, :]
-    true_g = samples_dataset["true_g"]
-    sigma_e = samples_dataset["sigma_e"]
-    sigma_e_int = samples_dataset["sigma_e_int"]
+    ds = load_dataset_jax(interim_samples_fpath)
+    e1 = ds["samples"]["e1"]
+    e2 = ds["samples"]["e2"]
+    e1e2 = jnp.stack([e1, e2], axis=-1)
+    sigma_e = ds["hyper"]["shape_noise"]
+    sigma_e_int = ds["hyper"]["sigma_e_int"]
 
     rng_key = jax.random.key(seed)
     g_samples = pipeline_shear_inference_simple(
         rng_key,
-        e_post,
-        init_g=true_g,
+        e1e2,
+        init_g=0.0,
         sigma_e=sigma_e,
         sigma_e_int=sigma_e_int,
         n_samples=n_samples,
