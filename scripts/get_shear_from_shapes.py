@@ -40,8 +40,8 @@ def main(
     rng_key = jax.random.key(seed)
     g_samples = pipeline_shear_inference_simple(
         rng_key,
-        e1e2,
-        init_g=0.0,
+        init_g=jnp.array([0.0, 0.0]),
+        e1e2=e1e2,
         sigma_e=sigma_e,
         sigma_e_int=sigma_e_int,
         n_samples=n_samples,
