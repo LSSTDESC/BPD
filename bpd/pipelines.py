@@ -79,8 +79,8 @@ def pipeline_shear_inference(
 
 def pipeline_shear_inference_simple(
     rng_key: PRNGKeyArray,
-    e1e2: Array,
     init_g: Array,
+    e1e2: Array,
     *,
     sigma_e: float,
     sigma_e_int: float,
