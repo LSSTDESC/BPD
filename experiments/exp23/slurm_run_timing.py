@@ -10,7 +10,7 @@ def main(
     seed: int,
     tag: str,
     time: str = "02:00",  # HH:MM
-    mem_per_gpu: str = "20G",
+    mem_per_gpu: str = "10G",
     qos: str = "regular",
 ):
     cmd = f"python /global/u2/i/imendoza/BPD/experiments/exp23/get_samples_timing.py {seed} {tag}"
