@@ -15,9 +15,11 @@ convergence:
 collate: 
 	./collate_samples.py ${SEED} --tag ${TAG}
 
-samples:
-	./slurm_full_samples.py ${SEED} ${TAG}
+timing:
 	./slurm_run_timing.py ${SEED} ${TAG}
+
+full:
+	./slurm_full_samples.py ${SEED} ${TAG}
 
 clean: 
 	rm -f ${DIR}/*.npz ${DIR}/*.npy
