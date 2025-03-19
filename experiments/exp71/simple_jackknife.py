@@ -62,6 +62,7 @@ def main(
     _logtarget = jit(partial(logtarget_shear_and_sn, sigma_e_int=sigma_e_int))
     raw_pipeline = partial(
         run_inference_nuts,
+        init_positions={"g": jnp.array([0.0, 0.0]), "sigma_e": 0.2},
         logtarget=_logtarget,
         n_samples=n_samples,
         initial_step_size=initial_step_size,
@@ -71,7 +72,6 @@ def main(
 
     g_plus, g_minus = run_jackknife_shear_pipeline(
         rng_key,
-        init_params={"g": jnp.array([0.0, 0.0]), "sigma_e": 0.2},
         post_params_plus={"e1e2": e1e2p},
         post_params_minus={"e1e2": e1e2m},
         shear_pipeline=pipe,

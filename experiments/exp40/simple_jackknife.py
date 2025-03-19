@@ -57,17 +57,17 @@ def main(
     rng_key = jax.random.key(seed)
     raw_pipeline = partial(
         pipeline_shear_inference_simple,
+        init_g=jnp.array([0.0, 0.0]),
         sigma_e=sigma_e,
         sigma_e_int=sigma_e_int,
         n_samples=n_samples,
         initial_step_size=initial_step_size,
     )
     raw_pipeline_jitted = jit(raw_pipeline)
-    pipeline = lambda k, d, g: raw_pipeline_jitted(k, d["e1e2"], g)
+    pipeline = lambda k, d: raw_pipeline_jitted(k, d["e1e2"])
 
     g_plus, g_minus = run_jackknife_shear_pipeline(
         rng_key,
-        init_g=jnp.array([0.0, 0.0]),
         post_params_plus={"e1e2": e_post_plus},
         post_params_minus={"e1e2": e_post_minus},
         shear_pipeline=pipeline,

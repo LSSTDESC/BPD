@@ -99,12 +99,12 @@ def main(
     # compilation on single target image
     _ = vpipe(
         gkeys[0, None],
-        {k: v[0, None] for k, v in true_params.items()},
         target_images[0, None],
         {k: v[0, None] for k, v in fixed_params.items()},
+        {k: v[0, None] for k, v in true_params.items()},
     )
 
-    samples = vpipe(gkeys, true_params, target_images, fixed_params)
+    samples = vpipe(gkeys, target_images, fixed_params, true_params)
     e_post = jnp.stack([samples["e1"], samples["e2"]], axis=-1)
     fpath = dirpath / f"e_post_{seed}.npz"
 

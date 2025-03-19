@@ -100,6 +100,7 @@ def main(
 
     raw_pipeline = partial(
         pipeline_shear_inference,
+        init_g=jnp.array([0.0, 0.0]),
         logprior=logprior_fnc,
         interim_logprior=interim_logprior_fnc,
         n_samples=n_samples,
@@ -109,7 +110,6 @@ def main(
 
     g_plus, g_minus = run_jackknife_vectorized(
         rng_key,
-        init_g=jnp.array([0.0, 0.0]),
         post_params_plus=post_params_plus,
         post_params_minus=post_params_minus,
         shear_pipeline=pipeline,
