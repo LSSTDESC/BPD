@@ -13,8 +13,8 @@ def main(
     tag: str = typer.Option(),
     time: str = "00:30",  # HH:MM
     mem_per_gpu: str = "10G",
-    n_jacks: int = 200,
-    n_nodes: int = 3,
+    n_jacks: int = 500,
+    n_nodes: int = 5,
     qos: str = "debug",
 ):
     n_splits = n_nodes * 4
