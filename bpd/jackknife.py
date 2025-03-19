@@ -6,6 +6,60 @@ from jax import jit, random, vmap
 from tqdm import tqdm
 
 
+def run_bootstrap_shear_pipeline(
+    rng_key,
+    *,
+    post_params_plus: dict,
+    post_params_minus: dict,
+    shear_pipeline: Callable,
+    n_gals: int,
+    n_boots: int = 100,
+    no_bar: bool = True,
+):
+    """Use jackknife+shape noise cancellation to estimate the mean and std of the shear posterior.
+
+    Args:
+        rng_key: Random jax key.
+        init_g: Initial value for shear `g`.
+        post_params_pos: Interim posterior galaxy parameters estimated using positive shear.
+        post_params_neg: Interim posterior galaxy parameters estimated using negative shear,
+            and otherwise same conditions and random seed as `post_params_pos`.
+        shear_pipeline: Function that outputs shear posterior samples from `post_params` with all
+            keyword arguments pre-specified.
+        n_jacks: Number of jackknife batches.
+
+    Returns:
+        Jackknife samples of shear posterior mean combined with shape noise cancellation trick.
+    """
+
+    results_plus = []
+    results_minus = []
+    keys = random.split(rng_key, n_boots)
+
+    pipe = jit(shear_pipeline)
+
+    for ii in tqdm(n_boots, desc="Bootstrap #", disable=no_bar):
+        k_ii = keys[ii]
+        k1, k2 = random.split(k_ii)
+        indices = random.randint(k1, shape=(n_gals,), minval=0, maxval=n_gals - 1)
+
+        _params_jack_pos = {k: v[indices] for k, v in post_params_plus.items()}
+        _params_jack_neg = {k: v[indices] for k, v in post_params_minus.items()}
+
+        g_pos_ii = pipe(k2, _params_jack_pos)
+        g_neg_ii = pipe(k2, _params_jack_neg)
+
+        results_plus.append(g_pos_ii)
+        results_minus.append(g_neg_ii)
+
+    g_pos_samples = jnp.stack(results_plus, axis=0)
+    g_neg_samples = jnp.stack(results_minus, axis=0)
+    assert g_pos_samples.shape[-1] == 2
+    assert g_neg_samples.shape[-1] == 2
+
+    return g_pos_samples, g_neg_samples
+
+
 def run_jackknife_shear_pipeline(
     rng_key,
     *,
