@@ -102,8 +102,8 @@ def pipeline_shear_inference_simple(
         logtarget_shear, loglikelihood=_loglikelihood_jitted, sigma_g=sigma_g
     )
 
-    _do_inference = partial(
-        run_inference_nuts,
+    return run_inference_nuts(
+        rng_key,
         data=e1e2,
         init_positions=init_g,
         logtarget=_logtarget,
@@ -112,8 +112,6 @@ def pipeline_shear_inference_simple(
         max_num_doublings=max_num_doublings,
         initial_step_size=initial_step_size,
     )
-
-    return _do_inference(rng_key)
 
 
 def logtarget_images(
