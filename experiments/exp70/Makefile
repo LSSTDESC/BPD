@@ -21,8 +21,14 @@ export JAX_ENABLE_X64=True
 figures:
 	../exp70/get_figures.py ${SEED} --tag ${TAG}
 
+collate_boot:
+	../exp70/collate_samples.py ${SEED} --tag ${TAG} --mode "" --start-string "g_samples_boots"
+
 collate_jack:
 	../exp70/collate_samples.py ${SEED} --tag ${TAG} --mode "" --start-string "g_samples_jack"
+
+boot:
+	./slurm_boot.py ${SEED} --tag ${TAG}
 
 jackknife:
 	./slurm_jackknife.py ${SEED} --tag ${TAG}
