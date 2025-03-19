@@ -74,8 +74,8 @@ def run_sampling_nuts(
 
 def run_inference_nuts(
     rng_key: PRNGKeyArray,
-    init_positions: ArrayLike,
     data: ArrayLike,
+    init_positions: ArrayLike,
     *,
     logtarget: Callable,
     n_samples: int,

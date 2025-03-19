@@ -87,7 +87,7 @@ def main(
     draw_params = {**galaxy_params}
     draw_params["f"] = 10 ** draw_params.pop("lf")
     target_images = get_target_images(
-        nkey, draw_params, background=background, slen=slen
+        nkey, draw_params, background=background, slen=slen, draw_type="gaussian"
     )
     assert target_images.shape == (n_gals, slen, slen)
 
@@ -131,12 +131,12 @@ def main(
     # compilation on single target image
     _ = vpipe(
         gkeys[0, None],
-        {k: v[0, None] for k, v in true_params.items()},
         target_images[0, None],
         {k: v[0, None] for k, v in fixed_params.items()},
+        {k: v[0, None] for k, v in true_params.items()},
     )
 
-    samples = vpipe(gkeys, true_params, target_images, fixed_params)
+    samples = vpipe(gkeys, target_images, fixed_params, true_params)
     e_post = jnp.stack([samples["e1"], samples["e2"]], axis=-1)
 
     extra_tag = f"_{mode}" if mode else ""

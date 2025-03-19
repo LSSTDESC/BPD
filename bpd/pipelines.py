@@ -13,6 +13,26 @@ from bpd.prior import ellip_prior_e1e2, true_ellip_logprior
 from bpd.sample import sample_noisy_ellipticities_unclipped
 
 
+def logtarget_shear_and_sn(
+    params,
+    *,
+    data: Array | dict[str, Array],
+    sigma_e_int: float,
+    sigma_g: float = 0.01,
+):
+    g = params["g"]
+    sigma_e = params["sigma_e"]
+
+    _logprior = lambda e, g: true_ellip_logprior(e, g, sigma_e=sigma_e)
+    _interim_logprior = lambda e: jnp.log(ellip_prior_e1e2(e, sigma=sigma_e_int))
+    loglike = shear_loglikelihood(
+        g, post_params=data, logprior=_logprior, interim_logprior=_interim_logprior
+    )
+    logprior1 = stats.norm.logpdf(g, loc=0.0, scale=sigma_g).sum()
+    logprior2 = stats.uniform.logpdf(sigma_e, 1e-4, 1.0 - 1e-4)  # uninformative
+    return logprior1 + logprior2 + loglike
+
+
 def logtarget_shear(
     g: Array, *, data: Array | dict[str, Array], loglikelihood: Callable, sigma_g: float
 ):
@@ -24,8 +44,8 @@ def logtarget_shear(
 def pipeline_shear_inference(
     rng_key: PRNGKeyArray,
     post_params: Array,
-    init_g: Array,
     *,
+    init_g: Array,
     logprior: Callable,
     interim_logprior: Callable,
     n_samples: int,
@@ -59,9 +79,9 @@ def pipeline_shear_inference(
 
 def pipeline_shear_inference_simple(
     rng_key: PRNGKeyArray,
-    e_post: Array,
-    init_g: Array,
+    e1e2: Array,
     *,
+    init_g: Array,
     sigma_e: float,
     sigma_e_int: float,
     n_samples: int,
@@ -82,17 +102,16 @@ def pipeline_shear_inference_simple(
         logtarget_shear, loglikelihood=_loglikelihood_jitted, sigma_g=sigma_g
     )
 
-    _do_inference = partial(
-        run_inference_nuts,
-        data=e_post,
+    return run_inference_nuts(
+        rng_key,
+        data=e1e2,
+        init_positions=init_g,
         logtarget=_logtarget,
         n_samples=n_samples,
         n_warmup_steps=n_warmup_steps,
         max_num_doublings=max_num_doublings,
         initial_step_size=initial_step_size,
     )
-
-    return _do_inference(rng_key, init_g)
 
 
 def logtarget_images(
@@ -108,17 +127,17 @@ def logtarget_images(
 
 def pipeline_interim_samples_one_galaxy(
     rng_key: PRNGKeyArray,
-    true_params: dict[str, float],
     target_image: Array,
     fixed_params: dict[str, float],
+    true_params: dict[str, float],
     *,
     initialization_fnc: Callable,
     logprior: Callable,
     loglikelihood: Callable,
-    n_samples: int = 100,
+    n_samples: int = 300,
+    n_warmup_steps: int = 500,
     max_num_doublings: int = 5,
     initial_step_size: float = 1e-3,
-    n_warmup_steps: int = 500,
     is_mass_matrix_diagonal: bool = True,
 ):
     # Flux and HLR are fixed to truth and not inferred in this function.
@@ -133,8 +152,10 @@ def pipeline_interim_samples_one_galaxy(
         fixed_params=fixed_params,
     )
 
-    _inference_fnc = partial(
-        run_inference_nuts,
+    return run_inference_nuts(
+        k2,
+        data=target_image,
+        init_positions=init_position,
         logtarget=_logtarget,
         is_mass_matrix_diagonal=is_mass_matrix_diagonal,
         n_warmup_steps=n_warmup_steps,
@@ -142,10 +163,6 @@ def pipeline_interim_samples_one_galaxy(
         initial_step_size=initial_step_size,
         n_samples=n_samples,
     )
-    _run_inference = jit(_inference_fnc)
-
-    interim_samples = _run_inference(k2, init_position, target_image)
-    return interim_samples
 
 
 def logtarget_toy_ellips(
@@ -200,8 +217,8 @@ def pipeline_toy_ellips(
     _do_inference = vmap(_do_inference_jitted, in_axes=(0, 0, 0))
 
     # compile
-    _ = _do_inference(keys2[:2], e_sheared[:2], e_obs[:2])
+    _ = _do_inference(keys2[:2], e_obs[:2], e_sheared[:2])
 
-    e_post = _do_inference(keys2, e_sheared, e_obs)
+    e_post = _do_inference(keys2, e_obs, e_sheared)
 
     return e_post, e_obs, e_sheared

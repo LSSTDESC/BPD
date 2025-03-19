@@ -30,7 +30,7 @@ def _draw_gaussian(
     g2: float,
     slen: int,
     fft_size: int,
-    psf_hlr: float = 0.7,
+    psf_fwhm: float = 0.8,
     pixel_scale: float = 0.2,
 ):
     gsparams = GSParams(minimum_fft_size=fft_size, maximum_fft_size=fft_size)
@@ -39,7 +39,7 @@ def _draw_gaussian(
     gal = gal.shear(g1=e1, g2=e2)
     gal = gal.shear(g1=g1, g2=g2)
 
-    psf = xgalsim.Gaussian(flux=1.0, half_light_radius=psf_hlr)
+    psf = xgalsim.Gaussian(flux=1.0, fwhm=psf_fwhm)
     gal_conv = xgalsim.Convolve([gal, psf]).withGSParams(gsparams)
     image = gal_conv.drawImage(nx=slen, ny=slen, scale=pixel_scale, offset=(x, y))
     return image.array

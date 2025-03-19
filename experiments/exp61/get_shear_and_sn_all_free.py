@@ -98,7 +98,8 @@ def main(
     rng_key = jax.random.key(seed)
     samples = run_inference_nuts(
         rng_key,
-        {
+        data=samples_dataset["samples"],
+        init_positions={
             "g": true_g,
             "sigma_e": true_sigma_e,
             "mean_logflux": true_mean_logflux,
@@ -106,7 +107,6 @@ def main(
             "mean_loghlr": true_mean_loghlr,
             "sigma_loghlr": true_sigma_loghlr,
         },
-        samples_dataset["samples"],
         logtarget=_logtarget,
         n_samples=n_samples,
         initial_step_size=initial_step_size,

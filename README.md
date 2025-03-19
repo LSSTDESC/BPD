@@ -13,16 +13,14 @@ conda create -n bpd python=3.12
 conda activate bpd
 
 # Install JAX (on GPU)
-pip install -U "jax[cuda12]"
-
-# Install JAX-Galsim
-pip install git+https://github.com/GalSim-developers/JAX-GalSim.git
-
-# Install package and depedencies
 git clone git@github.com:LSSTDESC/BPD.git
 cd BPD
+pip install -U "jax[cuda12]<0.5.0"
 pip install -e .
 pip install -e ".[dev]"
+
+# Install JAX-Galsim
+pip install git+https://github.com/GalSim-developers/JAX-GalSim.git --no-deps --no-build-isolation
 
 # Might be necessary
 conda install -c nvidia cuda-nvcc

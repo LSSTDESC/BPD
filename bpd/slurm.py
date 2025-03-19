@@ -61,7 +61,7 @@ def run_single_gpu_job(
     with open(jobfile, "a", encoding="utf-8") as f:
         f.write("\n")
         srun_cmd = (
-            f"srun --exact -u -n 1 -c 1 --gpus-per-task 1 "
+            f"srun --exact -u -N 1 -n 1 -c 1 --gpus-per-task 1 "
             f"--mem-per-gpu={mem_per_gpu} {cmd}"
         )
         f.write(srun_cmd)
@@ -93,7 +93,7 @@ def run_multi_gpu_job(
         for ii in range(n_total):
             cmd = cmds[ii]
             srun_cmd = (
-                f"srun --exact -u -n 1 -c 1 --gpus-per-task 1 "
+                f"srun --exact -u -N 1 -n 1 -c 1 --gpus-per-task 1 "
                 f"--mem-per-gpu={mem_per_gpu} {cmd}  &\n"
             )
 

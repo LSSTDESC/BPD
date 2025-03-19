@@ -2,14 +2,13 @@ from math import ceil
 from typing import Callable
 
 import jax.numpy as jnp
-from jax import Array, jit, random, vmap
+from jax import jit, random, vmap
 from tqdm import tqdm
 
 
 def run_jackknife_shear_pipeline(
     rng_key,
     *,
-    init_g: Array,
     post_params_plus: dict,
     post_params_minus: dict,
     shear_pipeline: Callable,
@@ -58,8 +57,8 @@ def run_jackknife_shear_pipeline(
             for k, v in post_params_minus.items()
         }
 
-        g_pos_ii = pipe(k_ii, _params_jack_pos, init_g)
-        g_neg_ii = pipe(k_ii, _params_jack_neg, -init_g)
+        g_pos_ii = pipe(k_ii, _params_jack_pos)
+        g_neg_ii = pipe(k_ii, _params_jack_neg)
 
         results_plus.append(g_pos_ii)
         results_minus.append(g_neg_ii)
@@ -75,7 +74,6 @@ def run_jackknife_shear_pipeline(
 def run_jackknife_vectorized(
     rng_key,
     *,
-    init_g: Array,
     post_params_plus: dict,
     post_params_minus: dict,
     shear_pipeline: Callable,
@@ -123,11 +121,10 @@ def run_jackknife_vectorized(
             _ = vec_shear_pipeline(
                 keys[0, None],
                 {k: v[0, None] for k, v in params_jack_pos.items()},
-                init_g,
             )
 
-        gp = vec_shear_pipeline(keys[start1:end1], params_jack_pos, init_g)
-        gn = vec_shear_pipeline(keys[start1:end1], params_jack_neg, -init_g)
+        gp = vec_shear_pipeline(keys[start1:end1], params_jack_pos)
+        gn = vec_shear_pipeline(keys[start1:end1], params_jack_neg)
 
         results_plus.append(gp)
         results_minus.append(gn)

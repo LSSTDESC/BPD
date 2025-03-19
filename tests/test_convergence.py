@@ -52,7 +52,7 @@ def test_interim_toy_convergence(seed):
     _do_inference_vmapped = vmap(_do_inference_jitted, in_axes=(0, None, None))
     _run_inference = vmap(_do_inference_vmapped, in_axes=(0, 0, 0))
 
-    e_post = _run_inference(keys2, e_sheared, e_obs)
+    e_post = _run_inference(keys2, e_obs, e_sheared)
     assert e_post.shape == (n_gals, 4, n_samples_per_galaxy, 2)
 
     for ii in (0, 1):

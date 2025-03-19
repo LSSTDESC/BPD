@@ -6,33 +6,12 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 import typer
-from jax import Array, jit
-from jax.scipy import stats
+from jax import jit
 
 from bpd import DATA_DIR
 from bpd.chains import run_inference_nuts
 from bpd.io import load_dataset_jax, save_dataset
-from bpd.likelihood import shear_loglikelihood
-from bpd.prior import ellip_prior_e1e2, true_ellip_logprior
-
-
-def logtarget(
-    params,
-    *,
-    data: Array | dict[str, Array],
-    sigma_e_int: float,
-    sigma_g: float = 0.01,
-):
-    g = params["g"]
-    sigma_e = params["sigma_e"]
-    _logprior = lambda e, g: true_ellip_logprior(e, g, sigma_e=sigma_e)
-    _interim_logprior = lambda e: jnp.log(ellip_prior_e1e2(e, sigma=sigma_e_int))
-    loglike = shear_loglikelihood(
-        g, post_params=data, logprior=_logprior, interim_logprior=_interim_logprior
-    )
-    logprior1 = stats.norm.logpdf(g, loc=0.0, scale=sigma_g).sum()
-    logprior2 = stats.uniform.logpdf(sigma_e, 1e-4, 0.4 - 1e-4)  # uninformative
-    return logprior1 + logprior2 + loglike
+from bpd.pipelines import logtarget_shear_and_sn
 
 
 def main(
@@ -41,7 +20,6 @@ def main(
     tag: str = typer.Option(),
     initial_step_size: float = 0.01,
     n_samples: int = 3000,
-    trim: int = 1,
     overwrite: bool = False,
     extra_tag: str = "",
 ):
@@ -54,19 +32,17 @@ def main(
     assert interim_samples_fpath.exists(), "ellipticity samples file does not exist"
     fpath = DATA_DIR / "cache_chains" / tag / f"shear_samples_{seed}{extra_txt}.npz"
 
-    samples_dataset = load_dataset_jax(interim_samples_fpath)
-    e_post = samples_dataset["e_post"][:, ::trim, :]
-    true_g = samples_dataset["true_g"]
-    true_sigma_e = samples_dataset["sigma_e"]
-    sigma_e_int = samples_dataset["sigma_e_int"]
-
-    _logtarget = jit(partial(logtarget, sigma_e_int=sigma_e_int))
-
+    ds = load_dataset_jax(interim_samples_fpath)
+    e1 = ds["samples"]["e1"]
+    e2 = ds["samples"]["e2"]
+    e1e2 = jnp.stack([e1, e2], axis=-1)
+    sigma_e_int = ds["hyper"]["sigma_e_int"]
+    _logtarget = jit(partial(logtarget_shear_and_sn, sigma_e_int=sigma_e_int))
     rng_key = jax.random.key(seed)
     samples = run_inference_nuts(
         rng_key,
-        {"g": true_g, "sigma_e": true_sigma_e},
-        e_post,
+        data=e1e2,
+        init_positions={"g": jnp.array([0.0, 0.0]), "sigma_e": 0.2},
         logtarget=_logtarget,
         n_samples=n_samples,
         initial_step_size=initial_step_size,
@@ -83,9 +59,9 @@ def main(
             "sigma_e": samples["sigma_e"],
         },
         "truth": {
-            "g1": true_g[0].item(),
-            "g2": true_g[1].item(),
-            "sigma_e": true_sigma_e,
+            "g1": ds["hyper"]["g1"],
+            "g2": ds["hyper"]["g2"],
+            "sigma_e": ds["hyper"]["shape_noise"],
         },
     }
     save_dataset(out, fpath, overwrite=overwrite)
