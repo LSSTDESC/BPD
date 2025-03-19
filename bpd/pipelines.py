@@ -44,8 +44,8 @@ def logtarget_shear(
 def pipeline_shear_inference(
     rng_key: PRNGKeyArray,
     post_params: Array,
-    init_g: Array,
     *,
+    init_g: Array,
     logprior: Callable,
     interim_logprior: Callable,
     n_samples: int,
@@ -79,9 +79,9 @@ def pipeline_shear_inference(
 
 def pipeline_shear_inference_simple(
     rng_key: PRNGKeyArray,
-    init_g: Array,
     e1e2: Array,
     *,
+    init_g: Array,
     sigma_e: float,
     sigma_e_int: float,
     n_samples: int,
@@ -105,6 +105,7 @@ def pipeline_shear_inference_simple(
     _do_inference = partial(
         run_inference_nuts,
         data=e1e2,
+        init_positions=init_g,
         logtarget=_logtarget,
         n_samples=n_samples,
         n_warmup_steps=n_warmup_steps,
@@ -112,7 +113,7 @@ def pipeline_shear_inference_simple(
         initial_step_size=initial_step_size,
     )
 
-    return _do_inference(rng_key, init_g)
+    return _do_inference(rng_key)
 
 
 def logtarget_images(
@@ -128,9 +129,9 @@ def logtarget_images(
 
 def pipeline_interim_samples_one_galaxy(
     rng_key: PRNGKeyArray,
-    true_params: dict[str, float],
     target_image: Array,
     fixed_params: dict[str, float],
+    true_params: dict[str, float],
     *,
     initialization_fnc: Callable,
     logprior: Callable,
@@ -164,7 +165,9 @@ def pipeline_interim_samples_one_galaxy(
     )
     _run_inference = jit(_inference_fnc)
 
-    interim_samples = _run_inference(k2, init_position, target_image)
+    interim_samples = _run_inference(
+        k2, data=target_image, init_positions=init_position
+    )
     return interim_samples
 
 
@@ -220,8 +223,8 @@ def pipeline_toy_ellips(
     _do_inference = vmap(_do_inference_jitted, in_axes=(0, 0, 0))
 
     # compile
-    _ = _do_inference(keys2[:2], e_sheared[:2], e_obs[:2])
+    _ = _do_inference(keys2[:2], e_obs[:2], e_sheared[:2])
 
-    e_post = _do_inference(keys2, e_sheared, e_obs)
+    e_post = _do_inference(keys2, e_obs, e_sheared)
 
     return e_post, e_obs, e_sheared
