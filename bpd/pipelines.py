@@ -152,8 +152,10 @@ def pipeline_interim_samples_one_galaxy(
         fixed_params=fixed_params,
     )
 
-    _inference_fnc = partial(
-        run_inference_nuts,
+    return run_inference_nuts(
+        k2,
+        data=target_image,
+        init_positions=init_position,
         logtarget=_logtarget,
         is_mass_matrix_diagonal=is_mass_matrix_diagonal,
         n_warmup_steps=n_warmup_steps,
@@ -161,12 +163,6 @@ def pipeline_interim_samples_one_galaxy(
         initial_step_size=initial_step_size,
         n_samples=n_samples,
     )
-    _run_inference = jit(_inference_fnc)
-
-    interim_samples = _run_inference(
-        k2, data=target_image, init_positions=init_position
-    )
-    return interim_samples
 
 
 def logtarget_toy_ellips(
