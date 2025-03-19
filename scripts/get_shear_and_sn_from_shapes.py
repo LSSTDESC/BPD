@@ -41,8 +41,8 @@ def main(
     rng_key = jax.random.key(seed)
     samples = run_inference_nuts(
         rng_key,
-        {"g": jnp.array([0.0, 0.0]), "sigma_e": 0.2},
-        e1e2,
+        data=e1e2,
+        init_positions={"g": jnp.array([0.0, 0.0]), "sigma_e": 0.2},
         logtarget=_logtarget,
         n_samples=n_samples,
         initial_step_size=initial_step_size,
