@@ -16,21 +16,7 @@ def run_bootstrap_shear_pipeline(
     n_boots: int = 100,
     no_bar: bool = True,
 ):
-    """Use jackknife+shape noise cancellation to estimate the mean and std of the shear posterior.
-
-    Args:
-        rng_key: Random jax key.
-        init_g: Initial value for shear `g`.
-        post_params_pos: Interim posterior galaxy parameters estimated using positive shear.
-        post_params_neg: Interim posterior galaxy parameters estimated using negative shear,
-            and otherwise same conditions and random seed as `post_params_pos`.
-        shear_pipeline: Function that outputs shear posterior samples from `post_params` with all
-            keyword arguments pre-specified.
-        n_jacks: Number of jackknife batches.
-
-    Returns:
-        Jackknife samples of shear posterior mean combined with shape noise cancellation trick.
-    """
+    """Obtain boostrap samples of shear posteriors from a 'plus' and 'minus' sims."""
 
     results_plus = []
     results_minus = []
@@ -38,7 +24,7 @@ def run_bootstrap_shear_pipeline(
 
     pipe = jit(shear_pipeline)
 
-    for ii in tqdm(n_boots, desc="Bootstrap #", disable=no_bar):
+    for ii in tqdm(range(n_boots), desc="Bootstrap #", disable=no_bar):
         k_ii = keys[ii]
         k1, k2 = random.split(k_ii)
         indices = random.randint(k1, shape=(n_gals,), minval=0, maxval=n_gals - 1)
