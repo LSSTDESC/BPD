@@ -28,7 +28,7 @@ collate_jack:
 	../exp70/collate_samples.py ${SEED} --tag ${TAG} --mode "" --start-string "g_samples_jack"
 
 boot:
-	./slurm_boot.py ${SEED} --tag ${TAG}
+	./slurm_bootstrap.py ${SEED} --tag ${TAG}
 
 jackknife:
 	./slurm_jackknife.py ${SEED} --tag ${TAG}
