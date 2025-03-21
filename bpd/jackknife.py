@@ -6,6 +6,46 @@ from jax import jit, random, vmap
 from tqdm import tqdm
 
 
+def run_bootstrap_shear_pipeline(
+    rng_key,
+    *,
+    post_params_plus: dict,
+    post_params_minus: dict,
+    shear_pipeline: Callable,
+    n_gals: int,
+    n_boots: int = 100,
+    no_bar: bool = True,
+):
+    """Obtain boostrap samples of shear posteriors from a 'plus' and 'minus' sims."""
+
+    results_plus = []
+    results_minus = []
+    keys = random.split(rng_key, n_boots)
+
+    pipe = jit(shear_pipeline)
+
+    for ii in tqdm(range(n_boots), desc="Bootstrap #", disable=no_bar):
+        k_ii = keys[ii]
+        k1, k2 = random.split(k_ii)
+        indices = random.randint(k1, shape=(n_gals,), minval=0, maxval=n_gals)
+
+        _params_jack_pos = {k: v[indices] for k, v in post_params_plus.items()}
+        _params_jack_neg = {k: v[indices] for k, v in post_params_minus.items()}
+
+        g_pos_ii = pipe(k2, _params_jack_pos)
+        g_neg_ii = pipe(k2, _params_jack_neg)
+
+        results_plus.append(g_pos_ii)
+        results_minus.append(g_neg_ii)
+
+    g_pos_samples = jnp.stack(results_plus, axis=0)
+    g_neg_samples = jnp.stack(results_minus, axis=0)
+    assert g_pos_samples.shape[-1] == 2
+    assert g_neg_samples.shape[-1] == 2
+
+    return g_pos_samples, g_neg_samples
+
+
 def run_jackknife_shear_pipeline(
     rng_key,
     *,
