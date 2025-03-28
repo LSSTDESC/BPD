@@ -26,14 +26,14 @@ def run_bootstrap_shear_pipeline(
 
     for ii in tqdm(range(n_boots), desc="Bootstrap #", disable=no_bar):
         k_ii = keys[ii]
-        k1, k2 = random.split(k_ii)
+        k1, k2, k3 = random.split(k_ii, 3)
         indices = random.randint(k1, shape=(n_gals,), minval=0, maxval=n_gals)
 
         _params_jack_pos = {k: v[indices] for k, v in post_params_plus.items()}
         _params_jack_neg = {k: v[indices] for k, v in post_params_minus.items()}
 
         g_pos_ii = pipe(k2, _params_jack_pos)
-        g_neg_ii = pipe(k2, _params_jack_neg)
+        g_neg_ii = pipe(k3, _params_jack_neg)
 
         results_plus.append(g_pos_ii)
         results_minus.append(g_neg_ii)
