@@ -1,21 +1,27 @@
 SHELL=/bin/bash
-SEED := 42
+SEED := 49
 EXP := exp80
 TAG := ${EXP}_${SEED}
 DIR := /pscratch/sd/i/imendoza/data/cache_chains/${TAG}
+
+SHAPE_NOISE = 0.2
+SIGMA_E_INT = 0.3
+N_GALS = 300000
 
 export JAX_ENABLE_X64=True
 
 collate: 
 	../exp70/collate_samples.py ${SEED}2 --tag ${TAG} --start-string g_samples_boots --mode ""
 
+jack: 
+	./slurm_jackknife.py ${SEED}3 --tag ${TAG}
+
 boot: 
-	./slurm_bootstrap.py ${SEED}2 --tag ${TAG}
+	./slurm_bootstrap.py ${SEED}2 --tag ${TAG} --time "00:29"
 
 samples: 
 	export CUDA_VISIBLE_DEVICES=0
-	./get_shape_samples.py ${SEED}1 ${TAG}
-
+	./get_shape_samples.py ${SEED}1 ${TAG} --shape-noise ${SHAPE_NOISE} --sigma-e-int ${SIGMA_E_INT} --n-gals ${N_GALS}
 
 clean: 
 	rm -f ${DIR}/*
