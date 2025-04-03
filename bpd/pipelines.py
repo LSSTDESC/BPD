@@ -18,7 +18,6 @@ def logtarget_shear_and_sn(
     *,
     data: Array | dict[str, Array],
     sigma_e_int: float,
-    sigma_g: float = 0.01,
 ):
     g = params["g"]
     sigma_e = params["sigma_e"]
