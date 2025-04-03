@@ -17,9 +17,9 @@ from bpd.sample import sample_noisy_ellipticities_unclipped
 def main(
     seed: int,
     tag: str,
-    n_gals: int = 10_000,
-    shape_noise: float = 1e-2,
-    sigma_e_int: float = 5e-2,
+    n_gals: int = 3000,
+    shape_noise: float = 0.1,
+    sigma_e_int: float = 0.2,
     sigma_m: float = 1e-5,
     g1: float = 0.02,
     g2: float = 0.0,
