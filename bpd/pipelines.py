@@ -34,10 +34,13 @@ def logtarget_shear_and_sn(
 
 
 def logtarget_shear(
-    g: Array, *, data: Array | dict[str, Array], loglikelihood: Callable, sigma_g: float
+    g: Array, *, data: Array | dict[str, Array], loglikelihood: Callable
 ):
     loglike = loglikelihood(g, post_params=data)
-    logprior = stats.norm.logpdf(g, loc=0.0, scale=sigma_g).sum()
+
+    # flat circle prior for shear
+    g_mag = jnp.sqrt(g[0] ** 2 + g[1] ** 2)
+    logprior = stats.uniform.logpdf(g_mag, 0.0, 1.0) + jnp.log(1 / (2 * jnp.pi))
     return logprior + loglike
 
 
@@ -50,7 +53,6 @@ def pipeline_shear_inference(
     interim_logprior: Callable,
     n_samples: int,
     initial_step_size: float,
-    sigma_g: float = 0.01,
     n_warmup_steps: int = 500,
     max_num_doublings: int = 2,
 ):
@@ -59,9 +61,7 @@ def pipeline_shear_inference(
     )
     _loglikelihood_jitted = jit(_loglikelihood)
 
-    _logtarget = partial(
-        logtarget_shear, loglikelihood=_loglikelihood_jitted, sigma_g=sigma_g
-    )
+    _logtarget = partial(logtarget_shear, loglikelihood=_loglikelihood_jitted)
 
     _do_inference = partial(
         run_inference_nuts,
@@ -86,7 +86,6 @@ def pipeline_shear_inference_simple(
     sigma_e_int: float,
     n_samples: int,
     initial_step_size: float,
-    sigma_g: float = 0.01,
     n_warmup_steps: int = 500,
     max_num_doublings: int = 2,
 ):
@@ -98,9 +97,7 @@ def pipeline_shear_inference_simple(
     )
     _loglikelihood_jitted = jit(_loglikelihood)
 
-    _logtarget = partial(
-        logtarget_shear, loglikelihood=_loglikelihood_jitted, sigma_g=sigma_g
-    )
+    _logtarget = partial(logtarget_shear, loglikelihood=_loglikelihood_jitted)
 
     return run_inference_nuts(
         rng_key,
