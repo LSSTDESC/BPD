@@ -18,8 +18,8 @@ def main(
     tag: str = typer.Option(),
     samples_fname: str = typer.Option(),
     initial_step_size: float = 0.01,
-    n_samples: int = 2000,
-    n_boots: int = 50,
+    n_samples: int = 1000,
+    n_boots: int = 100,
     no_bar: bool = False,
 ):
     # load data
