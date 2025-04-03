@@ -44,7 +44,7 @@ def main(
 
     _logtarget = partial(logtarget_toy_ellips, sigma_m=sigma_m, sigma_e_int=sigma_e_int)
 
-    k2s = random.split(k2, (n_gals, 2))
+    k2s = random.split(k2, n_gals)
 
     _pipe = jit(
         partial(
@@ -58,9 +58,9 @@ def main(
     )
     pipe = vmap(_pipe, in_axes=(0, 0, 0))
 
-    _ = pipe(k2s[:2, 0], e_obs_plus[:2], e_sheared_plus[:2])
-    e_post_plus = pipe(k2s[:, 0], e_obs_plus, e_sheared_plus)
-    e_post_minus = pipe(k2s[:, 1], e_obs_minus, e_sheared_minus)
+    _ = pipe(k2s[:2], e_obs_plus[:2], e_sheared_plus[:2])
+    e_post_plus = pipe(k2s, e_obs_plus, e_sheared_plus)
+    e_post_minus = pipe(k2s, e_obs_minus, e_sheared_minus)
 
     save_dataset(
         {
