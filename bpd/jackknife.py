@@ -26,14 +26,14 @@ def run_bootstrap_shear_pipeline(
 
     for ii in tqdm(range(n_boots), desc="Bootstrap #", disable=no_bar):
         k_ii = keys[ii]
-        k1, k2, k3 = random.split(k_ii, 3)
+        k1, k2 = random.split(k_ii)
         indices = random.randint(k1, shape=(n_gals,), minval=0, maxval=n_gals)
 
         _params_jack_pos = {k: v[indices] for k, v in post_params_plus.items()}
         _params_jack_neg = {k: v[indices] for k, v in post_params_minus.items()}
 
         g_pos_ii = pipe(k2, _params_jack_pos)
-        g_neg_ii = pipe(k3, _params_jack_neg)
+        g_neg_ii = pipe(k2, _params_jack_neg)
 
         results_plus.append(g_pos_ii)
         results_minus.append(g_neg_ii)
@@ -86,7 +86,6 @@ def run_jackknife_shear_pipeline(
 
     for ii in tqdm(range(start, end), desc="Jackknife #", disable=no_bar):
         k_ii = keys[ii]
-        _k1, _k2 = random.split(k_ii)
         idx1, idx2 = ii * batch_size, (ii + 1) * batch_size
 
         _params_jack_pos = {
@@ -98,8 +97,8 @@ def run_jackknife_shear_pipeline(
             for k, v in post_params_minus.items()
         }
 
-        g_pos_ii = pipe(_k1, _params_jack_pos)
-        g_neg_ii = pipe(_k2, _params_jack_neg)
+        g_pos_ii = pipe(k_ii, _params_jack_pos)
+        g_neg_ii = pipe(k_ii, _params_jack_neg)
 
         results_plus.append(g_pos_ii)
         results_minus.append(g_neg_ii)
