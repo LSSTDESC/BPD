@@ -22,7 +22,6 @@ def logtarget(
     *,
     data: Array | dict[str, Array],
     sigma_e_int: float,
-    sigma_g: float = 0.01,
 ):
     g = params["g"]
     sigma_e = params["sigma_e"]
@@ -49,7 +48,8 @@ def logtarget(
     loglike = shear_loglikelihood(
         g, post_params=data, logprior=_logprior, interim_logprior=_interim_logprior
     )
-    logprior_g = stats.norm.logpdf(g, loc=0.0, scale=sigma_g).sum()
+    g_mag = jnp.sqrt(g[0] ** 2 + g[1] ** 2)
+    logprior_g = stats.uniform.logpdf(g_mag, 0.0, 1.0) + jnp.log(1 / (2 * jnp.pi))
 
     # uninformative
     logprior1 = uniform_logpdf(sigma_e, 1e-4, 0.4)
