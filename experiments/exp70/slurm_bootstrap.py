@@ -11,7 +11,7 @@ from bpd.slurm import run_multi_gpu_job
 def main(
     seed: int,
     tag: str = typer.Option(),
-    n_boots: int = 100,
+    n_boots: int = 500,
     n_nodes: int = 5,
     time: str = "00:30",  # HH:MM
     mem_per_gpu: str = "10G",
