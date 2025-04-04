@@ -6,7 +6,7 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 import typer
-from jax import Array, jit
+from jax import Array
 
 from bpd import DATA_DIR
 from bpd.io import load_dataset, save_dataset
