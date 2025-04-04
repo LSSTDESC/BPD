@@ -27,6 +27,7 @@ def logtarget_shear_and_sn(
     loglike = shear_loglikelihood(
         g, post_params=data, logprior=_logprior, interim_logprior=_interim_logprior
     )
+
     # prior on shear
     g_mag = jnp.sqrt(g[0] ** 2 + g[1] ** 2)
     logprior1 = stats.uniform.logpdf(g_mag, 0.0, 1.0) + jnp.log(1 / (2 * jnp.pi))
