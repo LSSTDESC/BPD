@@ -15,7 +15,7 @@ def main(
     samples_minus_fname: str = typer.Option(),
     n_boots: int = 500,
     n_nodes: int = 5,
-    time: str = "00:20",  # HH:MM
+    time: str = "00:30",  # HH:MM
     mem_per_gpu: str = "10G",
     qos: str = "debug",
 ):
