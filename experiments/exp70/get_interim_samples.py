@@ -42,7 +42,7 @@ def main(
     seed: int,
     tag: str,
     mode: str = "",
-    n_gals: int = 6250,
+    n_gals: int = 1875,
     n_samples_per_gal: int = 300,
     mean_logflux: float = 2.5,
     sigma_logflux: float = 0.4,

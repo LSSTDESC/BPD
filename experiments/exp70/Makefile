@@ -1,16 +1,16 @@
 SHELL=/bin/bash
-SEED := 42
+SEED := 43
 EXP := exp70
 TAG := ${EXP}_${SEED}
 DIR := /pscratch/sd/i/imendoza/data/cache_chains/${TAG}
 
 # simulation parameters
-N_GALS := 625
+N_GALS := 1875
 N_SAMPLES_PER_GAL := 300
 SHEAR := 0.02
 QOS := debug
 
-TIME_SAMPLE := 00:10
+TIME_SAMPLE := 00:20
 NODES_SAMPLE := 4
 NTASKS_SAMPLE := 4
 MEM_PER_GPU := 10G
