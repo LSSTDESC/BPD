@@ -80,13 +80,13 @@ def main(
     save_dataset(
         {
             "plus": {
-                "g1": samples_plus["g"][:, 0],
-                "g2": samples_plus["g"][:, 1],
+                "g1": samples_plus["g"][..., 0],
+                "g2": samples_plus["g"][..., 1],
                 "sigma_e": samples_plus["sigma_e"],
             },
             "minus": {
-                "g1": samples_minus["g"][:, 0],
-                "g2": samples_minus["g"][:, 1],
+                "g1": samples_minus["g"][..., 0],
+                "g2": samples_minus["g"][..., 1],
                 "sigma_e": samples_minus["sigma_e"],
             },
         },
