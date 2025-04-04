@@ -5,7 +5,6 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 import typer
-from jax import jit
 
 from bpd import DATA_DIR
 from bpd.io import load_dataset_jax, save_dataset
@@ -20,8 +19,7 @@ def main(
     samples_minus_fname: str = typer.Option(),
     initial_step_size: float = 0.1,
     n_samples: int = 1000,
-    overwrite: bool = False,
-    n_boots: int = 50,
+    n_boots: int = 25,
     no_bar: bool = False,
 ):
     dirpath = DATA_DIR / "cache_chains" / tag
@@ -29,9 +27,6 @@ def main(
     samples_minus_fpath = dirpath / samples_minus_fname
     assert samples_plus_fpath.exists() and samples_minus_fpath.exists()
     fpath = dirpath / f"g_samples_boots_{seed}.npz"
-
-    if fpath.exists() and not overwrite:
-        raise IOError("overwriting...")
 
     dsp = load_dataset_jax(samples_plus_fpath)
     dsm = load_dataset_jax(samples_minus_fpath)
@@ -60,10 +55,13 @@ def main(
         n_samples=n_samples,
         initial_step_size=initial_step_size,
     )
-    raw_pipeline_jitted = jit(raw_pipeline)
-    pipe = lambda k, d: raw_pipeline_jitted(k, d["e1e2"])
 
-    g_plus, g_minus = run_bootstrap_shear_pipeline(
+    @jax.jit
+    def pipe(k, d):
+        out = raw_pipeline(k, d["e1e2"])
+        return {"g1": out[..., 0], "g2": out[..., 1]}
+
+    samples_plus, samples_minus = run_bootstrap_shear_pipeline(
         rng_key,
         post_params_plus={"e1e2": e1e2p},
         post_params_minus={"e1e2": e1e2m},
@@ -73,10 +71,13 @@ def main(
         no_bar=no_bar,
     )
 
-    assert g_plus.shape[1:] == (n_samples, 2)
-    assert g_minus.shape[1:] == (n_samples, 2)
+    assert samples_plus["g1"].shape == (n_boots, n_samples)
+    assert samples_minus["g1"].shape == (n_boots, n_samples)
 
-    save_dataset({"g_plus": g_plus, "g_minus": g_minus}, fpath, overwrite=True)
+    gp = jnp.stack([samples_plus["g1"], samples_plus["g2"]], axis=-1)
+    gm = jnp.stack([samples_minus["g1"], samples_minus["g2"]], axis=-1)
+
+    save_dataset({"gp": gp, "gm": gm}, fpath, overwrite=True)
 
 
 if __name__ == "__main__":
