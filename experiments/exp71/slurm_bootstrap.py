@@ -10,8 +10,8 @@ def main(
     seed: int,
     tag: str = typer.Option(),
     time: str = "00:30",  # HH:MM
-    samples_plus_fname: str = typer.Option(),
-    samples_minus_fname: str = typer.Option(),
+    samples_plus_fpath: str = typer.Option(),
+    samples_minus_fpath: str = typer.Option(),
     mem_per_gpu: str = "10G",
     n_boots: int = 25,
     n_nodes: int = 5,
@@ -23,8 +23,8 @@ def main(
     cmds = []
     for ii in range(n_splits):
         base_cmd = """./simple_bootstrap.py {new_seed}
-        --samples-plus-fname {samples_plus_fname}
-        --samples-minus-fname {samples_minus_fname}
+        --samples-plus-fpath {samples_plus_fpath}
+        --samples-minus-fpath {samples_minus_fpath}
         --tag {tag} --n-boots {split_size}
         """
         base_cmd = " ".join(base_cmd.split())
@@ -32,8 +32,8 @@ def main(
         cmd = base_cmd.format(
             new_seed=new_seed,
             tag=tag,
-            samples_plus_fname=samples_plus_fname,
-            samples_minus_fname=samples_minus_fname,
+            samples_plus_fpath=samples_plus_fpath,
+            samples_minus_fpath=samples_minus_fpath,
             n_boots=split_size,
         )
         cmds.append(cmd)
