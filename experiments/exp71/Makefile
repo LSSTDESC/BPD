@@ -9,6 +9,8 @@ SHEAR := 0.02
 QOS := debug
 MEM_PER_GPU := 10G
 
+PLUS_FILE := /pscratch/sd/i/imendoza/data/cache_chains/exp70_44/interim_samples_441_plus.npz
+MINUS_FILE := /pscratch/sd/i/imendoza/data/cache_chains/exp70_44/interim_samples_441_minus.npz
 
 export JAX_ENABLE_X64=True
 
@@ -20,7 +22,7 @@ collate_boot:
 
 bootstrap:
 	export CUDA_VISIBLE_DEVICES=0
-	./slurm_bootstrap.py ${SEED} --tag ${TAG} --samples-plus-fpath /pscratch/sd/i/imendoza/data/cache_chains/exp70_44/interim_samples_441_plus.npz --samples-minus-fpath /pscratch/sd/i/imendoza/data/cache_chains/exp70_44/interim_samples_441_minus.npz
+	./slurm_bootstrap.py ${SEED} --tag ${TAG} --samples-plus-fpath ${PLUS_FILE}  --samples-minus-fpath ${MINUS_FILE}
 
 shear: 
 	export CUDA_VISIBLE_DEVICES=0
