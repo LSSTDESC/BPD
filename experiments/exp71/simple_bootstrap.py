@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from functools import partial
+from pathlib import Path
 
 import jax
 import jax.numpy as jnp
@@ -17,16 +18,16 @@ from bpd.pipelines import logtarget_shear_and_sn
 def main(
     seed: int,
     tag: str = typer.Option(),
-    samples_plus_fname: str = typer.Option(),
-    samples_minus_fname: str = typer.Option(),
+    samples_plus_fpath: str = typer.Option(),
+    samples_minus_fpath: str = typer.Option(),
     initial_step_size: float = 0.1,
     n_samples: int = 1000,
-    n_boots: int = 50,
+    n_boots: int = 30,
     no_bar: bool = False,
 ):
     dirpath = DATA_DIR / "cache_chains" / tag
-    samples_plus_fpath = dirpath / samples_plus_fname
-    samples_minus_fpath = dirpath / samples_minus_fname
+    samples_plus_fpath = Path(samples_plus_fpath)
+    samples_minus_fpath = Path(samples_minus_fpath)
     assert samples_plus_fpath.exists() and samples_minus_fpath.exists()
     fpath = dirpath / f"g_samples_boots_{seed}.npz"
 
@@ -47,7 +48,6 @@ def main(
     assert jnp.all(dsp["truth"]["e1"] == dsm["truth"]["e1"])
     assert jnp.all(dsp["truth"]["lf"] == dsm["truth"]["lf"])
 
-    # run
     rng_key = jax.random.key(seed)
     _logtarget = jit(partial(logtarget_shear_and_sn, sigma_e_int=sigma_e_int))
     raw_pipeline = partial(
@@ -58,20 +58,21 @@ def main(
         initial_step_size=initial_step_size,
         max_num_doublings=3,
     )
-    pipe = jit(raw_pipeline)
+    _pipe = jit(raw_pipeline)
+    pipe = lambda k, d: _pipe(k, d["e1e2"])
 
     samples_plus, samples_minus = run_bootstrap_shear_pipeline(
         rng_key,
         post_params_plus={"e1e2": e1e2p},
         post_params_minus={"e1e2": e1e2m},
         shear_pipeline=pipe,
-        n_gals=e1e2p.shape[0],
+        n_gals=dsp["samples"]["e1"].shape[0],
         n_boots=n_boots,
         no_bar=no_bar,
     )
 
-    assert samples_plus["g1"].shape == (n_boots, n_samples)
-    assert samples_minus["g1"].shape == (n_boots, n_samples)
+    assert samples_plus["g"].shape == (n_boots, n_samples, 2)
+    assert samples_minus["g"].shape == (n_boots, n_samples, 2)
 
     save_dataset(
         {"plus": {**samples_plus}, "minus": {**samples_minus}},
