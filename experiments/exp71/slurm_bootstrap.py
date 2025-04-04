@@ -13,7 +13,7 @@ def main(
     samples_plus_fpath: str = typer.Option(),
     samples_minus_fpath: str = typer.Option(),
     mem_per_gpu: str = "10G",
-    n_boots: int = 25,
+    n_boots: int = 500,
     n_nodes: int = 5,
     qos: str = "debug",
 ):
