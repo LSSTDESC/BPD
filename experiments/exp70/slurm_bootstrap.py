@@ -11,9 +11,11 @@ from bpd.slurm import run_multi_gpu_job
 def main(
     seed: int,
     tag: str = typer.Option(),
+    samples_plus_fname: str = typer.Option(),
+    samples_minus_fname: str = typer.Option(),
     n_boots: int = 500,
     n_nodes: int = 5,
-    time: str = "00:30",  # HH:MM
+    time: str = "00:20",  # HH:MM
     mem_per_gpu: str = "10G",
     qos: str = "debug",
 ):
@@ -23,14 +25,18 @@ def main(
     cmds = []
     for ii in range(n_splits):
         base_cmd = """../exp70/simple_bootstrap.py {new_seed}
-        --samples-plus-fname interim_samples_{seed}_plus.npz
-        --samples-minus-fname interim_samples_{seed}_minus.npz
-        --tag {tag} --n-boots {split_size} --overwrite
+        --samples-plus-fname {samples_plus_fname}
+        --samples-minus-fname {samples_minus_fname}
+        --tag {tag} --n-boots {split_size}
         """
         base_cmd = " ".join(base_cmd.split())
         new_seed = f"{seed}{ii}"
         cmd = base_cmd.format(
-            new_seed=new_seed, seed=seed, tag=tag, split_size=split_size
+            new_seed=new_seed,
+            tag=tag,
+            split_size=split_size,
+            samples_plus_fname=samples_plus_fname,
+            samples_minus_fname=samples_minus_fname,
         )
         cmds.append(cmd)
 

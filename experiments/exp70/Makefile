@@ -28,16 +28,16 @@ collate_jack:
 	../exp70/collate_samples.py ${SEED}4 --tag ${TAG} --mode "" --start-string "g_samples_jack"
 
 boot:
-	./slurm_bootstrap.py ${SEED}3 --tag ${TAG}
+	./slurm_bootstrap.py ${SEED}3 --tag ${TAG} --samples-plus-fname "interim_samples_${SEED}1_plus.npz" --samples-minus-fname "interim_samples_${SEED}1_minus.npz"
 
 jackknife:
 	./slurm_jackknife.py ${SEED}4 --tag ${TAG}
 
 shear: 
 	export CUDA_VISIBLE_DEVICES=0
-	../../scripts/get_shear_from_shapes.py ${SEED}2 --interim-samples-fname "interim_samples_${SEED}_plus.npz" --tag ${TAG} --overwrite --extra-tag "plus"
+	time ../../scripts/get_shear_from_shapes.py ${SEED}2 --interim-samples-fname "interim_samples_${SEED}1_plus.npz" --tag ${TAG} --overwrite --extra-tag "plus"
 	
-	../../scripts/get_shear_from_shapes.py ${SEED}2 --interim-samples-fname "interim_samples_${SEED}_minus.npz" --tag ${TAG} --overwrite --extra-tag "minus"
+	../../scripts/get_shear_from_shapes.py ${SEED}2 --interim-samples-fname "interim_samples_${SEED}1_minus.npz" --tag ${TAG} --overwrite --extra-tag "minus"
 
 collate:
 	../exp70/collate_samples.py ${SEED}1 --tag ${TAG} --mode "plus"
