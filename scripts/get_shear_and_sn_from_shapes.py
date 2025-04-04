@@ -51,6 +51,7 @@ def main(
     )
 
     assert samples["g"].shape == (n_samples, 2)
+    assert "sigma_e" in samples
 
     out = {
         "samples": {
