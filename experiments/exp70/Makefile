@@ -24,14 +24,8 @@ figures:
 collate_boot:
 	../exp70/collate_samples.py ${SEED}3 --tag ${TAG} --mode "" --start-string "g_samples_boots"
 
-collate_jack:
-	../exp70/collate_samples.py ${SEED}4 --tag ${TAG} --mode "" --start-string "g_samples_jack"
-
 boot:
 	./slurm_bootstrap.py ${SEED}3 --tag ${TAG} --samples-plus-fname "interim_samples_${SEED}1_plus.npz" --samples-minus-fname "interim_samples_${SEED}1_minus.npz"
-
-jackknife:
-	./slurm_jackknife.py ${SEED}4 --tag ${TAG}
 
 shear: 
 	export CUDA_VISIBLE_DEVICES=0
