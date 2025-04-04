@@ -26,6 +26,9 @@ def main(
     no_bar: bool = False,
 ):
     dirpath = DATA_DIR / "cache_chains" / tag
+    if not dirpath.exists():
+        dirpath.mkdir(parents=True, exist_ok=True)
+
     samples_plus_fpath = Path(samples_plus_fpath)
     samples_minus_fpath = Path(samples_minus_fpath)
     assert samples_plus_fpath.exists() and samples_minus_fpath.exists()
