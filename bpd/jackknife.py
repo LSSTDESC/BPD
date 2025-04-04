@@ -32,18 +32,19 @@ def run_bootstrap_shear_pipeline(
         _params_jack_pos = {k: v[indices] for k, v in post_params_plus.items()}
         _params_jack_neg = {k: v[indices] for k, v in post_params_minus.items()}
 
-        g_pos_ii = pipe(k2, _params_jack_pos)
-        g_neg_ii = pipe(k2, _params_jack_neg)
+        samples_plus_ii = pipe(k2, _params_jack_pos)
+        samples_minus_ii = pipe(k2, _params_jack_neg)
 
-        results_plus.append(g_pos_ii)
-        results_minus.append(g_neg_ii)
+        results_plus.append(samples_plus_ii)
+        results_minus.append(samples_minus_ii)
 
-    g_pos_samples = jnp.stack(results_plus, axis=0)
-    g_neg_samples = jnp.stack(results_minus, axis=0)
-    assert g_pos_samples.shape[-1] == 2
-    assert g_neg_samples.shape[-1] == 2
+    samples_plus = {}
+    samples_minus = {}
+    for k in results_plus[0]:
+        samples_plus[k] = jnp.stack([rs[k] for rs in results_plus], axis=0)
+        samples_minus[k] = jnp.stack([rs[k] for rs in results_minus], axis=0)
 
-    return g_pos_samples, g_neg_samples
+    return samples_plus, samples_minus
 
 
 def run_jackknife_shear_pipeline(
