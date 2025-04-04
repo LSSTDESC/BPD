@@ -1,12 +1,12 @@
 SHELL=/bin/bash
-SEED := 65
+SEED := 64
 EXP := exp80
 TAG := ${EXP}_${SEED}
 DIR := /pscratch/sd/i/imendoza/data/cache_chains/${TAG}
 
 SHAPE_NOISE = 0.2
 SIGMA_E_INT = 0.3
-N_GALS = 100000
+N_GALS = 30_000
 
 export JAX_ENABLE_X64=True
 
