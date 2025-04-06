@@ -6,7 +6,7 @@ from pathlib import Path
 import jax
 import jax.numpy as jnp
 import typer
-from jax import jit
+from jax import jit, random
 
 from bpd import DATA_DIR
 from bpd.chains import run_inference_nuts
@@ -52,26 +52,39 @@ def main(
     assert jnp.all(dsp["truth"]["lf"] == dsm["truth"]["lf"])
 
     rng_key = jax.random.key(seed)
+    k1, k2 = random.split(rng_key)
+
     _logtarget = jit(partial(logtarget_shear_and_sn, sigma_e_int=sigma_e_int))
     raw_pipeline = partial(
         run_inference_nuts,
-        init_positions={"g": jnp.array([0.0, 0.0]), "sigma_e": 0.2},
         logtarget=_logtarget,
         n_samples=n_samples,
         initial_step_size=initial_step_size,
         max_num_doublings=3,
     )
     _pipe = jit(raw_pipeline)
-    pipe = lambda k, d: _pipe(k, d["e1e2"])
+    pipe = lambda k, d, ip: _pipe(k, d["e1e2"], ip)
+
+    # initializiations for each bootstrap
+    _sigma_e_true = dsp["hyper"]["shape_noise"]
+    init_positions = []
+    k1s = random.split(k1, n_boots)
+    for ii in range(n_boots):
+        g = jnp.array([0.0, 0.0])
+        sigma_e = random.uniform(
+            k1s[ii], shape=(), minval=_sigma_e_true - 0.02, maxval=_sigma_e_true + 0.02
+        )
+        init_positions.append({"g": g, "sigma_e": sigma_e})
 
     samples_plus, samples_minus = run_bootstrap_shear_pipeline(
-        rng_key,
+        k2,
         post_params_plus={"e1e2": e1e2p},
         post_params_minus={"e1e2": e1e2m},
         shear_pipeline=pipe,
         n_gals=dsp["samples"]["e1"].shape[0],
         n_boots=n_boots,
         no_bar=no_bar,
+        init_positions=init_positions,
     )
 
     assert samples_plus["g"].shape == (n_boots, n_samples, 2)
