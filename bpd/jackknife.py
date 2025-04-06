@@ -1,3 +1,4 @@
+from functools import partial
 from math import ceil
 from typing import Callable
 
@@ -15,6 +16,7 @@ def run_bootstrap_shear_pipeline(
     n_gals: int,
     n_boots: int = 100,
     no_bar: bool = True,
+    init_positions: list | None = None,
 ):
     """Obtain boostrap samples of shear posteriors from a 'plus' and 'minus' sims."""
 
@@ -25,6 +27,11 @@ def run_bootstrap_shear_pipeline(
     pipe = jit(shear_pipeline)
 
     for ii in tqdm(range(n_boots), desc="Bootstrap #", disable=no_bar):
+        if init_positions is not None:
+            _pipe_ii = partial(pipe, ip=init_positions[ii])
+        else:
+            _pipe_ii = pipe
+
         k_ii = keys[ii]
         k1, k2 = random.split(k_ii)
         indices = random.randint(k1, shape=(n_gals,), minval=0, maxval=n_gals)
@@ -32,8 +39,8 @@ def run_bootstrap_shear_pipeline(
         _params_jack_pos = {k: v[indices] for k, v in post_params_plus.items()}
         _params_jack_neg = {k: v[indices] for k, v in post_params_minus.items()}
 
-        samples_plus_ii = pipe(k2, _params_jack_pos)
-        samples_minus_ii = pipe(k2, _params_jack_neg)
+        samples_plus_ii = _pipe_ii(k2, _params_jack_pos)
+        samples_minus_ii = _pipe_ii(k2, _params_jack_neg)
 
         results_plus.append(samples_plus_ii)
         results_minus.append(samples_minus_ii)
