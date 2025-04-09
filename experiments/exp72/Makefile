@@ -15,7 +15,6 @@ NODES_SAMPLE := 5
 NTASKS_SAMPLE := 4
 MEM_PER_GPU := 10G
 
-
 export JAX_ENABLE_X64=True
 
 figures:
@@ -29,9 +28,8 @@ boot:
 
 shear: 
 	export CUDA_VISIBLE_DEVICES=0
-	time ../../scripts/get_shear_from_shapes.py ${SEED}2 --interim-samples-fname "interim_samples_${SEED}1_plus.npz" --tag ${TAG} --overwrite --extra-tag "plus"
-	
-	../../scripts/get_shear_from_shapes.py ${SEED}2 --interim-samples-fname "interim_samples_${SEED}1_minus.npz" --tag ${TAG} --overwrite --extra-tag "minus"
+	../../scripts/get_shear_all_free.py ${SEED}2 --interim-samples-fpath ${DIR}/"interim_samples_${SEED}1_plus.npz" --tag ${TAG} --overwrite --mode "plus"
+	../../scripts/get_shear_all_free.py ${SEED}2 --interim-samples-fpath ${DIR}/"interim_samples_${SEED}1_minus.npz" --tag ${TAG} --overwrite --mode "minus"
 
 collate:
 	../exp70/collate_samples.py ${SEED}1 --tag ${TAG} --mode "plus"
