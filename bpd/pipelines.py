@@ -68,7 +68,6 @@ def pipeline_shear_inference(
 
     _do_inference = partial(
         run_inference_nuts,
-        data=post_params,
         logtarget=_logtarget,
         n_samples=n_samples,
         n_warmup_steps=n_warmup_steps,
@@ -76,7 +75,7 @@ def pipeline_shear_inference(
         initial_step_size=initial_step_size,
     )
 
-    g_samples = _do_inference(rng_key, init_g)
+    g_samples = _do_inference(rng_key, post_params, init_g)
     return g_samples
 
 
