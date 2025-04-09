@@ -34,7 +34,7 @@ def main(
             tag=tag,
             samples_plus_fpath=samples_plus_fpath,
             samples_minus_fpath=samples_minus_fpath,
-            n_boots=split_size,
+            split_size=split_size,
         )
         cmds.append(cmd)
 
