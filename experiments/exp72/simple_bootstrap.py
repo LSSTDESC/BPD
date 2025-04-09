@@ -11,7 +11,7 @@ from bpd import DATA_DIR
 from bpd.io import load_dataset_jax, save_dataset
 from bpd.jackknife import run_bootstrap_shear_pipeline
 from bpd.pipelines import pipeline_shear_inference
-from bpd.prior import interim_gprops_logprior, true_all_params_logprior
+from bpd.prior import interim_gprops_logprior, true_all_params_trunc_logprior
 
 
 def _interim_logprior(post_params: dict[str, Array], sigma_e_int: float):
@@ -66,6 +66,7 @@ def main(
     sigma_e_int = dsp["hyper"]["sigma_e_int"]
     mean_logflux = dsp["hyper"]["mean_logflux"]
     sigma_logflux = dsp["hyper"]["sigma_logflux"]
+    min_logflux = dsp["hyper"]["min_logflux"]
     mean_loghlr = dsp["hyper"]["mean_loghlr"]
     sigma_loghlr = dsp["hyper"]["sigma_loghlr"]
 
@@ -78,17 +79,17 @@ def main(
     assert sigma_e_int == dsm["hyper"]["sigma_e_int"]
     assert mean_logflux == dsm["hyper"]["mean_logflux"]
     assert mean_loghlr == dsm["hyper"]["mean_loghlr"]
-
     assert jnp.all(dsp["truth"]["e1"] == dsm["truth"]["e1"])
     assert jnp.all(dsp["truth"]["f"] == dsm["truth"]["f"])
 
     logprior_fnc = partial(
-        true_all_params_logprior,
+        true_all_params_trunc_logprior,
         sigma_e=sigma_e,
         mean_logflux=mean_logflux,
         sigma_logflux=sigma_logflux,
         mean_loghlr=mean_loghlr,
         sigma_loghlr=sigma_loghlr,
+        min_logflux=min_logflux,
     )
     interim_logprior_fnc = partial(_interim_logprior, sigma_e_int=sigma_e_int)
 

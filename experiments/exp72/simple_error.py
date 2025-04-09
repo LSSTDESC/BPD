@@ -10,7 +10,7 @@ from jax import jit, random, vmap
 from bpd import DATA_DIR
 from bpd.io import load_dataset_jax, save_dataset
 from bpd.pipelines import pipeline_shear_inference
-from bpd.prior import interim_gprops_logprior, true_all_params_logprior
+from bpd.prior import interim_gprops_logprior, true_all_params_trunc_logprior
 
 
 def main(
@@ -60,6 +60,7 @@ def main(
     sigma_logflux = ds_plus["hyper"]["sigma_logflux"]
     mean_loghlr = ds_plus["hyper"]["mean_loghlr"]
     sigma_loghlr = ds_plus["hyper"]["sigma_loghlr"]
+    min_logflux = ds_plus["hyper"]["min_logflux"]
 
     g1m = ds_minus["hyper"]["g1"]
     g2m = ds_minus["hyper"]["g2"]
@@ -74,10 +75,11 @@ def main(
     assert jnp.all(ds_plus["truth"]["f"] == ds_minus["truth"]["f"])
 
     logprior_fnc = partial(
-        true_all_params_logprior,
+        true_all_params_trunc_logprior,
         sigma_e=sigma_e,
         mean_logflux=mean_logflux,
         sigma_logflux=sigma_logflux,
+        min_logflux=min_logflux,
         mean_loghlr=mean_loghlr,
         sigma_loghlr=sigma_loghlr,
     )
