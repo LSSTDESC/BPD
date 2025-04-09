@@ -116,3 +116,34 @@ def true_all_params_logprior(
     prior += true_ellip_logprior(e1e2, g, sigma_e=sigma_e)
 
     return prior
+
+
+def true_all_params_trunc_logprior(
+    post_params: dict[str, Array],
+    g: Array,
+    *,
+    sigma_e: float,
+    mean_logflux: float,
+    sigma_logflux: float,
+    min_logflux: float,
+    mean_loghlr: float,
+    sigma_loghlr: float,
+):
+    lf = post_params["lf"]
+    lhlr = post_params["lhlr"]
+    e1e2 = jnp.stack((post_params["e1"], post_params["e2"]), axis=-1)
+
+    prior = jnp.array(0.0)
+
+    # log flux uses a truncted normal distribution
+    a = (min_logflux - mean_logflux) / sigma_logflux
+    b = jnp.inf
+    prior += stats.truncnorm.logpdf(lf, a=a, b=b, loc=mean_logflux, scale=sigma_logflux)
+
+    # hlr
+    prior += stats.norm.logpdf(lhlr, loc=mean_loghlr, scale=sigma_loghlr)
+
+    # elliptcity
+    prior += true_ellip_logprior(e1e2, g, sigma_e=sigma_e)
+
+    return prior
