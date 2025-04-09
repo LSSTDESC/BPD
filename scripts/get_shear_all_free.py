@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""This file creates toy samples of ellipticities and saves them to .hdf5 file."""
+"""Sample shear posterior with all galaxy parameters free (fixed true prior)."""
 
 from functools import partial
+from pathlib import Path
 
 import jax
 import jax.numpy as jnp
@@ -25,7 +26,7 @@ def interim_logprior(post_params: dict[str, Array], sigma_e_int: float):
 def main(
     seed: int,
     tag: str = typer.Option(),
-    samples_fname: str = typer.Option(),
+    samples_fpath: str = typer.Option(),
     mode: str = "",
     initial_step_size: float = 1e-2,
     n_samples: int = 3000,
@@ -36,7 +37,7 @@ def main(
 
     # directory structure
     dirpath = DATA_DIR / "cache_chains" / tag
-    samples_fpath = dirpath / samples_fname
+    samples_fpath = Path(samples_fpath)
     assert dirpath.exists()
     assert samples_fpath.exists(), "ellipticity samples file does not exist"
     out_fpath = dirpath / f"g_samples_{seed}{mode_txt}.npy"
