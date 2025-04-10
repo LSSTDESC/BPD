@@ -20,7 +20,7 @@ from bpd.prior import interim_gprops_logprior
 from bpd.sample import (
     get_target_images,
     get_true_params_from_galaxy_params,
-    sample_galaxy_params_trunc,
+    sample_galaxy_params_skew,
 )
 
 
@@ -97,9 +97,9 @@ def main(
     fft_size: int = 256,
     background: float = 1.0,
     initial_step_size: float = 0.1,
-    mean_logflux: float = 2.5,
+    a_logflux: float = 14,
+    mean_logflux: float = 2.45,
     sigma_logflux: float = 0.4,
-    min_logflux: float = 2.45,
     mean_loghlr: float = -0.4,
     sigma_loghlr: float = 0.05,
 ):
@@ -144,13 +144,13 @@ def main(
     for n_gals in all_n_gals:  # repeat 1 == compilation
         print("n_gals:", n_gals)
 
-        galaxy_params = sample_galaxy_params_trunc(
+        galaxy_params = sample_galaxy_params_skew(
             pkey1,
             n=n_gals,
             shape_noise=shape_noise,
+            a_logflux=a_logflux,
             mean_logflux=mean_logflux,
             sigma_logflux=sigma_logflux,
-            min_logflux=min_logflux,
             mean_loghlr=mean_loghlr,
             sigma_loghlr=sigma_loghlr,
         )
