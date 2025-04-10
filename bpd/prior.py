@@ -169,7 +169,7 @@ def true_all_params_skew_logprior(
     # log flux uses a skew normal distribution
     # jax does not have an implementation of skew normal so we use the equation in:
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.skewnorm.html
-    prior += _skewnorm_logpdf(lf, a=a_logflux, loc=mean_logflux, scale=sigma_logflux)
+    prior += skewnorm_logpdf(lf, a=a_logflux, loc=mean_logflux, scale=sigma_logflux)
 
     # hlr
     prior += stats.norm.logpdf(lhlr, loc=mean_loghlr, scale=sigma_loghlr)
@@ -180,7 +180,7 @@ def true_all_params_skew_logprior(
     return prior
 
 
-def _skewnorm_logpdf(x: ArrayLike, a: float, loc: float, scale: float) -> ArrayLike:
+def skewnorm_logpdf(x: ArrayLike, a: float, loc: float, scale: float) -> ArrayLike:
     """Skew normal distribution using the equation from scipy."""
     y = (x - loc) / scale
     return jnp.log(2) + stats.norm.logpdf(y) + stats.norm.logcdf(a * y) - jnp.log(scale)
