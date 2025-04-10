@@ -147,3 +147,37 @@ def true_all_params_trunc_logprior(
     prior += true_ellip_logprior(e1e2, g, sigma_e=sigma_e)
 
     return prior
+
+
+def true_all_params_skew_logprior(
+    post_params: dict[str, Array],
+    g: Array,
+    *,
+    sigma_e: float,
+    a: float,  # skewness
+    mean_logflux: float,
+    sigma_logflux: float,
+    mean_loghlr: float,
+    sigma_loghlr: float,
+):
+    lf = post_params["lf"]
+    lhlr = post_params["lhlr"]
+    e1e2 = jnp.stack((post_params["e1"], post_params["e2"]), axis=-1)
+
+    prior = jnp.array(0.0)
+
+    # log flux uses a skew normal distribution
+    # jax does not have an implementation of skew normal so we use the equation in:
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.skewnorm.html
+    x = (lf - mean_logflux) / sigma_logflux
+    prior += (
+        jnp.log(2) + stats.norm.logpdf(x) + stats.norm.logcdf(a * x) / sigma_logflux
+    )
+
+    # hlr
+    prior += stats.norm.logpdf(lhlr, loc=mean_loghlr, scale=sigma_loghlr)
+
+    # elliptcity
+    prior += true_ellip_logprior(e1e2, g, sigma_e=sigma_e)
+
+    return prior
