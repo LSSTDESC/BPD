@@ -53,9 +53,6 @@ def main(
 
     # prior parameters
     hyper = ds["hyper"]
-    g1 = hyper["g1"]
-    g2 = hyper["g2"]
-    true_g = jnp.array([g1, g2])
     sigma_e_int = hyper["sigma_e_int"]
     sigma_e = hyper["shape_noise"]
     mean_logflux = hyper["mean_logflux"]
@@ -70,9 +67,9 @@ def main(
         sigma_e=sigma_e,
         mean_logflux=mean_logflux,
         sigma_logflux=sigma_logflux,
+        min_logflux=min_logflux,
         mean_loghlr=mean_loghlr,
         sigma_loghlr=sigma_loghlr,
-        min_logflux=min_logflux,
     )
     interim_logprior_fnc = partial(
         interim_gprops_logprior,
@@ -85,7 +82,7 @@ def main(
     g_samples = pipeline_shear_inference(
         rng_key,
         post_params,
-        init_g=true_g,
+        init_g=jnp.zeros([0.0, 0.0]),
         logprior=logprior_fnc,
         interim_logprior=interim_logprior_fnc,
         n_samples=n_samples,
