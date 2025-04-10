@@ -28,8 +28,8 @@ boot:
 
 shear: 
 	export CUDA_VISIBLE_DEVICES=0
-	../../scripts/get_shear_all_free.py ${SEED}2 --interim-samples-fpath ${DIR}/"interim_samples_${SEED}1_plus.npz" --tag ${TAG} --overwrite --mode "plus"
-	../../scripts/get_shear_all_free.py ${SEED}2 --interim-samples-fpath ${DIR}/"interim_samples_${SEED}1_minus.npz" --tag ${TAG} --overwrite --mode "minus"
+	./get_shear.py ${SEED}2 --samples-fpath ${DIR}/interim_samples_${SEED}1_plus.npz --tag ${TAG} --overwrite --mode "plus"
+	./get_shear.py ${SEED}2 --samples-fpath ${DIR}/interim_samples_${SEED}1_minus.npz --tag ${TAG} --overwrite --mode "minus"
 
 collate:
 	../exp70/collate_samples.py ${SEED}1 --tag ${TAG} --mode "plus"
