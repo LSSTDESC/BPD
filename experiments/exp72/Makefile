@@ -30,7 +30,7 @@ collate_boot:
 	../exp70/collate_samples.py ${SEED}3 --tag ${TAG} --mode "" --start-string "g_samples_boots"
 
 boot:
-	./slurm_bootstrap.py ${SEED}3 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH}
+	./slurm_bootstrap.py ${SEED}3 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH} --n-boots 200
 
 shear: 
 	export CUDA_VISIBLE_DEVICES=0
