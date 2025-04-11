@@ -274,3 +274,18 @@ def logtarget_all_free(
     logprior += logprior_g
 
     return logprior + loglike
+
+
+def init_all_params(key: PRNGKeyArray, true_params: dict[str, float], p: float = 0.1):
+    """Initialize all parameters uniformly around the truth."""
+    assert "g" not in true_params
+    keys = random.split(key, len(true_params))
+    init_positions = {}
+    for ii, k in enumerate(true_params):
+        init_positions[k] = random.uniform(
+            keys[ii],
+            shape=(),
+            minval=true_params[k] - p * true_params[k],
+            maxval=true_params[k] + p * true_params[k],
+        )
+    return init_positions
