@@ -10,22 +10,22 @@ from jax import jit, random, vmap
 from bpd import DATA_DIR
 from bpd.io import load_dataset_jax, save_dataset
 from bpd.pipelines import pipeline_shear_inference
-from bpd.prior import interim_gprops_logprior, true_all_params_trunc_logprior
+from bpd.prior import interim_gprops_logprior, true_all_params_skew_logprior
 
 
 def main(
     seed: int,
     tag: str = typer.Option(),
-    plus_samples_fpath: str = typer.Option(),
-    minus_samples_fpath: str = typer.Option(),
+    samples_plus_fpath: str = typer.Option(),
+    samples_minus_fpath: str = typer.Option(),
     initial_step_size: float = 1e-3,
     n_splits: int = 500,
 ):
     rng_key = random.key(seed)
 
     dirpath = DATA_DIR / "cache_chains" / tag
-    pfpath = Path(plus_samples_fpath)
-    mfpath = Path(minus_samples_fpath)
+    pfpath = Path(samples_plus_fpath)
+    mfpath = Path(samples_minus_fpath)
     fpath = dirpath / f"g_samples_{seed}_errs.npz"
 
     assert dirpath.exists()
@@ -51,22 +51,16 @@ def main(
         "e2": samples_minus["e2"],
     }
 
-    g1 = ds_plus["hyper"]["g1"]
-    g2 = ds_plus["hyper"]["g2"]
-    true_g = jnp.array([g1, g2])
     sigma_e = ds_plus["hyper"]["sigma_e"]
     sigma_e_int = ds_plus["hyper"]["sigma_e_int"]
     mean_logflux = ds_plus["hyper"]["mean_logflux"]
     sigma_logflux = ds_plus["hyper"]["sigma_logflux"]
     mean_loghlr = ds_plus["hyper"]["mean_loghlr"]
     sigma_loghlr = ds_plus["hyper"]["sigma_loghlr"]
-    min_logflux = ds_plus["hyper"]["min_logflux"]
+    a_logflux = ds_plus["hyper"]["a_logflux"]
 
-    g1m = ds_minus["hyper"]["g1"]
-    g2m = ds_minus["hyper"]["g2"]
-    true_gm = jnp.array([g1m, g2m])
-
-    assert jnp.all(true_g == -true_gm)
+    assert ds_plus["hyper"]["g1"] == -ds_minus["hyper"]["g1"]
+    assert ds_plus["hyper"]["g2"] == -ds_minus["hyper"]["g2"]
     assert sigma_e == ds_minus["hyper"]["sigma_e"]
     assert sigma_e_int == ds_minus["hyper"]["sigma_e_int"]
     assert mean_logflux == ds_minus["hyper"]["mean_logflux"]
@@ -75,11 +69,11 @@ def main(
     assert jnp.all(ds_plus["truth"]["f"] == ds_minus["truth"]["f"])
 
     logprior_fnc = partial(
-        true_all_params_trunc_logprior,
+        true_all_params_skew_logprior,
         sigma_e=sigma_e,
         mean_logflux=mean_logflux,
         sigma_logflux=sigma_logflux,
-        min_logflux=min_logflux,
+        a_logflux=a_logflux,
         mean_loghlr=mean_loghlr,
         sigma_loghlr=sigma_loghlr,
     )
@@ -103,6 +97,7 @@ def main(
 
     split_size = ppp["e1"].shape[0] // n_splits
     assert split_size * n_splits == ppp["e1"].shape[0], "dimensions do not match"
+
     # Reshape samples
     ppp = {k: jnp.reshape(v, (n_splits, split_size, 300)) for k, v in ppp.items()}
     ppm = {k: jnp.reshape(v, (n_splits, split_size, 300)) for k, v in ppm.items()}
