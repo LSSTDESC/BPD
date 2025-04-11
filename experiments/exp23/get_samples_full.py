@@ -169,6 +169,7 @@ def main(
                 "sigma_e": shape_noise,
                 "mean_logflux": mean_logflux,
                 "sigma_logflux": sigma_logflux,
+                "a_logflux": a_logflux,
                 "mean_loghlr": mean_loghlr,
                 "sigma_loghlr": sigma_loghlr,
             },
