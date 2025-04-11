@@ -1,40 +1,34 @@
 #!/usr/bin/env python3
 
 from functools import partial
+from pathlib import Path
 
 import jax
 import jax.numpy as jnp
 import typer
-from jax import Array, random
+from jax import random
 
 from bpd import DATA_DIR
 from bpd.io import load_dataset_jax, save_dataset
 from bpd.jackknife import run_bootstrap_shear_pipeline
 from bpd.pipelines import pipeline_shear_inference
-from bpd.prior import interim_gprops_logprior, true_all_params_trunc_logprior
-
-
-def _interim_logprior(post_params: dict[str, Array], sigma_e_int: float):
-    # we do not evaluate dxdy as we assume it's the same as the true prior and they cancel
-    return interim_gprops_logprior(
-        post_params, sigma_e=sigma_e_int, free_flux_hlr=True, free_dxdy=False
-    )
+from bpd.prior import interim_gprops_logprior, true_all_params_skew_logprior
 
 
 def main(
     seed: int,
     tag: str = typer.Option(),
-    samples_plus_fname: str = typer.Option(),
-    samples_minus_fname: str = typer.Option(),
+    samples_plus_fpath: str = typer.Option(),
+    samples_minus_fpath: str = typer.Option(),
     initial_step_size: float = 0.1,
     n_samples: int = 1000,
     n_boots: int = 25,
     no_bar: bool = False,
 ):
     dirpath = DATA_DIR / "cache_chains" / tag
-    samples_plus_fpath = dirpath / samples_plus_fname
-    samples_minus_fpath = dirpath / samples_minus_fname
-    assert samples_plus_fpath.exists() and samples_minus_fpath.exists()
+    pfpath = Path(samples_plus_fpath)
+    mfpath = Path(samples_minus_fpath)
+    assert dirpath.exists() and pfpath.exists() and mfpath.exists()
     fpath = dirpath / f"g_samples_boots_{seed}.npz"
 
     rng_key = random.key(seed)
@@ -59,9 +53,6 @@ def main(
         "e2": samples_minus["e2"],
     }
 
-    g1 = dsp["hyper"]["g1"]
-    g2 = dsp["hyper"]["g2"]
-    true_g = jnp.array([g1, g2])
     sigma_e = dsp["hyper"]["sigma_e"]
     sigma_e_int = dsp["hyper"]["sigma_e_int"]
     mean_logflux = dsp["hyper"]["mean_logflux"]
@@ -70,11 +61,8 @@ def main(
     mean_loghlr = dsp["hyper"]["mean_loghlr"]
     sigma_loghlr = dsp["hyper"]["sigma_loghlr"]
 
-    g1m = dsm["hyper"]["g1"]
-    g2m = dsm["hyper"]["g2"]
-    true_gm = jnp.array([g1m, g2m])
-
-    assert jnp.all(true_g == -true_gm)
+    assert dsp["hyper"]["g1"] == -dsm["hyper"]["g1"]
+    assert dsp["hyper"]["g2"] == -dsm["hyper"]["g2"]
     assert sigma_e == dsm["hyper"]["sigma_e"]
     assert sigma_e_int == dsm["hyper"]["sigma_e_int"]
     assert mean_logflux == dsm["hyper"]["mean_logflux"]
@@ -83,7 +71,7 @@ def main(
     assert jnp.all(dsp["truth"]["f"] == dsm["truth"]["f"])
 
     logprior_fnc = partial(
-        true_all_params_trunc_logprior,
+        true_all_params_skew_logprior,
         sigma_e=sigma_e,
         mean_logflux=mean_logflux,
         sigma_logflux=sigma_logflux,
@@ -91,7 +79,12 @@ def main(
         sigma_loghlr=sigma_loghlr,
         min_logflux=min_logflux,
     )
-    interim_logprior_fnc = partial(_interim_logprior, sigma_e_int=sigma_e_int)
+    interim_logprior_fnc = partial(
+        interim_gprops_logprior,
+        sigma_e=sigma_e_int,
+        free_flux_hlr=True,
+        free_dxdy=False,
+    )
 
     raw_pipeline = partial(
         pipeline_shear_inference,
