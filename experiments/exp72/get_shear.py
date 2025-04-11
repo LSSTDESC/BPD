@@ -14,7 +14,7 @@ from bpd.io import load_dataset_jax
 from bpd.pipelines import pipeline_shear_inference
 from bpd.prior import (
     interim_gprops_logprior,
-    true_all_params_trunc_logprior,
+    true_all_params_skew_logprior,
 )
 
 
@@ -57,17 +57,17 @@ def main(
     sigma_e = hyper["shape_noise"]
     mean_logflux = hyper["mean_logflux"]
     sigma_logflux = hyper["sigma_logflux"]
-    min_logflux = hyper["min_logflux"]
+    a_logflux = hyper["a_logflux"]
     mean_loghlr = hyper["mean_loghlr"]
     sigma_loghlr = hyper["sigma_loghlr"]
 
     # setup priors
     logprior_fnc = partial(
-        true_all_params_trunc_logprior,
+        true_all_params_skew_logprior,
         sigma_e=sigma_e,
         mean_logflux=mean_logflux,
         sigma_logflux=sigma_logflux,
-        min_logflux=min_logflux,
+        a_logflux=a_logflux,
         mean_loghlr=mean_loghlr,
         sigma_loghlr=sigma_loghlr,
     )
@@ -82,7 +82,7 @@ def main(
     g_samples = pipeline_shear_inference(
         rng_key,
         post_params,
-        init_g=jnp.zeros([0.0, 0.0]),
+        init_g=jnp.array([0.0, 0.0]),
         logprior=logprior_fnc,
         interim_logprior=interim_logprior_fnc,
         n_samples=n_samples,
