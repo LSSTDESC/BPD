@@ -18,7 +18,7 @@ from bpd.prior import interim_gprops_logprior
 from bpd.sample import (
     get_target_images,
     get_true_params_from_galaxy_params,
-    sample_galaxy_params_trunc,
+    sample_galaxy_params_skew,
 )
 
 
@@ -54,9 +54,9 @@ def main(
     mode: str = "",
     n_gals: int = 3000,
     n_samples_per_gal: int = 300,
-    mean_logflux: float = 2.5,
+    mean_logflux: float = 2.45,
     sigma_logflux: float = 0.4,
-    min_logflux: float = 2.45,
+    a_logflux: float = 14,
     mean_loghlr: float = -0.4,
     sigma_loghlr: float = 0.05,
     shape_noise: float = 0.2,
@@ -81,13 +81,13 @@ def main(
     out_fpath = dirpath / f"interim_samples_{seed}{extra_tag}.npz"
 
     # galaxy parameters from prior
-    galaxy_params = sample_galaxy_params_trunc(
+    galaxy_params = sample_galaxy_params_skew(
         pkey,
         n=n_gals,
         shape_noise=shape_noise,
         mean_logflux=mean_logflux,
         sigma_logflux=sigma_logflux,
-        min_logflux=min_logflux,
+        a_logflux=a_logflux,
         mean_loghlr=mean_loghlr,
         sigma_loghlr=sigma_loghlr,
         g1=g1,
@@ -170,7 +170,7 @@ def main(
                 "sigma_e_int": sigma_e_int,
                 "mean_logflux": mean_logflux,
                 "sigma_logflux": sigma_logflux,
-                "min_logflux": min_logflux,
+                "a_logflux": a_logflux,
                 "mean_loghlr": mean_loghlr,
                 "sigma_loghlr": sigma_loghlr,
             },
