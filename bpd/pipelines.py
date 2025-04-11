@@ -5,7 +5,6 @@ import jax.numpy as jnp
 import jax.scipy as jsp
 from jax import Array, jit, random, vmap
 from jax._src.prng import PRNGKeyArray
-from jax.scipy import stats
 
 from bpd.chains import run_inference_nuts
 from bpd.likelihood import shear_loglikelihood
@@ -36,9 +35,8 @@ def logtarget_shear_and_sn(
 
     # prior on shear
     g_mag = jnp.sqrt(g[0] ** 2 + g[1] ** 2)
-    logprior1 = stats.uniform.logpdf(g_mag, 0.0, 1.0) + jnp.log(1 / (2 * jnp.pi))
-
-    logprior2 = stats.uniform.logpdf(sigma_e, 1e-4, 1.0 - 1e-4)  # uninformative
+    logprior1 = uniform_logpdf(g_mag, 0.0, 1.0) + jnp.log(1 / (2 * jnp.pi))
+    logprior2 = uniform_logpdf(sigma_e, 1e-4, 1.0)  # uninformative
     return logprior1 + logprior2 + loglike
 
 
@@ -49,7 +47,7 @@ def logtarget_shear(
 
     # flat circle prior for shear
     g_mag = jnp.sqrt(g[0] ** 2 + g[1] ** 2)
-    logprior = stats.uniform.logpdf(g_mag, 0.0, 1.0) + jnp.log(1 / (2 * jnp.pi))
+    logprior = uniform_logpdf(g_mag, 0.0, 1.0) + jnp.log(1 / (2 * jnp.pi))
     return logprior + loglike
 
 
@@ -263,10 +261,10 @@ def logtarget_all_free(
         g, post_params=data, logprior=_logprior, interim_logprior=_interim_logprior
     )
     g_mag = jnp.sqrt(g[0] ** 2 + g[1] ** 2)
-    logprior_g = stats.uniform.logpdf(g_mag, 0.0, 1.0) + jnp.log(1 / (2 * jnp.pi))
+    logprior_g = uniform_logpdf(g_mag, 0.0, 1.0) + jnp.log(1 / (2 * jnp.pi))
 
     # uninformative
-    logprior1 = uniform_logpdf(sigma_e, 1e-4, 0.5)
+    logprior1 = uniform_logpdf(sigma_e, 1e-4, 1.0)
     logprior2 = uniform_logpdf(mean_logflux, -2.0, 6.0)
     logprior3 = uniform_logpdf(sigma_logflux, 0.0, 2.0)
     logprior4 = uniform_logpdf(mean_loghlr, -2.0, 2.0)
