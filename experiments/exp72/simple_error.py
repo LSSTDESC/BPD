@@ -51,7 +51,7 @@ def main(
         "e2": samples_minus["e2"],
     }
 
-    sigma_e = ds_plus["hyper"]["sigma_e"]
+    sigma_e = ds_plus["hyper"]["shape_noise"]
     sigma_e_int = ds_plus["hyper"]["sigma_e_int"]
     mean_logflux = ds_plus["hyper"]["mean_logflux"]
     sigma_logflux = ds_plus["hyper"]["sigma_logflux"]
@@ -61,12 +61,12 @@ def main(
 
     assert ds_plus["hyper"]["g1"] == -ds_minus["hyper"]["g1"]
     assert ds_plus["hyper"]["g2"] == -ds_minus["hyper"]["g2"]
-    assert sigma_e == ds_minus["hyper"]["sigma_e"]
+    assert sigma_e == ds_minus["hyper"]["shape_noise"]
     assert sigma_e_int == ds_minus["hyper"]["sigma_e_int"]
     assert mean_logflux == ds_minus["hyper"]["mean_logflux"]
     assert mean_loghlr == ds_minus["hyper"]["mean_loghlr"]
     assert jnp.all(ds_plus["truth"]["e1"] == ds_minus["truth"]["e1"])
-    assert jnp.all(ds_plus["truth"]["f"] == ds_minus["truth"]["f"])
+    assert jnp.all(ds_plus["truth"]["lf"] == ds_minus["truth"]["lf"])
 
     logprior_fnc = partial(
         true_all_params_skew_logprior,
@@ -79,7 +79,7 @@ def main(
     )
     interim_logprior_fnc = partial(
         interim_gprops_logprior,
-        sigma_e_int=sigma_e_int,
+        sigma_e=sigma_e_int,
         free_flux_hlr=True,
         free_dxdy=False,  # dxdy are not used in shear inference
     )
