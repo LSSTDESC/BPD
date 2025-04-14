@@ -27,8 +27,6 @@ from bpd.plotting import (
 from bpd.sample import sample_galaxy_params_skew
 from bpd.utils import DEFAULT_HYPERPARAMS, get_snr
 
-set_rc_params()
-
 FIG_DIR = HOME_DIR / "paper"
 CHAIN_DIR = DATA_DIR / "cache_chains"
 
@@ -60,7 +58,7 @@ OUT_PATHS = {
 
 
 def make_distribution_figure(fpath: str | Path, overwrite: bool = False):
-    set_rc_params(fontsize=40)
+    set_rc_params(fontsize=36, legend_fontsize=30)
     cache_fpath = HOME_DIR / "paper" / "gprop_cache.npz"
 
     if Path(cache_fpath).exists() and not overwrite:
@@ -163,11 +161,11 @@ def make_distribution_figure(fpath: str | Path, overwrite: bool = False):
             np.mean(params["hlr"]), np.std(params["hlr"])
         )
     )
-    ax3.legend()
     ax3.set_xscale("log")
+    ax3.legend()
 
     # e1, e2 overlaid
-    ax4.hist(
+    _, bins, _ = ax4.hist(
         params["e1"],
         bins=41,
         histtype="step",
@@ -177,20 +175,22 @@ def make_distribution_figure(fpath: str | Path, overwrite: bool = False):
     )
     ax4.hist(
         params["e2"],
-        bins=41,
+        bins=bins,
         histtype="step",
         density=True,
         label=r"$\varepsilon_{2}$",
         color="C1",
     )
     ax4.set_xlabel(r"$\varepsilon_{1, 2}$")
-    ax4.set_title(r"$\sigma = {:.2f}$".format(np.std(params["e1"])))
+    mu = np.mean(params["e1"])
+    if abs(mu) < 1e-2:
+        mu = 0.00
+    ax4.set_title(r"$\mu= {:.2f}, \sigma = {:.2f}$".format(mu, np.std(params["e1"])))
     ax4.legend()
 
     fig.tight_layout()
     fig.savefig(fpath, format="png")
     plt.close(fig)
-    set_rc_params()
 
 
 def make_timing_figure(fpath: str | Path):
@@ -201,10 +201,9 @@ def make_timing_figure(fpath: str | Path):
     fig.savefig(fpath, format="png")
     plt.close(fig)
 
-    set_rc_params()  # reset to default fontsize
-
 
 def make_contour_shear_figure(fpath: str | Path):
+    set_rc_params()  # reset to default fontsize
     g_exp72 = np.load(INPUT_PATHS["exp72_sp"])
     samples_exp73 = load_dataset(INPUT_PATHS["exp73_sp"])
     g_exp73 = jnp.stack(
@@ -260,6 +259,7 @@ def make_contour_shear_figure(fpath: str | Path):
 
 
 def make_contour_hyper_figure(fpath: str | Path):
+    set_rc_params()
     ds = load_dataset(INPUT_PATHS["exp73_sp"])
     samples = ds["samples"]
     truth = ds["truth"]
