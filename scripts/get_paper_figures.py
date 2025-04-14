@@ -19,13 +19,13 @@ from tqdm import tqdm
 
 from bpd import DATA_DIR, HOME_DIR
 from bpd.draw import draw_exponential_galsim
-from bpd.io import load_dataset
+from bpd.io import load_dataset, save_dataset
 from bpd.plotting import (
     get_timing_figure,
     set_rc_params,
 )
 from bpd.sample import sample_galaxy_params_skew
-from bpd.utils import get_snr
+from bpd.utils import DEFAULT_HYPERPARAMS, get_snr
 
 set_rc_params()
 
@@ -44,14 +44,14 @@ INPUT_PATHS = {
     "exp72_sp": CHAIN_DIR / "exp72_45" / "g_samples_452_plus.npy",
     "exp72_sm": CHAIN_DIR / "exp72_45" / "g_samples_452_minus.npy",
     "exp72_errs": CHAIN_DIR / "exp72_45" / "g_samples_454_errs.npz",
-    "exp73_sp": CHAIN_DIR / "exp73_45" / "tmp2" / "shear_samples_452_plus.npz",
-    "exp73_sm": CHAIN_DIR / "exp73_45" / "tmp2" / "shear_samples_452_minus.npz",
+    "exp73_sp": CHAIN_DIR / "exp73_45" / "shear_samples_452_plus.npz",
+    "exp73_sm": CHAIN_DIR / "exp73_45" / "shear_samples_452_minus.npz",
     "exp73_errs": CHAIN_DIR / "exp73_45" / "tmp2" / "g_samples_454_errs.npz",
 }
 
 
 OUT_PATHS = {
-    "snr": FIG_DIR / "snr.png",
+    "galaxy_distributions": FIG_DIR / "gprop_dists.png",
     "timing": FIG_DIR / "timing.png",
     "contour_shear": FIG_DIR / "contour_shear.png",
     "contour_hyper": FIG_DIR / "contour_hyper.png",
@@ -59,24 +59,18 @@ OUT_PATHS = {
 }
 
 
-def make_snr_figure(fpath: str | Path, overwrite: bool = False):
-    snr_cache_fpath = HOME_DIR / "paper" / "snr_cache.npy"
+def make_distribution_figure(fpath: str | Path, overwrite: bool = False):
+    set_rc_params(fontsize=40)
+    cache_fpath = HOME_DIR / "paper" / "gprop_cache.npz"
 
-    if Path(snr_cache_fpath).exists() and not overwrite:
-        snrs = jnp.load(snr_cache_fpath)
+    if Path(cache_fpath).exists() and not overwrite:
+        params = load_dataset(cache_fpath)
     else:
+        # this makes it the exact same dataset of exp 70-71
         n_gals = 10_000
-        k = jax.random.key(42)
-        galaxy_params = sample_galaxy_params_skew(
-            k,
-            n=n_gals,
-            shape_noise=0.2,
-            mean_logflux=2.45,
-            a_logflux=14.0,
-            sigma_logflux=0.4,
-            mean_loghlr=-0.4,
-            sigma_loghlr=0.05,
-        )
+        k = jax.random.key(441)
+        k1, _, _ = jax.random.split(k, 3)
+        galaxy_params = sample_galaxy_params_skew(k1, n=n_gals, **DEFAULT_HYPERPARAMS)
         draw_params = {**galaxy_params}
         draw_params["f"] = 10 ** draw_params.pop("lf")
         draw_params["hlr"] = 10 ** draw_params.pop("lhlr")
@@ -97,20 +91,106 @@ def make_snr_figure(fpath: str | Path, overwrite: bool = False):
             snrs.append(get_snr(noiseless[ii], background=1.0))
 
         snrs = jnp.stack(snrs, axis=0)
-        jnp.save(snr_cache_fpath, snrs)
+        params = {
+            "snr": snrs,
+            "f": 10 ** galaxy_params["lf"],
+            "hlr": 10 ** galaxy_params["lhlr"],
+            "e1": galaxy_params["e1"],
+            "e2": galaxy_params["e2"],
+        }
 
-    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    ax.hist(snrs, bins=41, histtype="step", density=True, range=(10, 80))
-    ax.set_xticks(np.arange(10, 81, 10))
-    ax.axvline(
-        jnp.median(snrs),
+        # converts to numpy arrays
+        save_dataset(params, cache_fpath, overwrite=overwrite)
+        params = load_dataset(cache_fpath)  # now it's numpy arrays not jax arrays
+
+    # plot flux, hlr, shapes (in one plot), and snr histograms
+    # indicate median with a black dashed line
+    fig, axes = plt.subplots(2, 2, figsize=(20, 20))
+    ax1, ax2, ax3, ax4 = axes.flatten()
+    ax1.hist(
+        params["f"],
+        bins=41,
+        histtype="step",
+        density=True,
+        range=(0, 4000),
+    )
+    ax1.set_xlabel(r"\rm Flux")
+    ax1.axvline(
+        np.median(params["f"]),
         linestyle="--",
         color="k",
-        label=r"\rm Median SNR = {:.2f}".format(jnp.median(snrs)),
+        label=r"\rm Median = {:.2f}".format(np.median(params["f"])),
     )
-    ax.set_xlabel(r"\rm SNR")
-    ax.legend()
+    # add mean and sigma to title
+    ax1.set_title(
+        r"$\mu = {:.2f}, \sigma = {:.2f}$".format(
+            np.mean(params["f"]), np.std(params["f"])
+        )
+    )
+    ax1.legend()
+
+    ax2.hist(params["snr"], bins=41, histtype="step", density=True, range=(10, 80))
+    ax2.set_xticks(np.arange(10, 81, 10))
+    ax2.axvline(
+        np.median(params["snr"]),
+        linestyle="--",
+        color="k",
+        label=r"\rm Median SNR = {:.2f}".format(np.median(params["snr"])),
+    )
+    ax2.set_xlabel(r"\rm SNR")
+    ax2.legend()
+    ax2.set_title(
+        r"$\mu = {:.2f}, \sigma = {:.2f}$".format(
+            np.mean(params["snr"]), np.std(params["snr"])
+        )
+    )
+
+    ax3.hist(
+        params["hlr"],
+        bins=41,
+        histtype="step",
+        density=True,
+    )
+    ax3.set_xlabel(r"\rm HLR")
+    ax3.axvline(
+        np.median(params["hlr"]),
+        linestyle="--",
+        color="k",
+        label=r"\rm Median = {:.2f}".format(np.median(params["hlr"])),
+    )
+    ax3.set_title(
+        r"$\mu = {:.2f}, \sigma = {:.2f}$".format(
+            np.mean(params["hlr"]), np.std(params["hlr"])
+        )
+    )
+    ax3.legend()
+    ax3.set_xscale("log")
+
+    # e1, e2 overlaid
+    ax4.hist(
+        params["e1"],
+        bins=41,
+        histtype="step",
+        density=True,
+        label=r"$\varepsilon_{1}$",
+        color="C0",
+    )
+    ax4.hist(
+        params["e2"],
+        bins=41,
+        histtype="step",
+        density=True,
+        label=r"$\varepsilon_{2}$",
+        color="C1",
+    )
+    ax4.set_xlabel(r"$\varepsilon_{1, 2}$")
+    ax4.set_title(r"$\sigma = {:.2f}$".format(np.std(params["e1"])))
+    ax4.legend()
+
+    fig.tight_layout()
     fig.savefig(fpath, format="png")
+    plt.close(fig)
+    set_rc_params()
 
 
 def make_timing_figure(fpath: str | Path):
@@ -119,6 +199,7 @@ def make_timing_figure(fpath: str | Path):
     max_n_gal = str(max(int(k) for k in timing_results))
     fig = get_timing_figure(results=timing_results, max_n_gal_str=max_n_gal)
     fig.savefig(fpath, format="png")
+    plt.close(fig)
 
     set_rc_params()  # reset to default fontsize
 
@@ -173,7 +254,8 @@ def make_contour_shear_figure(fpath: str | Path):
         )
     )
     fig = c.plotter.plot(figsize=(10, 10))
-
+    fig.tight_layout()
+    plt.close(fig)
     fig.savefig(fpath, format="png")
 
 
@@ -229,8 +311,8 @@ def make_contour_hyper_figure(fpath: str | Path):
     )
     fig = c.plotter.plot(figsize=(50, 50))
     fig.tight_layout()
-
     fig.savefig(fpath, format="png")
+    plt.close(fig)
 
 
 def get_bias_table(fpath: str | Path):
@@ -346,11 +428,11 @@ def get_bias_table(fpath: str | Path):
 
 
 def main(overwrite: bool = False):
-    # make_snr_figure(OUT_PATHS["snr"], overwrite=overwrite)
+    make_distribution_figure(OUT_PATHS["galaxy_distributions"], overwrite=overwrite)
     # make_timing_figure(OUT_PATHS["timing"])
     # make_contour_shear_figure(OUT_PATHS["contour_shear"])
     # make_contour_hyper_figure(OUT_PATHS["contour_hyper"])
-    get_bias_table(OUT_PATHS["bias"])
+    # get_bias_table(OUT_PATHS["bias"])
 
 
 if __name__ == "__main__":
