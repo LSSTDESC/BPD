@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-from tkinter import font
 
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
 os.environ["JAX_PLATFORMS"] = "cpu"
@@ -22,7 +21,6 @@ from bpd import DATA_DIR, HOME_DIR
 from bpd.draw import draw_exponential_galsim
 from bpd.io import load_dataset
 from bpd.plotting import (
-    get_jack_bias,
     get_timing_figure,
     set_rc_params,
 )
@@ -57,7 +55,7 @@ OUT_PATHS = {
     "timing": FIG_DIR / "timing.png",
     "contour_shear": FIG_DIR / "contour_shear.png",
     "contour_hyper": FIG_DIR / "contour_hyper.png",
-    "bias": FIG_DIR / "bias.png",
+    "bias": FIG_DIR / "table_bias.txt",
 }
 
 
@@ -235,48 +233,124 @@ def make_contour_hyper_figure(fpath: str | Path):
     fig.savefig(fpath, format="png")
 
 
-def make_bias_figure(fpath: str | Path):
-    jack_ds1 = load_dataset(INPUT_PATHS["shear_jack_1"])
-    g_plus_jack = jack_ds1["g_plus"]
-    g_minus_jack = jack_ds1["g_minus"]
+def get_bias_table(fpath: str | Path):
+    """Create a latex table of mean multiplicative and additive bias, as well as their errors from each experiment."""
 
-    m_mean, m_std, c_mean, c_std = get_jack_bias(
-        g_plus_jack, g_minus_jack, g1_true=0.02
+    # load datasets
+    gp1 = np.load(INPUT_PATHS["exp70_sp"])
+    gm1 = np.load(INPUT_PATHS["exp70_sm"])
+    assert gp1.ndim == 2 and gm1.ndim == 2
+
+    dsp2 = load_dataset(INPUT_PATHS["exp71_sp"])
+    dsm2 = load_dataset(INPUT_PATHS["exp71_sm"])
+    gp2 = jnp.stack([dsp2["samples"]["g1"], dsp2["samples"]["g2"]], axis=-1)
+    gm2 = jnp.stack([dsm2["samples"]["g1"], dsm2["samples"]["g2"]], axis=-1)
+
+    gp3 = np.load(INPUT_PATHS["exp72_sp"])
+    gm3 = np.load(INPUT_PATHS["exp72_sm"])
+    assert gp3.ndim == 2 and gm3.ndim == 2
+
+    dsp4 = load_dataset(INPUT_PATHS["exp73_sp"])
+    dsm4 = load_dataset(INPUT_PATHS["exp73_sm"])
+    gp4 = jnp.stack([dsp4["samples"]["g1"], dsp4["samples"]["g2"]], axis=-1)
+    gm4 = jnp.stack([dsm4["samples"]["g1"], dsm4["samples"]["g2"]], axis=-1)
+
+    # get mean multiplicative and additive bias for each experiment
+    m1_mean = np.mean(gp1[:, 0] - gm1[:, 0]) / 2 / 0.02 - 1
+    c1_mean = np.mean(gp1[:, 1] + gm1[:, 1]) / 2
+
+    m2_mean = np.mean(gp2[:, 0] - gm2[:, 0]) / 2 / 0.02 - 1
+    c2_mean = np.mean(gp2[:, 1] + gm2[:, 1]) / 2
+
+    m3_mean = np.mean(gp3[:, 0] - gm3[:, 0]) / 2 / 0.02 - 1
+    c3_mean = np.mean(gp3[:, 1] + gm3[:, 1]) / 2
+
+    m4_mean = np.mean(gp4[:, 0] - gm4[:, 0]) / 2 / 0.02 - 1
+    c4_mean = np.mean(gp4[:, 1] + gm4[:, 1]) / 2
+
+    # get std of multiplicative and additive bias for each experiment
+    # we need to load error files
+    gps1 = load_dataset(INPUT_PATHS["exp70_errs"])["g_plus"]
+    gms1 = load_dataset(INPUT_PATHS["exp70_errs"])["g_minus"]
+    gps2 = load_dataset(INPUT_PATHS["exp71_errs"])["plus"]["g"]
+    gms2 = load_dataset(INPUT_PATHS["exp71_errs"])["minus"]["g"]
+    gps3 = load_dataset(INPUT_PATHS["exp72_errs"])["gp"]
+    gms3 = load_dataset(INPUT_PATHS["exp72_errs"])["gm"]
+    gps4 = load_dataset(INPUT_PATHS["exp73_errs"])["plus"]["g"]
+    gms4 = load_dataset(INPUT_PATHS["exp73_errs"])["minus"]["g"]
+    assert gps1.ndim == 3 and gms1.ndim == 3
+    assert gps2.ndim == 3 and gms2.ndim == 3
+    assert gps3.ndim == 3 and gms3.ndim == 3
+    assert gps4.ndim == 3 and gms4.ndim == 3
+
+    m1s = (gps1[:, :, 0].mean(1) - gms1[:, :, 0].mean(1)) / 2 / 0.02 - 1
+    c1s = (gps1[:, :, 1].mean(1) + gms1[:, :, 1].mean(1)) / 2
+    m1_std = m1s.std() / np.sqrt(len(m1s))
+    c1_std = c1s.std() / np.sqrt(len(c1s))
+
+    m2s = (gps2[:, :, 0].mean(1) - gms2[:, :, 0].mean(1)) / 2 / 0.02 - 1
+    c2s = (gps2[:, :, 1].mean(1) + gms2[:, :, 1].mean(1)) / 2
+    m2_std = m2s.std() / np.sqrt(len(m2s))
+    c2_std = c2s.std() / np.sqrt(len(c2s))
+
+    m3s = (gps3[:, :, 0].mean(1) - gms3[:, :, 0].mean(1)) / 2 / 0.02 - 1
+    c3s = (gps3[:, :, 1].mean(1) + gms3[:, :, 1].mean(1)) / 2
+    m3_std = m3s.std() / np.sqrt(len(m3s))
+    c3_std = c3s.std() / np.sqrt(len(c3s))
+
+    m4s = (gps4[:, :, 0].mean(1) - gms4[:, :, 0].mean(1)) / 2 / 0.02 - 1
+    c4s = (gps4[:, :, 1].mean(1) + gms4[:, :, 1].mean(1)) / 2
+    m4_std = m4s.std() / np.sqrt(len(m4s))
+    c4_std = c4s.std() / np.sqrt(len(c4s))
+
+    # create table
+    # in format for each m, c: mean +- std
+    # use f-strings
+    table = r"""
+\begin{table}[h]
+    \centering
+    \begin{tabular}{|c|c|c|c|c|}
+        \hline
+        \textbf{Experiment} & \textbf{Multiplicative Bias $m$} & \textbf{Additive Bias $c$} \\
+        \hline
+        1 & $%.3g \pm %.3g$ & $%.3g \pm %.3g$ \\
+        2 & $%.3g \pm %.3g$ & $%.3g \pm %.3g$ \\
+        3 & $%.3g \pm %.3g$ & $%.3g \pm %.3g$ \\
+        4 & $%.3g \pm %.3g$ & $%.3g \pm %.3g$ \\
+        \hline
+    \end{tabular}
+    \caption{Multiplicative and additive bias for each experiment.}
+    \label{tab:bias}
+\end{table}
+    """ % (
+        m1_mean / 1e-3,
+        m1_std / 1e-3,
+        c1_mean / 1e-3,
+        c1_std / 1e-3,
+        m2_mean / 1e-3,
+        m2_std / 1e-3,
+        c2_mean / 1e-3,
+        c2_std / 1e-3,
+        m3_mean / 1e-3,
+        m3_std / 1e-3,
+        c3_mean / 1e-3,
+        c3_std / 1e-3,
+        m4_mean / 1e-3,
+        m4_std / 1e-3,
+        c4_mean / 1e-3,
+        c4_std / 1e-3,
     )
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6), sharey=True)
-
-    # multiplicative bias
-    ax1.errorbar(x=m_mean, y=0, xerr=m_std * 3, color="k", fmt="-o", capsize=10.0)
-
-    ax1.set_yticks([0.0, 0.25, 0.5])
-    ax1.set_yticklabels([r"\rm Only Shear", r"\rm Example 1", r"\rm Example 2"])
-    ax1.set_ylim(-0.1, 0.75)
-    ax1.set_title(r"\rm Multiplicative bias $m$")
-    ax1.set_xlim(-0.01, 0.01)
-
-    area = np.linspace(-2e-3, 2e-3, 1000)
-    ax1.fill_between(area, y1=-0.1, y2=1.1, alpha=0.25, color="k", label="Requirement")
-    ax1.legend()
-
-    # additive bias
-    ax2.errorbar(x=c_mean, y=0, xerr=c_std * 3, color="k", fmt="-o", capsize=10.0)
-
-    ax2.set_title(r"\rm Additive bias $c$")
-    ax2.set_xlim(-0.005, 0.005)
-
-    area = np.linspace(-2e-3, 2e-3, 1000)
-    ax2.fill_between(area, y1=-0.1, y2=1.1, alpha=0.25, color="k")
-
-    fig.savefig(fpath, format="png")
+    with open(fpath, "w", encoding="utf-8") as f:
+        f.write(table)
 
 
 def main(overwrite: bool = False):
     # make_snr_figure(OUT_PATHS["snr"], overwrite=overwrite)
     # make_timing_figure(OUT_PATHS["timing"])
     # make_contour_shear_figure(OUT_PATHS["contour_shear"])
-    make_contour_hyper_figure(OUT_PATHS["contour_hyper"])
-    # make_bias_figure(OUT_PATHS["bias"])
+    # make_contour_hyper_figure(OUT_PATHS["contour_hyper"])
+    get_bias_table(OUT_PATHS["bias"])
 
 
 if __name__ == "__main__":
