@@ -43,7 +43,7 @@ def main(
         "e2": ds["samples"]["e2"],
     }
 
-    true_sigma_e = ds["hyper"]["sigma_e"]
+    true_sigma_e = ds["hyper"]["shape_noise"]
     true_mean_logflux = ds["hyper"]["mean_logflux"]
     true_sigma_logflux = ds["hyper"]["sigma_logflux"]
     true_mean_loghlr = ds["hyper"]["mean_loghlr"]
@@ -79,8 +79,8 @@ def main(
         logtarget=_logtarget,
         n_samples=n_samples,
         initial_step_size=initial_step_size,
-        max_num_doublings=5,
-        n_warmup_steps=500,
+        max_num_doublings=7,
+        n_warmup_steps=1000,
     )
 
     assert samples["g"].shape == (n_samples, 2)
