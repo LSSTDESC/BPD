@@ -46,9 +46,9 @@ INPUT_PATHS = {
     "exp72_sp": CHAIN_DIR / "exp72_45" / "g_samples_452_plus.npy",
     "exp72_sm": CHAIN_DIR / "exp72_45" / "g_samples_452_minus.npy",
     "exp72_errs": CHAIN_DIR / "exp72_45" / "g_samples_454_errs.npz",
-    "exp73_sp": CHAIN_DIR / "exp73_45" / "shear_samples_452_plus.npz",
-    "exp73_sm": CHAIN_DIR / "exp73_45" / "shear_samples_452_minus.npz",
-    "exp73_errs": CHAIN_DIR / "exp73_45" / "g_samples_454_errs.npz",
+    "exp73_sp": CHAIN_DIR / "exp73_45" / "tmp2" / "shear_samples_452_plus.npz",
+    "exp73_sm": CHAIN_DIR / "exp73_45" / "tmp2" / "shear_samples_452_minus.npz",
+    "exp73_errs": CHAIN_DIR / "exp73_45" / "tmp2" / "g_samples_454_errs.npz",
 }
 
 
@@ -220,10 +220,10 @@ def make_contour_hyper_figure(fpath: str | Path):
                 "mean_loghlr": r"$\mu_{s}$",
                 "sigma_loghlr": r"$\sigma_{s}$",
             },
-            label_font_size=50,
-            summarise=False,
-            summary_font_size=55,
-            tick_font_size=55,
+            label_font_size=60,
+            summarise=True,
+            summary_font_size=45,
+            tick_font_size=50,
             diagonal_tick_labels=True,
             spacing=0.0,
             max_ticks=3,
