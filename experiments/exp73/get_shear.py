@@ -72,9 +72,8 @@ def main(
     )
     init_positions["g"] = jnp.array([0.0, 0.0])
 
-    samples = run_inference_nuts(
-        k2,
-        data=post_params,
+    _pipe = partial(
+        run_inference_nuts,
         init_positions=init_positions,
         logtarget=_logtarget,
         n_samples=n_samples,
@@ -82,6 +81,15 @@ def main(
         max_num_doublings=7,
         n_warmup_steps=1000,
     )
+    pipe = jit(_pipe)
+
+    # jit function quickly
+    print("JITting function...")
+    _ = pipe(k2, data={k: v[0, None] for k, v in post_params.items()})
+
+    # then run on full data
+    print("Running inference...")
+    samples = pipe(k2, data=post_params)
 
     assert samples["g"].shape == (n_samples, 2)
     g = samples.pop("g")
