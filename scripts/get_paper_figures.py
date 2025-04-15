@@ -51,6 +51,7 @@ INPUT_PATHS = {
 OUT_PATHS = {
     "galaxy_distributions": FIG_DIR / "gprop_dists.png",
     "timing": FIG_DIR / "timing.png",
+    "error_bar": FIG_DIR / "error_bar.png",
     "contour_shear": FIG_DIR / "contour_shear.png",
     "contour_hyper": FIG_DIR / "contour_hyper.png",
     "bias": FIG_DIR / "table_bias.txt",
@@ -195,14 +196,78 @@ def make_distribution_figure(fpath: str | Path, overwrite: bool = False):
 
 def make_timing_figure(fpath: str | Path):
     set_rc_params(fontsize=24)
+
+    # get avg ESS across all galaxy properties
+    conv_results = load_dataset(INPUT_PATHS["timing_conv"])
+    ess_dict = conv_results["ess"]
+    avg_ess = np.mean([np.mean(ess_dict[k]) for k in ess_dict])
+    print(f"Avg. ESS: {avg_ess}")
+
     timing_results = load_dataset(INPUT_PATHS["timing_results"])
+
     max_n_gal = str(max(int(k) for k in timing_results))
-    fig = get_timing_figure(results=timing_results, max_n_gal_str=max_n_gal)
+    fig = get_timing_figure(
+        results=timing_results, max_n_gal_str=max_n_gal, avg_ess=avg_ess
+    )
     fig.savefig(fpath, format="png")
     plt.close(fig)
 
 
-def make_contour_shear_figure(fpath: str | Path):
+def make_errorbar_figure(fpath: str | Path):
+    set_rc_params()  # reset to default fontsize
+    g_exp1 = np.load(INPUT_PATHS["exp70_sp"])
+    g_exp3 = np.load(INPUT_PATHS["exp72_sp"])
+    c = ChainConsumer()
+    assert g_exp1.ndim == 2
+    assert g_exp1.shape[1] == 2
+    assert g_exp3.ndim == 2
+    assert g_exp3.shape[1] == 2
+
+    data1 = {"g1": g_exp1[:, 0], "g2": g_exp1[:, 1]}
+    df1 = pandas.DataFrame.from_dict(data1)
+
+    data3 = {"g1": g_exp3[:, 0], "g2": g_exp3[:, 1]}
+    df3 = pandas.DataFrame.from_dict(data3)
+
+    # Customise the chain when you add it
+    c = ChainConsumer()
+    chain1 = Chain(
+        samples=df1,
+        name="Only Shear",
+        marker_style="*",
+    )
+    chain3 = Chain(
+        samples=df3,
+        name="All Free",
+        marker_style="*",
+    )
+
+    c.add_chain(chain1)
+    c.add_chain(chain3)
+
+    c.add_truth(Truth(location={"g1": 0.02, "g2": 0.0}, color="k", line_width=2.0))
+
+    c.set_plot_config(
+        PlotConfig(
+            usetex=True,
+            labels={"g1": "$g_{1}$", "g2": "$g_{2}$"},
+            label_font_size=30,
+            tick_font_size=24,
+        )
+    )
+
+    fig = c.plotter.plot_summary(
+        errorbar=True,
+        figsize=4.0,
+        # extra_parameter_spacing=0.8,
+        # vertical_spacing_ratio=1.5,
+    )
+    # fig.tight_layout()
+    plt.close(fig)
+    fig.savefig(fpath, format="png")
+
+
+def make_contour_shear_figure1(fpath: str | Path):
     set_rc_params()  # reset to default fontsize
     g_exp72 = np.load(INPUT_PATHS["exp72_sp"])
     samples_exp73 = load_dataset(INPUT_PATHS["exp73_sp"])
@@ -428,9 +493,10 @@ def get_bias_table(fpath: str | Path):
 
 
 def main(overwrite: bool = False):
-    make_distribution_figure(OUT_PATHS["galaxy_distributions"], overwrite=overwrite)
+    # make_distribution_figure(OUT_PATHS["galaxy_distributions"], overwrite=overwrite)
     # make_timing_figure(OUT_PATHS["timing"])
-    # make_contour_shear_figure(OUT_PATHS["contour_shear"])
+    # make_errorbar_figure(OUT_PATHS["error_bar"])
+    make_contour_shear_figure1(OUT_PATHS["contour_shear"])
     # make_contour_hyper_figure(OUT_PATHS["contour_hyper"])
     # get_bias_table(OUT_PATHS["bias"])
 
