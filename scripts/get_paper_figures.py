@@ -474,21 +474,21 @@ def get_bias_table(fpath: str | Path):
 \end{table}
     """ % (
         m1_mean / 1e-3,
-        m1_std / 1e-3,
+        3 * m1_std / 1e-3,
         c1_mean / 1e-3,
-        c1_std / 1e-3,
+        3 * c1_std / 1e-3,
         m2_mean / 1e-3,
-        m2_std / 1e-3,
+        3 * m2_std / 1e-3,
         c2_mean / 1e-3,
-        c2_std / 1e-3,
+        3 * c2_std / 1e-3,
         m3_mean / 1e-3,
-        m3_std / 1e-3,
+        3 * m3_std / 1e-3,
         c3_mean / 1e-3,
-        c3_std / 1e-3,
+        3 * c3_std / 1e-3,
         m4_mean / 1e-3,
-        m4_std / 1e-3,
+        3 * m4_std / 1e-3,
         c4_mean / 1e-3,
-        c4_std / 1e-3,
+        3 * c4_std / 1e-3,
     )
 
     with open(fpath, "w", encoding="utf-8") as f:
