@@ -100,24 +100,42 @@ def get_timing_figure(
         )
         t_per_obj_dict[n_chains] = t_per_obj_arr / avg_ess
 
-    fig, ax = plt.subplots(1, 1, figsize=figsize)
+    # first option
+    fig1, ax = plt.subplots(1, 1, figsize=figsize)
     ax.set_prop_cycle(cycles)
 
-    ax.set_ylabel(r"\rm Time per galaxy in a single A100 GPU (sec)")
+    ax.set_ylabel(r"\rm Galaxies processed per second in one A100 GPU")
+    ax.set_xlabel(r"\rm \# of effective samples")
+
+    for n_chains, t_per_obj_array in t_per_obj_dict.items():
+        ax.plot(n_samples_array, 1 / t_per_obj_array, label=f"${n_chains}$")
+
+    ax.legend(
+        title=r"\rm Galaxies Sampled in Parallel",
+        loc="upper right",
+        ncol=4,
+        fancybox=True,
+        shadow=False,
+    )
+
+    fig2, ax = plt.subplots(1, 1, figsize=figsize)
+    ax.set_prop_cycle(cycles)
+
+    ax.set_ylabel(r"\rm Time to process one galaxy in one A100 GPU (sec)")
     ax.set_xlabel(r"\rm \# of effective samples")
 
     for n_chains, t_per_obj_array in t_per_obj_dict.items():
         ax.plot(n_samples_array, t_per_obj_array, label=f"${n_chains}$")
 
-    plt.legend(
-        title=r"\rm Number of chains",
+    ax.legend(
+        title=r"\rm Galaxies Sampled in Parallel",
         loc="upper left",
         ncol=4,
         fancybox=True,
         shadow=False,
     )
 
-    return fig
+    return fig1, fig2
 
 
 def get_jack_bias(
