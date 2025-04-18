@@ -51,6 +51,7 @@ INPUT_PATHS = {
 OUT_PATHS = {
     "galaxy_distributions": FIG_DIR / "gprop_dists.png",
     "timing": FIG_DIR / "timing.png",
+    "timing2": FIG_DIR / "timing2.png",
     "error_bar": FIG_DIR / "error_bar.png",
     "contour_shear": FIG_DIR / "contour_shear.png",
     "contour_hyper": FIG_DIR / "contour_hyper.png",
@@ -194,7 +195,7 @@ def make_distribution_figure(fpath: str | Path, overwrite: bool = False):
     plt.close(fig)
 
 
-def make_timing_figure(fpath: str | Path):
+def make_timing_figure(fpath1: Path, fpath2: Path):
     set_rc_params(fontsize=24)
 
     # get avg ESS across all galaxy properties
@@ -206,11 +207,13 @@ def make_timing_figure(fpath: str | Path):
     timing_results = load_dataset(INPUT_PATHS["timing_results"])
 
     max_n_gal = str(max(int(k) for k in timing_results))
-    fig = get_timing_figure(
+    fig1, fig2 = get_timing_figure(
         results=timing_results, max_n_gal_str=max_n_gal, avg_ess=avg_ess
     )
-    fig.savefig(fpath, format="png")
-    plt.close(fig)
+    fig1.savefig(fpath1, format="png")
+    fig2.savefig(fpath2, format="png")
+    plt.close(fig1)
+    plt.close(fig2)
 
 
 def make_errorbar_figure(fpath: str | Path):
@@ -494,9 +497,8 @@ def get_bias_table(fpath: str | Path):
 
 def main(overwrite: bool = False):
     # make_distribution_figure(OUT_PATHS["galaxy_distributions"], overwrite=overwrite)
-    # make_timing_figure(OUT_PATHS["timing"])
-    # make_errorbar_figure(OUT_PATHS["error_bar"])
-    make_contour_shear_figure1(OUT_PATHS["contour_shear"])
+    make_timing_figure(OUT_PATHS["timing"], OUT_PATHS["timing2"])
+    # make_contour_shear_figure1(OUT_PATHS["contour_shear"])
     # make_contour_hyper_figure(OUT_PATHS["contour_hyper"])
     # get_bias_table(OUT_PATHS["bias"])
 
