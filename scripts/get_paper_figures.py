@@ -287,7 +287,7 @@ def make_contour_shear_figure1(fpath: str | Path):
     c = ChainConsumer()
     chain = Chain(
         samples=df1,
-        name="Only Shear",
+        name=r"\texttt{all-fixed}",
         marker_style="*",
     )
 
@@ -300,7 +300,7 @@ def make_contour_shear_figure1(fpath: str | Path):
     df2 = pandas.DataFrame.from_dict(data2)
     chain2 = Chain(
         samples=df2,
-        name="All Free",
+        name=r"\texttt{all-free}",
         marker_style="*",
     )
     c.add_chain(chain2)
