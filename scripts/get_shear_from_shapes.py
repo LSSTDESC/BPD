@@ -15,7 +15,7 @@ def main(
     seed: int,
     interim_samples_fname: str = typer.Option(),
     tag: str = typer.Option(),
-    initial_step_size: float = 1e-3,
+    initial_step_size: float = 0.001,
     n_samples: int = 3000,
     overwrite: bool = False,
     extra_tag: str = "",

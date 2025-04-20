@@ -140,7 +140,7 @@ def pipeline_interim_samples_one_galaxy(
     n_samples: int = 300,
     n_warmup_steps: int = 500,
     max_num_doublings: int = 5,
-    initial_step_size: float = 1e-3,
+    initial_step_size: float = 0.001,
     is_mass_matrix_diagonal: bool = True,
 ):
     # Flux and HLR are fixed to truth and not inferred in this function.

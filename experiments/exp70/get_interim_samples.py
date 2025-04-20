@@ -51,7 +51,7 @@ def main(
     slen: int = 63,
     fft_size: int = 256,
     background: float = 1.0,
-    initial_step_size: float = 0.1,
+    initial_step_size: float = 0.01,
 ):
     assert (g1 > 0 and mode == "plus") or (g1 < 0 and mode == "minus") or (not mode)
 

@@ -16,7 +16,7 @@ def main(
     tag: str = typer.Option(),
     plus_samples_fname: str = typer.Option(),
     minus_samples_fname: str = typer.Option(),
-    initial_step_size: float = 1e-3,
+    initial_step_size: float = 0.01,
     n_splits: int = 500,
 ):
     rng_key = jax.random.key(seed)

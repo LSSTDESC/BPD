@@ -20,7 +20,7 @@ def main(
     tag: str = typer.Option(),
     samples_plus_fpath: str = typer.Option(),
     samples_minus_fpath: str = typer.Option(),
-    initial_step_size: float = 0.1,
+    initial_step_size: float = 0.001,
     n_samples: int = 1000,
     n_boots: int = 30,
     no_bar: bool = False,
