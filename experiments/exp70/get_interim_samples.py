@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
+import math
 import os
 from functools import partial
 
 os.environ["JAX_ENABLE_X64"] = "True"
 
+import jax.numpy as jnp
 import typer
 from jax import Array, jit, random, vmap
 from jax._src.prng import PRNGKeyArray
@@ -19,7 +21,7 @@ from bpd.sample import (
     get_true_params_from_galaxy_params,
     sample_galaxy_params_skew,
 )
-from bpd.utils import DEFAULT_HYPERPARAMS
+from bpd.utils import DEFAULT_HYPERPARAMS, MAX_N_GALS_PER_GPU
 
 
 def _init_function(key: PRNGKeyArray, *, data: Array, true_params: dict):
@@ -41,7 +43,7 @@ def _init_function(key: PRNGKeyArray, *, data: Array, true_params: dict):
 
 def main(
     seed: int,
-    tag: str,
+    tag: str = typer.Option(),
     mode: str = "",
     n_gals: int = 2000,
     n_samples_per_gal: int = 300,
@@ -126,7 +128,28 @@ def main(
         {k: v[0, None] for k, v in true_params.items()},
     )
 
-    samples = vpipe(gkeys, target_images, fixed_params, true_params)
+    print("Pipeline compiled, now running on all galaxies...")
+
+    # divide in batches if not all galaxies fit on GPU
+    n_batches = math.ceil(n_gals / MAX_N_GALS_PER_GPU)
+    samples_list = []
+    for ii in range(n_batches):
+        start, end = ii * MAX_N_GALS_PER_GPU, (ii + 1) * MAX_N_GALS_PER_GPU
+        print(f"Batch {ii}, {start}:{end}")
+        _gkeys = gkeys[start:end]
+        _target_images = target_images[start:end]
+        _fixed_params = {k: v[start:end] for k, v in fixed_params.items()}
+        _true_params = {k: v[start:end] for k, v in true_params.items()}
+        _samples = vpipe(_gkeys, _target_images, _fixed_params, _true_params)
+        samples_list.append(_samples)
+
+    # concatenate all samples
+    samples = {}
+    for k in samples_list[0]:
+        samples[k] = jnp.concatenate(
+            [samples_list[ii][k] for ii in range(n_batches)], axis=0
+        )
+    assert samples["e1"].shape == (n_gals, n_samples_per_gal)
 
     save_dataset(
         {
