@@ -11,6 +11,8 @@ DEFAULT_HYPERPARAMS = {
     "sigma_loghlr": 0.05,
 }
 
+MAX_N_GALS_PER_GPU = 5000
+
 
 def get_snr(im: ArrayLike, background: float) -> float:
     """Calculate the signal-to-noise ratio of an image.
