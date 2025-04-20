@@ -12,6 +12,9 @@ export JAX_ENABLE_X64=True
 figures:
 	../exp70/get_figures.py ${SEED} --tag ${TAG}
 
+error_post:
+	./simple_error2.py ${SEED}4 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE} --samples-minus-fpath ${MINUS_FILE} --posterior-fpath ${DIR}/shear_samples_452_plus.npz
+
 error:
 	./simple_error.py ${SEED}4 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE} --samples-minus-fpath ${MINUS_FILE}
 
