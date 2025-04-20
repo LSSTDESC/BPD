@@ -2,6 +2,15 @@ import jax.numpy as jnp
 from jax.scipy.stats import uniform
 from jax.typing import ArrayLike
 
+DEFAULT_HYPERPARAMS = {
+    "shape_noise": 0.2,
+    "a_logflux": 14.0,
+    "mean_logflux": 2.45,
+    "sigma_logflux": 0.4,
+    "mean_loghlr": -0.4,
+    "sigma_loghlr": 0.05,
+}
+
 
 def get_snr(im: ArrayLike, background: float) -> float:
     """Calculate the signal-to-noise ratio of an image.

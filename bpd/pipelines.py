@@ -5,12 +5,17 @@ import jax.numpy as jnp
 import jax.scipy as jsp
 from jax import Array, jit, random, vmap
 from jax._src.prng import PRNGKeyArray
-from jax.scipy import stats
 
 from bpd.chains import run_inference_nuts
 from bpd.likelihood import shear_loglikelihood
-from bpd.prior import ellip_prior_e1e2, true_ellip_logprior
+from bpd.prior import (
+    ellip_prior_e1e2,
+    interim_gprops_logprior,
+    true_all_params_skew_logprior,
+    true_ellip_logprior,
+)
 from bpd.sample import sample_noisy_ellipticities_unclipped
+from bpd.utils import uniform_logpdf
 
 
 def logtarget_shear_and_sn(
@@ -18,7 +23,6 @@ def logtarget_shear_and_sn(
     *,
     data: Array | dict[str, Array],
     sigma_e_int: float,
-    sigma_g: float = 0.01,
 ):
     g = params["g"]
     sigma_e = params["sigma_e"]
@@ -28,16 +32,22 @@ def logtarget_shear_and_sn(
     loglike = shear_loglikelihood(
         g, post_params=data, logprior=_logprior, interim_logprior=_interim_logprior
     )
-    logprior1 = stats.norm.logpdf(g, loc=0.0, scale=sigma_g).sum()
-    logprior2 = stats.uniform.logpdf(sigma_e, 1e-4, 1.0 - 1e-4)  # uninformative
+
+    # prior on shear
+    g_mag = jnp.sqrt(g[0] ** 2 + g[1] ** 2)
+    logprior1 = uniform_logpdf(g_mag, 0.0, 1.0) + jnp.log(1 / (2 * jnp.pi))
+    logprior2 = uniform_logpdf(sigma_e, 1e-4, 1.0)  # uninformative
     return logprior1 + logprior2 + loglike
 
 
 def logtarget_shear(
-    g: Array, *, data: Array | dict[str, Array], loglikelihood: Callable, sigma_g: float
+    g: Array, *, data: Array | dict[str, Array], loglikelihood: Callable
 ):
     loglike = loglikelihood(g, post_params=data)
-    logprior = stats.norm.logpdf(g, loc=0.0, scale=sigma_g).sum()
+
+    # flat circle prior for shear
+    g_mag = jnp.sqrt(g[0] ** 2 + g[1] ** 2)
+    logprior = uniform_logpdf(g_mag, 0.0, 1.0) + jnp.log(1 / (2 * jnp.pi))
     return logprior + loglike
 
 
@@ -50,7 +60,6 @@ def pipeline_shear_inference(
     interim_logprior: Callable,
     n_samples: int,
     initial_step_size: float,
-    sigma_g: float = 0.01,
     n_warmup_steps: int = 500,
     max_num_doublings: int = 2,
 ):
@@ -59,13 +68,10 @@ def pipeline_shear_inference(
     )
     _loglikelihood_jitted = jit(_loglikelihood)
 
-    _logtarget = partial(
-        logtarget_shear, loglikelihood=_loglikelihood_jitted, sigma_g=sigma_g
-    )
+    _logtarget = partial(logtarget_shear, loglikelihood=_loglikelihood_jitted)
 
     _do_inference = partial(
         run_inference_nuts,
-        data=post_params,
         logtarget=_logtarget,
         n_samples=n_samples,
         n_warmup_steps=n_warmup_steps,
@@ -73,7 +79,7 @@ def pipeline_shear_inference(
         initial_step_size=initial_step_size,
     )
 
-    g_samples = _do_inference(rng_key, init_g)
+    g_samples = _do_inference(rng_key, post_params, init_g)
     return g_samples
 
 
@@ -86,7 +92,6 @@ def pipeline_shear_inference_simple(
     sigma_e_int: float,
     n_samples: int,
     initial_step_size: float,
-    sigma_g: float = 0.01,
     n_warmup_steps: int = 500,
     max_num_doublings: int = 2,
 ):
@@ -98,9 +103,7 @@ def pipeline_shear_inference_simple(
     )
     _loglikelihood_jitted = jit(_loglikelihood)
 
-    _logtarget = partial(
-        logtarget_shear, loglikelihood=_loglikelihood_jitted, sigma_g=sigma_g
-    )
+    _logtarget = partial(logtarget_shear, loglikelihood=_loglikelihood_jitted)
 
     return run_inference_nuts(
         rng_key,
@@ -222,3 +225,67 @@ def pipeline_toy_ellips(
     e_post = _do_inference(keys2, e_obs, e_sheared)
 
     return e_post, e_obs, e_sheared
+
+
+def logtarget_all_free(
+    params,
+    *,
+    data: dict[str, Array],
+    sigma_e_int: float,
+):
+    g = params["g"]
+    sigma_e = params["sigma_e"]
+    mean_logflux = params["mean_logflux"]
+    sigma_logflux = params["sigma_logflux"]
+    mean_loghlr = params["mean_loghlr"]
+    sigma_loghlr = params["sigma_loghlr"]
+    a_logflux = params["a_logflux"]
+
+    # ignores dx,dy
+    _logprior = partial(
+        true_all_params_skew_logprior,
+        sigma_e=sigma_e,
+        mean_logflux=mean_logflux,
+        sigma_logflux=sigma_logflux,
+        a_logflux=a_logflux,
+        mean_loghlr=mean_loghlr,
+        sigma_loghlr=sigma_loghlr,
+    )
+    _interim_logprior = partial(
+        interim_gprops_logprior,
+        sigma_e=sigma_e_int,
+        free_flux_hlr=True,
+        free_dxdy=False,
+    )
+    loglike = shear_loglikelihood(
+        g, post_params=data, logprior=_logprior, interim_logprior=_interim_logprior
+    )
+    g_mag = jnp.sqrt(g[0] ** 2 + g[1] ** 2)
+    logprior_g = uniform_logpdf(g_mag, 0.0, 1.0) + jnp.log(1 / (2 * jnp.pi))
+
+    # uninformative
+    logprior1 = uniform_logpdf(sigma_e, 1e-4, 1.0)
+    logprior2 = uniform_logpdf(mean_logflux, -2.0, 6.0)
+    logprior3 = uniform_logpdf(sigma_logflux, 0.0, 2.0)
+    logprior4 = uniform_logpdf(mean_loghlr, -2.0, 2.0)
+    logprior5 = uniform_logpdf(sigma_loghlr, 0.0, 0.5)
+    logprior6 = uniform_logpdf(a_logflux, -100, 100)
+    logprior = logprior1 + logprior2 + logprior3 + logprior4 + logprior5 + logprior6
+    logprior += logprior_g
+
+    return logprior + loglike
+
+
+def init_all_params(key: PRNGKeyArray, true_params: dict[str, float], p: float = 0.1):
+    """Initialize all parameters uniformly around the truth."""
+    assert "g" not in true_params
+    keys = random.split(key, len(true_params))
+    init_positions = {}
+    for ii, k in enumerate(true_params):
+        init_positions[k] = random.uniform(
+            keys[ii],
+            shape=(),
+            minval=true_params[k] - p * true_params[k],
+            maxval=true_params[k] + p * true_params[k],
+        )
+    return init_positions

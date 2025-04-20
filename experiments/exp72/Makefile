@@ -1,0 +1,51 @@
+SHELL=/bin/bash
+SEED := 45
+EXP := exp72
+TAG := ${EXP}_${SEED}
+DIR := /pscratch/sd/i/imendoza/data/cache_chains/${TAG}
+
+# simulation parameters
+N_GALS := 3000
+N_SAMPLES_PER_GAL := 300
+SHEAR := 0.02
+QOS := debug
+
+TIME_SAMPLE := 00:30
+NODES_SAMPLE := 5
+NTASKS_SAMPLE := 4
+MEM_PER_GPU := 10G
+
+PLUS_SAMPLES_FPATH := ${DIR}/interim_samples_${SEED}1_plus.npz
+MINUS_SAMPLES_FPATH := ${DIR}/interim_samples_${SEED}1_minus.npz
+
+export JAX_ENABLE_X64=True
+
+figures:
+	../exp70/get_figures.py ${SEED} --tag ${TAG}
+
+error:
+	./simple_error.py ${SEED}4 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH}
+
+collate_boot:
+	../exp70/collate_samples.py ${SEED}3 --tag ${TAG} --mode "" --start-string "g_samples_boots"
+
+boot:
+	./slurm_bootstrap.py ${SEED}3 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH} --n-boots 200
+
+shear: 
+	export CUDA_VISIBLE_DEVICES=0
+	./get_shear.py ${SEED}2 --samples-fpath ${PLUS_SAMPLES_FPATH} --tag ${TAG} --overwrite --mode "plus"
+	./get_shear.py ${SEED}2 --samples-fpath ${MINUS_SAMPLES_FPATH} --tag ${TAG} --overwrite --mode "minus"
+
+collate:
+	../exp70/collate_samples.py ${SEED}1 --tag ${TAG} --mode "plus"
+	../exp70/collate_samples.py ${SEED}1 --tag ${TAG} --mode "minus"
+
+samples: 
+	./slurm_get_interim_samples.py ${SEED}1 --tag ${TAG} --g1 ${SHEAR} --g2 0.0 --n-gals ${N_GALS} --n-samples-per-gal ${N_SAMPLES_PER_GAL} --time ${TIME_SAMPLE} --mode "plus" --mem-per-gpu ${MEM_PER_GPU} --qos ${QOS} --nodes ${NODES_SAMPLE} --n-tasks-per-node ${NTASKS_SAMPLE}
+
+	./slurm_get_interim_samples.py ${SEED}1 --tag ${TAG} --g1 -${SHEAR} --g2 0.0 --n-gals ${N_GALS} --n-samples-per-gal ${N_SAMPLES_PER_GAL} --time ${TIME_SAMPLE} --mode "minus" --mem-per-gpu ${MEM_PER_GPU} --qos ${QOS} --nodes ${NODES_SAMPLE}  --n-tasks-per-node ${NTASKS_SAMPLE}
+
+
+clean: 
+	rm -f ${DIR}/g_samples_*.npy ${DIR}/interim_samples_*.npz ${DIR}/g_samples_*.npz

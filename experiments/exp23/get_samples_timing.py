@@ -20,8 +20,9 @@ from bpd.prior import interim_gprops_logprior
 from bpd.sample import (
     get_target_images,
     get_true_params_from_galaxy_params,
-    sample_galaxy_params_trunc,
+    sample_galaxy_params_skew,
 )
+from bpd.utils import DEFAULT_HYPERPARAMS
 
 
 def _init_fnc(key: PRNGKeyArray, image: Array, true_params: dict):
@@ -91,17 +92,11 @@ def main(
     seed: int,
     tag: str,
     n_samples: int = 500,
-    shape_noise: float = 0.2,
     sigma_e_int: float = 0.3,
     slen: int = 63,
     fft_size: int = 256,
     background: float = 1.0,
     initial_step_size: float = 0.1,
-    mean_logflux: float = 2.5,
-    sigma_logflux: float = 0.4,
-    min_logflux: float = 2.45,
-    mean_loghlr: float = -0.4,
-    sigma_loghlr: float = 0.05,
 ):
     rng_key = random.key(seed)
     pkey, nkey, rkey = random.split(rng_key, 3)
@@ -144,15 +139,8 @@ def main(
     for n_gals in all_n_gals:  # repeat 1 == compilation
         print("n_gals:", n_gals)
 
-        galaxy_params = sample_galaxy_params_trunc(
-            pkey1,
-            n=n_gals,
-            shape_noise=shape_noise,
-            mean_logflux=mean_logflux,
-            sigma_logflux=sigma_logflux,
-            min_logflux=min_logflux,
-            mean_loghlr=mean_loghlr,
-            sigma_loghlr=sigma_loghlr,
+        galaxy_params = sample_galaxy_params_skew(
+            pkey1, n=n_gals, **DEFAULT_HYPERPARAMS
         )
         assert galaxy_params["x"].shape == (n_gals,)
         assert galaxy_params["e1"].shape == (n_gals,)

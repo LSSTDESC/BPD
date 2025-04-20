@@ -1,9 +1,57 @@
+from functools import partial
 from math import ceil
 from typing import Callable
 
 import jax.numpy as jnp
 from jax import jit, random, vmap
 from tqdm import tqdm
+
+
+def run_bootstrap_shear_pipeline(
+    rng_key,
+    *,
+    post_params_plus: dict,
+    post_params_minus: dict,
+    shear_pipeline: Callable,
+    n_gals: int,
+    n_boots: int = 100,
+    no_bar: bool = True,
+    init_positions: list | None = None,
+):
+    """Obtain boostrap samples of shear posteriors from a 'plus' and 'minus' sims."""
+
+    results_plus = []
+    results_minus = []
+    keys = random.split(rng_key, n_boots)
+
+    pipe = jit(shear_pipeline)
+
+    for ii in tqdm(range(n_boots), desc="Bootstrap #", disable=no_bar):
+        if init_positions is not None:
+            _pipe_ii = partial(pipe, ip=init_positions[ii])
+        else:
+            _pipe_ii = pipe
+
+        k_ii = keys[ii]
+        k1, k2 = random.split(k_ii)
+        indices = random.randint(k1, shape=(n_gals,), minval=0, maxval=n_gals)
+
+        _params_jack_pos = {k: v[indices] for k, v in post_params_plus.items()}
+        _params_jack_neg = {k: v[indices] for k, v in post_params_minus.items()}
+
+        samples_plus_ii = _pipe_ii(k2, _params_jack_pos)
+        samples_minus_ii = _pipe_ii(k2, _params_jack_neg)
+
+        results_plus.append(samples_plus_ii)
+        results_minus.append(samples_minus_ii)
+
+    samples_plus = {}
+    samples_minus = {}
+    for k in results_plus[0]:
+        samples_plus[k] = jnp.stack([rs[k] for rs in results_plus], axis=0)
+        samples_minus[k] = jnp.stack([rs[k] for rs in results_minus], axis=0)
+
+    return samples_plus, samples_minus
 
 
 def run_jackknife_shear_pipeline(

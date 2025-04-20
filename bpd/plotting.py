@@ -24,7 +24,7 @@ def set_rc_params(
     fontsize=32,
     title_size="large",
     label_size="medium",
-    legend_fontsize="medium",
+    legend_fontsize="small",
     tick_label_size="small",
     major_tick_size=10,
     minor_tick_size=5,
@@ -73,7 +73,9 @@ def set_rc_params(
     )
 
 
-def get_timing_figure(results: dict, max_n_gal_str: str) -> Figure:
+def get_timing_figure(
+    results: dict, *, max_n_gal_str: str, avg_ess: float, figsize=(10, 10)
+) -> Figure:
     all_n_gals = [n_gals for n_gals in results]
 
     # cycler from blue to red
@@ -96,20 +98,44 @@ def get_timing_figure(results: dict, max_n_gal_str: str) -> Figure:
         t_per_obj_arr = (
             t_per_obj_warmup + t_per_obj_per_sample_sampling * n_samples_array
         )
-        t_per_obj_dict[n_chains] = t_per_obj_arr
+        t_per_obj_dict[n_chains] = t_per_obj_arr / avg_ess
 
-    fig, ax = plt.subplots(1, 1)
+    # first option
+    fig1, ax = plt.subplots(1, 1, figsize=figsize)
     ax.set_prop_cycle(cycles)
 
-    ax.set_ylabel(r"\rm Time per galaxy in a single A100 GPU (sec)")
-    ax.set_xlabel(r"\rm \# of samples")
+    ax.set_ylabel(r"\rm Galaxies processed per second in one A100 GPU")
+    ax.set_xlabel(r"\rm \# of effective samples")
+
+    for n_chains, t_per_obj_array in t_per_obj_dict.items():
+        ax.plot(n_samples_array, 1 / t_per_obj_array, label=f"${n_chains}$")
+
+    ax.legend(
+        title=r"\rm Galaxies Sampled in Parallel",
+        loc="upper right",
+        ncol=4,
+        fancybox=True,
+        shadow=False,
+    )
+
+    fig2, ax = plt.subplots(1, 1, figsize=figsize)
+    ax.set_prop_cycle(cycles)
+
+    ax.set_ylabel(r"\rm Time to process one galaxy in one A100 GPU (sec)")
+    ax.set_xlabel(r"\rm \# of effective samples")
 
     for n_chains, t_per_obj_array in t_per_obj_dict.items():
         ax.plot(n_samples_array, t_per_obj_array, label=f"${n_chains}$")
 
-    plt.legend(title=r"\rm Number of chains", loc="best")
+    ax.legend(
+        title=r"\rm Galaxies Sampled in Parallel",
+        loc="upper left",
+        ncol=4,
+        fancybox=True,
+        shadow=False,
+    )
 
-    return fig
+    return fig1, fig2
 
 
 def get_jack_bias(

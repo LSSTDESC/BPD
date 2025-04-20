@@ -1,38 +1,31 @@
 SHELL=/bin/bash
-SEED := 42
-EXP := exp70
+SEED := 44
+EXP := exp71
 TAG := ${EXP}_${SEED}
 DIR := /pscratch/sd/i/imendoza/data/cache_chains/${TAG}
 
 # simulation parameters
-N_GALS := 625
-N_SAMPLES_PER_GAL := 300
 SHEAR := 0.02
 QOS := debug
-
-TIME_SAMPLE := 00:10
-NODES_SAMPLE := 4
-NTASKS_SAMPLE := 4
 MEM_PER_GPU := 10G
 
+PLUS_FILE := /pscratch/sd/i/imendoza/data/cache_chains/exp70_44/interim_samples_441_plus.npz
+MINUS_FILE := /pscratch/sd/i/imendoza/data/cache_chains/exp70_44/interim_samples_441_minus.npz
 
 export JAX_ENABLE_X64=True
 
-figures:
-	../exp70/get_figures.py ${SEED} --tag ${TAG}
+collate_boot:
+	../exp70/collate_samples.py ${SEED}3 --tag ${TAG} --mode "" --start-string "g_samples_boots"
 
-collate_jack:
-	../exp70/collate_samples.py ${SEED} --tag ${TAG} --mode "" --start-string "g_samples_jack"
-
-jackknife:
+bootstrap:
 	export CUDA_VISIBLE_DEVICES=0
-	./slurm_jackknife.py ${SEED} --tag ${TAG}
+	./slurm_bootstrap.py ${SEED}3 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE}  --samples-minus-fpath ${MINUS_FILE} --n-boots 200
 
 shear: 
 	export CUDA_VISIBLE_DEVICES=0
-	../../scripts/get_shear_and_sn_from_shapes.py ${SEED} --interim-samples-fname "interim_samples_${SEED}_plus.npz" --tag ${TAG} --overwrite --extra-tag "plus"
+	../../scripts/get_shear_and_sn_from_shapes.py ${SEED}2 --samples-fpath ${PLUS_FILE} --tag ${TAG} --overwrite --extra-tag "plus"
 	
-	../../scripts/get_shear_and_sn_from_shapes.py ${SEED} --interim-samples-fname "interim_samples_${SEED}_minus.npz" --tag ${TAG} --overwrite --extra-tag "minus"
+	../../scripts/get_shear_and_sn_from_shapes.py ${SEED}2 --samples-fpath ${MINUS_FILE} --tag ${TAG} --overwrite --extra-tag "minus"
 
 
 clean: 

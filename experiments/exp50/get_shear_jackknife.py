@@ -6,7 +6,7 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 import typer
-from jax import Array, jit
+from jax import Array
 
 from bpd import DATA_DIR
 from bpd.io import load_dataset, save_dataset
@@ -106,13 +106,17 @@ def main(
         n_samples=n_samples,
         initial_step_size=initial_step_size,
     )
-    pipeline = jit(raw_pipeline)
+
+    @jax.jit
+    def pipe(k, d):
+        out = raw_pipeline(k, d)
+        return {"g1": out[..., 0], "g2": out[..., 1]}
 
     g_plus, g_minus = run_jackknife_vectorized(
         rng_key,
         post_params_plus=post_params_plus,
         post_params_minus=post_params_minus,
-        shear_pipeline=pipeline,
+        shear_pipeline=pipe,
         n_gals=samples_plus["e1"].shape[0],
         n_jacks=n_jacks,
         n_splits=n_splits,
