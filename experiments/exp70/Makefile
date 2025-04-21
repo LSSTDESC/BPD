@@ -25,28 +25,33 @@ collate_boot:
 	../exp70/collate_samples.py ${SEED}3 --tag ${TAG} --mode "" --start-string "g_samples_boots"
 
 boot:
-	./slurm_bootstrap.py ${SEED}3 --tag ${TAG} --samples-plus-fname "interim_samples_${SEED}1_plus.npz" --samples-minus-fname "interim_samples_${SEED}1_minus.npz"
+	./slurm_bootstrap.py ${SEED}3 --tag ${TAG} --plus-samples-fname "interim_samples_${SEED}1_plus.npz" --minus-samples-fname-minus-fname "interim_samples_${SEED}1_minus.npz"
 
-shear: 
+error:
+	./simple_error.py ${SEED}4 --tag ${TAG} --plus-samples-fname "interim_samples_${SEED}1_plus.npz" --minus-samples-fname "interim_samples_${SEED}1_minus.npz"
+
+shear_plus: 
 	export CUDA_VISIBLE_DEVICES=0
-	time ../../scripts/get_shear_from_shapes.py ${SEED}2 --interim-samples-fname "interim_samples_${SEED}1_plus.npz" --tag ${TAG} --overwrite --extra-tag "plus"
-	
+	../../scripts/get_shear_from_shapes.py ${SEED}2 --interim-samples-fname "interim_samples_${SEED}1_plus.npz" --tag ${TAG} --overwrite --extra-tag "plus"
+
+shear_minus:
+	export CUDA_VISIBLE_DEVICES=0
 	../../scripts/get_shear_from_shapes.py ${SEED}2 --interim-samples-fname "interim_samples_${SEED}1_minus.npz" --tag ${TAG} --overwrite --extra-tag "minus"
 
-collate:
+collate_plus:
 	../exp70/collate_samples.py ${SEED}1 --tag ${TAG} --mode "plus"
-	../exp70/collate_samples.py ${SEED}1 --tag ${TAG} --mode "minus"
 
-test_samples: 
-	./slurm_get_interim_samples.py ${SEED}1 --tag ${TAG} --g1 0.02 --g2 0.0 --n-gals 10_000 --n-samples-per-gal 100 --time 02:00 --mode "plus" --mem-per-gpu ${MEM_PER_GPU} --qos "regular" --nodes 1 --n-tasks-per-node 1
+collate_minus:
+	../exp70/collate_samples.py ${SEED}1 --tag ${TAG} --mode "minus"
 
 samples_plus:
 	./slurm_get_interim_samples.py ${SEED}1 --tag ${TAG} --g1 ${SHEAR} --g2 0.0 --n-gals ${N_GALS} --n-samples-per-gal ${N_SAMPLES_PER_GAL} --time ${TIME_SAMPLE} --mode "plus" --mem-per-gpu ${MEM_PER_GPU} --qos ${QOS} --nodes ${NODES_SAMPLE} --n-tasks-per-node ${NTASKS_SAMPLE}
 
-
 samples_minus:
 	./slurm_get_interim_samples.py ${SEED}1 --tag ${TAG} --g1 -${SHEAR} --g2 0.0 --n-gals ${N_GALS} --n-samples-per-gal ${N_SAMPLES_PER_GAL} --time ${TIME_SAMPLE} --mode "minus" --mem-per-gpu ${MEM_PER_GPU} --qos ${QOS} --nodes ${NODES_SAMPLE}  --n-tasks-per-node ${NTASKS_SAMPLE}
 
+test_samples: 
+	./slurm_get_interim_samples.py ${SEED}1 --tag ${TAG} --g1 0.02 --g2 0.0 --n-gals 10_000 --n-samples-per-gal 100 --time 02:00 --mode "plus" --mem-per-gpu ${MEM_PER_GPU} --qos "regular" --nodes 1 --n-tasks-per-node 1
 
 clean: 
 	rm -f ${DIR}/g_samples_*.npy ${DIR}/interim_samples_*.npz ${DIR}/g_samples_*.npz
