@@ -1,5 +1,5 @@
 SHELL=/bin/bash
-SEED := 44
+SEED := 51
 EXP := exp71
 TAG := ${EXP}_${SEED}
 DIR := /pscratch/sd/i/imendoza/data/cache_chains/${TAG}
@@ -9,8 +9,8 @@ SHEAR := 0.02
 QOS := debug
 MEM_PER_GPU := 10G
 
-PLUS_FILE := /pscratch/sd/i/imendoza/data/cache_chains/exp70_44/interim_samples_441_plus.npz
-MINUS_FILE := /pscratch/sd/i/imendoza/data/cache_chains/exp70_44/interim_samples_441_minus.npz
+PLUS_FILE := /pscratch/sd/i/imendoza/data/cache_chains/exp70_51/interim_samples_511_plus.npz
+MINUS_FILE := /pscratch/sd/i/imendoza/data/cache_chains/exp70_51/interim_samples_511_minus.npz
 
 export JAX_ENABLE_X64=True
 
