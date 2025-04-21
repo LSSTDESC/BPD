@@ -103,7 +103,6 @@ def main(
 
     samples_plus = tree_map(lambda *x: jnp.concatenate(x, axis=0), *samples_plus)
     samples_minus = tree_map(lambda *x: jnp.concatenate(x, axis=0), *samples_minus)
-    print(samples_plus["g"].shape)
     assert samples_plus["g"].shape == (n_splits, 1000, 2), "shear samples do not match"
     assert samples_minus["g"].shape == (n_splits, 1000, 2), "shear samples do not match"
     assert samples_plus["sigma_e"].shape == (n_splits, 1000), (
