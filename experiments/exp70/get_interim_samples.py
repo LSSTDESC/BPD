@@ -54,6 +54,7 @@ def main(
     fft_size: int = 256,
     background: float = 1.0,
     initial_step_size: float = 0.01,
+    max_n_gals_per_gpu: int = MAX_N_GALS_PER_GPU,
 ):
     assert (g1 > 0 and mode == "plus") or (g1 < 0 and mode == "minus") or (not mode)
 
@@ -131,10 +132,10 @@ def main(
     print("Pipeline compiled, now running on all galaxies...")
 
     # divide in batches if not all galaxies fit on GPU
-    n_batches = math.ceil(n_gals / MAX_N_GALS_PER_GPU)
+    n_batches = math.ceil(n_gals / max_n_gals_per_gpu)
     samples_list = []
     for ii in range(n_batches):
-        start, end = ii * MAX_N_GALS_PER_GPU, (ii + 1) * MAX_N_GALS_PER_GPU
+        start, end = ii * max_n_gals_per_gpu, (ii + 1) * max_n_gals_per_gpu
         print(f"Batch {ii}, {start}:{end}")
         _gkeys = gkeys[start:end]
         _target_images = target_images[start:end]
