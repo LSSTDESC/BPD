@@ -24,10 +24,12 @@ bootstrap:
 	export CUDA_VISIBLE_DEVICES=0
 	./slurm_bootstrap.py ${SEED}3 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE}  --samples-minus-fpath ${MINUS_FILE} --n-boots 200
 
-shear: 
+shear_plus: 
 	export CUDA_VISIBLE_DEVICES=0
 	../../scripts/get_shear_and_sn_from_shapes.py ${SEED}2 --samples-fpath ${PLUS_FILE} --tag ${TAG} --overwrite --extra-tag "plus"
 	
+shear_minus:
+	export CUDA_VISIBLE_DEVICES=0
 	../../scripts/get_shear_and_sn_from_shapes.py ${SEED}2 --samples-fpath ${MINUS_FILE} --tag ${TAG} --overwrite --extra-tag "minus"
 
 
