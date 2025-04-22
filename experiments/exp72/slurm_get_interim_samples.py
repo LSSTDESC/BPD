@@ -24,7 +24,7 @@ def main(
     jobname = f"{tag}{mode_txt}"
 
     base_cmd = """python /global/u2/i/imendoza/BPD/experiments/exp72/get_interim_samples.py
-               {{seed}} {tag}
+               {{seed}} --tag {tag}
                --mode {mode}
                --g1 {g1} --g2 {g2}
                --n-gals {n_gals}
