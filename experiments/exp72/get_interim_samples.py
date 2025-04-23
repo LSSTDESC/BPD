@@ -147,8 +147,6 @@ def main(
         batch_size=batch_size,
     )
 
-    samples = vpipe(gkeys, target_images, fixed_params, true_params)
-
     save_dataset(
         {
             "samples": {**samples},
