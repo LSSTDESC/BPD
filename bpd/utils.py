@@ -44,7 +44,7 @@ def process_in_batches(
     """Process a function in batches to avoid memory issues. Works with dicts and array outputs.
     Args:
         fnc: Function to be applied to the arguments.
-        *args: Arguments to the function.
+        *args: Arguments to the function (Arrays or dict of Arrays).
         n_points: Size of the dataset (e.g. number of galaxies).
         batch_size: Size of each batch.
     """
