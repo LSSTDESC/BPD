@@ -37,6 +37,7 @@ shear_plus:
 	./get_shear.py ${SEED}2 --samples-fpath ${PLUS_SAMPLES_FPATH} --tag ${TAG} --overwrite --mode "plus"
 
 shear_minus:
+	export CUDA_VISIBLE_DEVICES=0
 	./get_shear.py ${SEED}2 --samples-fpath ${MINUS_SAMPLES_FPATH} --tag ${TAG} --overwrite --mode "minus"
 
 collate_plus:

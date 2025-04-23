@@ -11,6 +11,7 @@ from bpd import DATA_DIR
 from bpd.io import load_dataset_jax, save_dataset
 from bpd.pipelines import pipeline_shear_inference
 from bpd.prior import interim_gprops_logprior, true_all_params_skew_logprior
+from bpd.utils import process_in_batches
 
 
 def main(
@@ -105,8 +106,13 @@ def main(
     # run shear inference pipeline
     keys = random.split(rng_key, n_splits)
 
-    gp = vmap(pipe)(keys, ppp)
-    gm = vmap(pipe)(keys, ppm)
+    gp = process_in_batches(
+        vmap(pipe), keys, ppp, n_points=ppp["e1"].shape[0], batch_size=100
+    )
+    gm = process_in_batches(
+        vmap(pipe), keys, ppm, n_points=ppm["e1"].shape[0], batch_size=100
+    )
+
     assert gp.shape == (n_splits, 1000, 2), "shear samples do not match"
     assert gm.shape == (n_splits, 1000, 2), "shear samples do not match"
 
