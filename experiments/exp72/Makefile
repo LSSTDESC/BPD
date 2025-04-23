@@ -10,7 +10,7 @@ N_SAMPLES_PER_GAL := 300
 SHEAR := 0.02
 QOS := regular
 
-TIME_SAMPLE := 00:30
+TIME_SAMPLE := 02:00
 NODES_SAMPLE := 8
 NTASKS_SAMPLE := 4
 MEM_PER_GPU := 10G
@@ -39,8 +39,10 @@ shear_plus:
 shear_minus:
 	./get_shear.py ${SEED}2 --samples-fpath ${MINUS_SAMPLES_FPATH} --tag ${TAG} --overwrite --mode "minus"
 
-collate:
+collate_plus:
 	../exp70/collate_samples.py ${SEED}1 --tag ${TAG} --mode "plus"
+
+collate_minus:
 	../exp70/collate_samples.py ${SEED}1 --tag ${TAG} --mode "minus"
 
 samples_plus: 
