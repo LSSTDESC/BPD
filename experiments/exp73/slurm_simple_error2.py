@@ -2,7 +2,7 @@
 
 import typer
 
-from bpd.slurm import run_single_gpu_job
+from bpd.slurm import run_multi_gpu_job
 
 
 def main(
@@ -14,7 +14,7 @@ def main(
     n_splits: int = 500,
     n_samples: int = 1000,
     initial_step_size: float = 0.01,
-    time: str = "05:00",  # HH:MM
+    time: str = "04:00",  # HH:MM
     mem_per_gpu: str = "10G",
     qos: str = "regular",
 ):
@@ -26,6 +26,8 @@ def main(
                 --n-splits {n_splits}
                 --n-samples {n_samples}
                 --initial-step-size {initial_step_size}
+                --start {{start}}
+                --end {{end}}
                 """
     base_cmd = " ".join(base_cmd.split())
     cmd = base_cmd.format(
@@ -39,12 +41,23 @@ def main(
         initial_step_size=initial_step_size,
     )
 
-    run_single_gpu_job(
-        cmd,
-        jobname=tag + "_simple_error2",
+    cmds = []
+    assert n_splits % 125 == 0, "n_splits must be divisible by 125"
+    assert n_splits // 125 == 4
+    for ii in range(0, 4):
+        start = ii * 125
+        end = (ii + 1) * 125
+        cmd_ = cmd.format(start=start, end=end)
+        cmds.append(cmd_)
+
+    run_multi_gpu_job(
+        cmds,
+        jobname="exp73_simple_error2",
         time=time,
         mem_per_gpu=mem_per_gpu,
         qos=qos,
+        nodes=1,
+        n_tasks_per_node=4,
     )
 
 
