@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""For reference, takes 2hrs for 300k galaxies."""
 
 import typer
 
