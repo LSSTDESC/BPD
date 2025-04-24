@@ -48,6 +48,7 @@ def process_in_batches(
         n_points: Size of the dataset (e.g. number of galaxies).
         batch_size: Size of each batch.
     """
+    assert callable(fnc)
     assert len(args) > 0
     assert n_points > 0
     assert batch_size > 0
