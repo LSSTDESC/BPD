@@ -79,7 +79,7 @@ def main(
         end = n_splits
         txt = ""
     else:
-        txt = "_{start}_{end}"
+        txt = f"_{start}_{end}"
     if start >= end:
         raise ValueError("start must be less than end")
     if end > n_splits:
@@ -223,22 +223,19 @@ def main(
     k2s = random.split(k2, n_splits)
 
     print("Running inference plus...")
-    vmap(pipe)(
+    samples_plus = vmap(pipe)(
         k2s[start:end],
         {k: v[start:end] for k, v in ppp.items()},
         {k: v[start:end] for k, v in init_positions.items()},
     )
 
     print("Running inference minus...")
-    vmap(pipe)(
+    samples_minus = vmap(pipe)(
         k2s[start:end],
         {k: v[start:end] for k, v in ppm.items()},
         {k: v[start:end] for k, v in init_positions.items()},
     )
 
-    assert samples_plus["g"].shape == (n_splits, n_samples, 2), (
-        "shear samples do not match"
-    )
     save_dataset(
         {
             "plus": {
@@ -254,6 +251,10 @@ def main(
         },
         fpath,
         overwrite=True,
+    )
+
+    assert samples_plus["g"].shape == (end - start, n_samples, 2), (
+        "shear samples do not match"
     )
 
 
