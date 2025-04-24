@@ -14,7 +14,7 @@ def main(
     n_splits: int = 500,
     n_samples: int = 1000,
     initial_step_size: float = 0.01,
-    time: str = "03:00",  # HH:MM
+    time: str = "05:00",  # HH:MM
     mem_per_gpu: str = "10G",
     qos: str = "regular",
 ):
