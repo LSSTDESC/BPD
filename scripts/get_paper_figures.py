@@ -33,18 +33,18 @@ CHAIN_DIR = DATA_DIR / "cache_chains"
 INPUT_PATHS = {
     "timing_results": CHAIN_DIR / "exp23_43" / "timing_results_43.npz",
     "timing_conv": CHAIN_DIR / "exp23_43" / "convergence_results_43.npz",
-    "exp70_sp": CHAIN_DIR / "exp70_44" / "g_samples_442_plus.npy",
-    "exp70_sm": CHAIN_DIR / "exp70_44" / "g_samples_442_minus.npy",
-    "exp70_errs": CHAIN_DIR / "exp70_44" / "g_samples_449_errs.npz",
-    "exp71_sp": CHAIN_DIR / "exp71_44" / "shear_samples_442_plus.npz",
-    "exp71_sm": CHAIN_DIR / "exp71_44" / "shear_samples_442_minus.npz",
-    "exp71_errs": CHAIN_DIR / "exp71_44" / "g_samples_449_errs.npz",
-    "exp72_sp": CHAIN_DIR / "exp72_45" / "g_samples_452_plus.npy",
-    "exp72_sm": CHAIN_DIR / "exp72_45" / "g_samples_452_minus.npy",
-    "exp72_errs": CHAIN_DIR / "exp72_45" / "g_samples_454_errs.npz",
-    "exp73_sp": CHAIN_DIR / "exp73_45" / "shear_samples_452_plus.npz",
-    "exp73_sm": CHAIN_DIR / "exp73_45" / "shear_samples_452_minus.npz",
-    "exp73_errs": CHAIN_DIR / "exp73_45" / "tmp2" / "g_samples_454_errs.npz",
+    "exp70_sp": CHAIN_DIR / "exp70_51" / "g_samples_512_plus.npy",
+    "exp70_sm": CHAIN_DIR / "exp70_51" / "g_samples_512_minus.npy",
+    "exp70_errs": CHAIN_DIR / "exp70_51" / "g_samples_514_errs.npz",
+    "exp71_sp": CHAIN_DIR / "exp71_51" / "shear_samples_512_plus.npz",
+    "exp71_sm": CHAIN_DIR / "exp71_51" / "shear_samples_512_minus.npz",
+    "exp71_errs": CHAIN_DIR / "exp71_51" / "g_samples_514_errs.npz",
+    "exp72_sp": CHAIN_DIR / "exp72_51" / "g_samples_512_plus.npy",
+    "exp72_sm": CHAIN_DIR / "exp72_51" / "g_samples_512_minus.npy",
+    "exp72_errs": CHAIN_DIR / "exp72_51" / "g_samples_514_errs.npz",
+    "exp73_sp": CHAIN_DIR / "exp73_51" / "shear_samples_512_plus.npz",
+    "exp73_sm": CHAIN_DIR / "exp73_51" / "shear_samples_512_minus.npz",
+    "exp73_errs": CHAIN_DIR / "exp73_51" / "g_samples_514_errs_514.npz",
 }
 
 
@@ -359,7 +359,7 @@ def make_contour_hyper_figure(fpath: str | Path):
     c.set_plot_config(
         PlotConfig(
             usetex=True,
-            plot_hists=True,
+            plot_hists=False,
             labels={
                 "sigma_e": r"$\sigma_{e}$",
                 "a_logflux": r"$a_{f}$",
@@ -369,7 +369,7 @@ def make_contour_hyper_figure(fpath: str | Path):
                 "sigma_loghlr": r"$\sigma_{s}$",
             },
             label_font_size=60,
-            summarise=True,
+            summarise=False,
             summary_font_size=45,
             tick_font_size=50,
             diagonal_tick_labels=True,
@@ -457,21 +457,21 @@ def get_bias_table(fpath: str | Path):
     # in format for each m, c: mean +- std
     # use f-strings
     table = r"""
-\begin{table}[h]
+\begin{table*}
     \centering
-    \begin{tabular}{|c|c|c|c|c|}
+    \begin{tabular}{|c|c|c|c|c|c|}
         \hline
-        \textbf{Experiment} & \textbf{Multiplicative Bias $m$} & \textbf{Additive Bias $c$} \\
+        \textbf{Experiment} & \textbf{Properties Used} & \textbf{Prior Known?} & \textbf{Multiplicative Bias $m / 10^{-3}$} & \textbf{Additive Bias $c / 10^{-3}$} \\
         \hline
-        1 & $%.3g \pm %.3g$ & $%.3g \pm %.3g$ \\
-        2 & $%.3g \pm %.3g$ & $%.3g \pm %.3g$ \\
-        3 & $%.3g \pm %.3g$ & $%.3g \pm %.3g$ \\
-        4 & $%.3g \pm %.3g$ & $%.3g \pm %.3g$ \\
+        \texttt{shapes-fixed} & Ellipticities & Yes & $%.3g \pm %.3g$ & $%.3g \pm %.3f$ \\
+        \texttt{shapes-free} & Ellipticities & No & $%.3g \pm %.3g$ & $%.3g \pm %.3f$ \\
+        \texttt{all-fixed} & All & Yes & $%.3g \pm %.3g$ & $%.3g \pm %.3f$ \\
+        \texttt{all-free} & All & No & $%.3g \pm %.3g$ & $%.3g \pm %.3f$ \\
         \hline
     \end{tabular}
-    \caption{Multiplicative and additive bias for each experiment.}
+    \caption{\textbf{Multiplicative and additive bias for different settings.}}
     \label{tab:bias}
-\end{table}
+\end{table*}
     """ % (
         m1_mean / 1e-3,
         3 * m1_std / 1e-3,
@@ -497,9 +497,9 @@ def get_bias_table(fpath: str | Path):
 
 def main(overwrite: bool = False):
     # make_distribution_figure(OUT_PATHS["galaxy_distributions"], overwrite=overwrite)
-    make_timing_figure(OUT_PATHS["timing"], OUT_PATHS["timing2"])
+    # make_timing_figure(OUT_PATHS["timing"], OUT_PATHS["timing2"])
     # make_contour_shear_figure1(OUT_PATHS["contour_shear"])
-    # make_contour_hyper_figure(OUT_PATHS["contour_hyper"])
+    make_contour_hyper_figure(OUT_PATHS["contour_hyper"])
     # get_bias_table(OUT_PATHS["bias"])
 
 
