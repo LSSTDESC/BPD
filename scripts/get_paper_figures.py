@@ -496,8 +496,8 @@ def get_bias_table(fpath: str | Path):
 
 
 def main(overwrite: bool = False):
-    make_distribution_figure(OUT_PATHS["galaxy_distributions"], overwrite=overwrite)
     make_timing_figure(OUT_PATHS["timing"], OUT_PATHS["timing2"])
+    make_distribution_figure(OUT_PATHS["galaxy_distributions"], overwrite=overwrite)
     make_contour_shear_figure1(OUT_PATHS["contour_shear"])
     make_contour_hyper_figure(OUT_PATHS["contour_hyper"])
     get_bias_table(OUT_PATHS["bias"])
