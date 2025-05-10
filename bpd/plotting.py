@@ -104,6 +104,7 @@ def get_timing_figure(
             print(
                 f"Global best efficiency: {t_per_obj_per_sample_sampling / avg_ess:.2g} sec"
             )
+            print(f"Global best warmup: {t_per_obj_warmup:.2g} sec")
 
     # first option
     fig1, ax = plt.subplots(1, 1, figsize=figsize)
