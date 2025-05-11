@@ -53,22 +53,22 @@ def main(
         "e2": samples_minus["e2"],
     }
 
-    sigma_e = dsp["hyper"]["sigma_e"]
+    sigma_e = dsp["hyper"]["shape_noise"]
     sigma_e_int = dsp["hyper"]["sigma_e_int"]
     mean_logflux = dsp["hyper"]["mean_logflux"]
     sigma_logflux = dsp["hyper"]["sigma_logflux"]
-    min_logflux = dsp["hyper"]["min_logflux"]
+    a_logflux = dsp["hyper"]["a_logflux"]
     mean_loghlr = dsp["hyper"]["mean_loghlr"]
     sigma_loghlr = dsp["hyper"]["sigma_loghlr"]
 
     assert dsp["hyper"]["g1"] == -dsm["hyper"]["g1"]
     assert dsp["hyper"]["g2"] == -dsm["hyper"]["g2"]
-    assert sigma_e == dsm["hyper"]["sigma_e"]
+    assert sigma_e == dsm["hyper"]["shape_noise"]
     assert sigma_e_int == dsm["hyper"]["sigma_e_int"]
     assert mean_logflux == dsm["hyper"]["mean_logflux"]
     assert mean_loghlr == dsm["hyper"]["mean_loghlr"]
     assert jnp.all(dsp["truth"]["e1"] == dsm["truth"]["e1"])
-    assert jnp.all(dsp["truth"]["f"] == dsm["truth"]["f"])
+    assert jnp.all(dsp["truth"]["lf"] == dsm["truth"]["lf"])
 
     logprior_fnc = partial(
         true_all_params_skew_logprior,
@@ -77,7 +77,7 @@ def main(
         sigma_logflux=sigma_logflux,
         mean_loghlr=mean_loghlr,
         sigma_loghlr=sigma_loghlr,
-        min_logflux=min_logflux,
+        a_logflux=a_logflux,
     )
     interim_logprior_fnc = partial(
         interim_gprops_logprior,
@@ -99,6 +99,11 @@ def main(
     def pipe(k, d):
         out = raw_pipeline(k, d)
         return {"g1": out[..., 0], "g2": out[..., 1]}
+
+    # jit pipe function (to avoid memory error)
+    print("Jitting pipeline...")
+    _ = pipe(rng_key, {k: v[0, None] for k, v in post_params_plus.items()})
+    print("Pipeline jitted.")
 
     samples_plus, samples_minus = run_bootstrap_shear_pipeline(
         rng_key,
