@@ -8,12 +8,12 @@ import jax
 import jax.numpy as jnp
 import typer
 from jax import jit, random, vmap
-from jax.tree_util import tree_map
 
 from bpd import DATA_DIR
 from bpd.chains import run_inference_nuts
 from bpd.io import load_dataset_jax, save_dataset
 from bpd.pipelines import logtarget_shear_and_sn
+from bpd.utils import process_in_batches
 
 
 def main(
@@ -81,28 +81,25 @@ def main(
 
     # run shear inference pipeline
     # split into batches to avoid memory issues
-    keys = jax.random.split(k2, n_splits)
     batch_size = math.ceil(n_splits / n_batches)
+    keys = jax.random.split(k2, n_splits)
+    samples_plus = process_in_batches(
+        vmap(pipe),
+        keys,
+        e1e2ps,
+        init_positions,
+        n_points=n_splits,
+        batch_size=batch_size,
+    )
+    samples_minus = process_in_batches(
+        vmap(pipe),
+        keys,
+        e1e2ms,
+        init_positions,
+        n_points=n_splits,
+        batch_size=batch_size,
+    )
 
-    samples_plus = []
-    samples_minus = []
-    for ii in range(n_batches):
-        start = ii * batch_size
-        end = min((ii + 1) * batch_size, n_splits)
-        _keys = keys[start:end]
-        _e1e2ps = e1e2ps[start:end]
-        _e1e2ms = e1e2ms[start:end]
-        _init_positions = {k: v[start:end] for k, v in init_positions.items()}
-        print(f"Running shear inference pipeline (plus) batch {ii + 1}/{n_batches}...")
-        sp = vmap(pipe)(_keys, _e1e2ps, _init_positions)
-        print(f"Running shear inference pipeline (minus) batch {ii + 1}/{n_batches}...")
-        sm = vmap(pipe)(_keys, _e1e2ms, _init_positions)
-
-        samples_plus.append(sp)
-        samples_minus.append(sm)
-
-    samples_plus = tree_map(lambda *x: jnp.concatenate(x, axis=0), *samples_plus)
-    samples_minus = tree_map(lambda *x: jnp.concatenate(x, axis=0), *samples_minus)
     assert samples_plus["g"].shape == (n_splits, 1000, 2), "shear samples do not match"
     assert samples_minus["g"].shape == (n_splits, 1000, 2), "shear samples do not match"
     assert samples_plus["sigma_e"].shape == (n_splits, 1000), (

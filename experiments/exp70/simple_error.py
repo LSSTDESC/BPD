@@ -11,6 +11,7 @@ from jax import jit, random, vmap
 from bpd import DATA_DIR
 from bpd.io import load_dataset_jax, save_dataset
 from bpd.pipelines import pipeline_shear_inference_simple
+from bpd.utils import process_in_batches
 
 
 def main(
@@ -69,32 +70,14 @@ def main(
     _pipe = jit(_pipe)
     pipe = vmap(_pipe, in_axes=(0, 0))
 
-    # run shear inference pipeline
+    # run shear inference pipeline in batches
     keys = random.split(rng_key, n_splits)
-    batch_size = math.ceil(n_splits / n_batches)
-    for ii in range(n_batches):
-        start = ii * batch_size
-        end = (ii + 1) * batch_size
-        print(start, end)
-        _keys = keys[start:end]
-        _e1e2ps = e1e2ps[start:end]
-        _e1e2ms = e1e2ms[start:end]
-        print(f"Running shear inference pipeline (plus) batch {ii + 1}/{n_batches}...")
-        gp = pipe(_keys, _e1e2ps)
-        print(f"Running shear inference pipeline (minus) batch {ii + 1}/{n_batches}...")
-        gm = pipe(_keys, _e1e2ms)
-
-        print(gp.shape)
-        assert gp.shape == gm.shape, "shear samples do not match"
-        assert gp.shape[1:] == (1000, 2), "shear samples do not match"
-        if ii == 0:
-            g_plus = gp
-            g_minus = gm
-        else:
-            g_plus = jnp.concatenate((g_plus, gp), axis=0)
-            g_minus = jnp.concatenate((g_minus, gm), axis=0)
-        print(g_plus.shape)
-
+    g_plus = process_in_batches(
+        pipe, keys, e1e2ps, n_points=n_splits, n_batches=n_batches
+    )
+    g_minus = process_in_batches(
+        pipe, keys, e1e2ms, n_points=n_splits, n_batches=n_batches
+    )
     assert g_plus.shape == g_minus.shape, "shear samples do not match"
     assert g_plus.shape == (n_splits, 1000, 2), "shear samples do not match"
 
