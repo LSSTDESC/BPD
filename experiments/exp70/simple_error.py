@@ -19,6 +19,7 @@ def main(
     plus_samples_fname: str = typer.Option(),
     minus_samples_fname: str = typer.Option(),
     initial_step_size: float = 0.01,
+    n_gals: int | None = None,
     n_splits: int = 500,
     n_batches: int = 5,
 ):
@@ -34,15 +35,17 @@ def main(
     assert mfpath.exists(), "ellipticity samples file does not exist"
 
     dsp = load_dataset_jax(pfpath)
-    e1 = dsp["samples"]["e1"]
-    e2 = dsp["samples"]["e2"]
+    if n_gals is None:
+        n_gals = dsp["samples"]["e1"].shape[0]
+    e1 = dsp["samples"]["e1"][:n_gals]
+    e2 = dsp["samples"]["e2"][:n_gals]
     e1e2p = jnp.stack([e1, e2], axis=-1)
     sigma_e = dsp["hyper"]["shape_noise"]
     sigma_e_int = dsp["hyper"]["sigma_e_int"]
 
     dsm = load_dataset_jax(mfpath)
-    e1 = dsm["samples"]["e1"]
-    e2 = dsm["samples"]["e2"]
+    e1 = dsm["samples"]["e1"][:n_gals]
+    e2 = dsm["samples"]["e2"][:n_gals]
     e1e2m = jnp.stack([e1, e2], axis=-1)
     assert e1e2p.shape == e1e2m.shape, "ellipticity samples do not match"
     assert sigma_e == dsm["hyper"]["shape_noise"], "shape noise does not match"

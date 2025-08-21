@@ -24,6 +24,7 @@ def main(
     n_samples: int = 1000,
     n_boots: int = 25,
     no_bar: bool = False,
+    n_gals: int | None = None,
 ):
     dirpath = DATA_DIR / "cache_chains" / tag
     pfpath = Path(samples_plus_fpath)
@@ -36,21 +37,21 @@ def main(
     dsp = load_dataset_jax(samples_plus_fpath)
     dsm = load_dataset_jax(samples_minus_fpath)
 
-    # positions are not used as we assume true and interim prior cancels
-    samples_plus = dsp["samples"]
-    post_params_plus = {
-        "lf": samples_plus["lf"],
-        "lhlr": samples_plus["lhlr"],
-        "e1": samples_plus["e1"],
-        "e2": samples_plus["e2"],
-    }
+    if n_gals is None:
+        n_gals = dsp["samples"]["e1"].shape[0]
 
-    samples_minus = dsm["samples"]
+    # positions are not used as we assume true and interim prior cancels
+    post_params_plus = {
+        "lf": dsp["samples"]["lf"][:n_gals],
+        "lhlr": dsp["samples"]["lhlr"][:n_gals],
+        "e1": dsp["samples"]["e1"][:n_gals],
+        "e2": dsp["samples"]["e2"][:n_gals],
+    }
     post_params_minus = {
-        "lf": samples_minus["lf"],
-        "lhlr": samples_minus["lhlr"],
-        "e1": samples_minus["e1"],
-        "e2": samples_minus["e2"],
+        "lf": dsm["samples"]["lf"][:n_gals],
+        "lhlr": dsm["samples"]["lhlr"][:n_gals],
+        "e1": dsm["samples"]["e1"][:n_gals],
+        "e2": dsm["samples"]["e2"][:n_gals],
     }
 
     sigma_e = dsp["hyper"]["shape_noise"]
@@ -110,7 +111,7 @@ def main(
         post_params_plus=post_params_plus,
         post_params_minus=post_params_minus,
         shear_pipeline=pipe,
-        n_gals=samples_plus["e1"].shape[0],
+        n_gals=post_params_plus["e1"].shape[0],
         n_boots=n_boots,
         no_bar=no_bar,
     )
