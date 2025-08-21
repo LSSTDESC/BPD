@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""In this version, we use the posterior obtained on the full dataset as the prior on each split."""
 
 from functools import partial
 from pathlib import Path
