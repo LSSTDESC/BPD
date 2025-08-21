@@ -42,6 +42,7 @@ def process_in_batches(
     fnc: Callable, *args, n_points: int, batch_size: int, no_bar: bool = False
 ):
     """Process a function in batches to avoid memory issues. Works with dicts and array outputs.
+
     Args:
         fnc: Function to be applied to the arguments.
         *args: Arguments to the function (Arrays or dict of Arrays).
