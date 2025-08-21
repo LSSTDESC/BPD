@@ -22,10 +22,13 @@ figures:
 	../exp70/get_figures.py ${SEED} --tag ${TAG}
 
 collate_boot:
-	../exp70/collate_samples.py ${SEED}3 --tag ${TAG} --mode "" --start-string "g_samples_boots"
+	../exp70/collate_samples.py 111 --tag ${TAG} --mode "" --start-string "g_samples_boots"
 
 boot:
-	./slurm_bootstrap.py ${SEED}3 --tag ${TAG} --plus-samples-fname "interim_samples_${SEED}1_plus.npz" --minus-samples-fname-minus-fname "interim_samples_${SEED}1_minus.npz"
+	./slurm_bootstrap.py 111 --tag ${TAG} --samples-plus-fname "interim_samples_${SEED}1_plus.npz" --samples-minus-fname "interim_samples_${SEED}1_minus.npz" --n-gals 10_000 --time 00:30
+
+verify_error:
+	./simple_error.py 111 --tag ${TAG} --plus-samples-fname "interim_samples_${SEED}1_plus.npz" --minus-samples-fname "interim_samples_${SEED}1_minus.npz" --n-gals 10_000
 
 error:
 	./simple_error.py ${SEED}4 --tag ${TAG} --plus-samples-fname "interim_samples_${SEED}1_plus.npz" --minus-samples-fname "interim_samples_${SEED}1_minus.npz"
