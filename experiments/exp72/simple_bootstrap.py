@@ -20,10 +20,11 @@ def main(
     tag: str = typer.Option(),
     samples_plus_fpath: str = typer.Option(),
     samples_minus_fpath: str = typer.Option(),
-    initial_step_size: float = 0.1,
+    initial_step_size: float = 0.001,
     n_samples: int = 1000,
     n_boots: int = 25,
     no_bar: bool = False,
+    n_gals: int | None = None,
 ):
     dirpath = DATA_DIR / "cache_chains" / tag
     pfpath = Path(samples_plus_fpath)
@@ -36,39 +37,39 @@ def main(
     dsp = load_dataset_jax(samples_plus_fpath)
     dsm = load_dataset_jax(samples_minus_fpath)
 
+    if n_gals is None:
+        n_gals = dsp["samples"]["e1"].shape[0]
+
     # positions are not used as we assume true and interim prior cancels
-    samples_plus = dsp["samples"]
     post_params_plus = {
-        "lf": samples_plus["lf"],
-        "lhlr": samples_plus["lhlr"],
-        "e1": samples_plus["e1"],
-        "e2": samples_plus["e2"],
+        "lf": dsp["samples"]["lf"][:n_gals],
+        "lhlr": dsp["samples"]["lhlr"][:n_gals],
+        "e1": dsp["samples"]["e1"][:n_gals],
+        "e2": dsp["samples"]["e2"][:n_gals],
     }
-
-    samples_minus = dsm["samples"]
     post_params_minus = {
-        "lf": samples_minus["lf"],
-        "lhlr": samples_minus["lhlr"],
-        "e1": samples_minus["e1"],
-        "e2": samples_minus["e2"],
+        "lf": dsm["samples"]["lf"][:n_gals],
+        "lhlr": dsm["samples"]["lhlr"][:n_gals],
+        "e1": dsm["samples"]["e1"][:n_gals],
+        "e2": dsm["samples"]["e2"][:n_gals],
     }
 
-    sigma_e = dsp["hyper"]["sigma_e"]
+    sigma_e = dsp["hyper"]["shape_noise"]
     sigma_e_int = dsp["hyper"]["sigma_e_int"]
     mean_logflux = dsp["hyper"]["mean_logflux"]
     sigma_logflux = dsp["hyper"]["sigma_logflux"]
-    min_logflux = dsp["hyper"]["min_logflux"]
+    a_logflux = dsp["hyper"]["a_logflux"]
     mean_loghlr = dsp["hyper"]["mean_loghlr"]
     sigma_loghlr = dsp["hyper"]["sigma_loghlr"]
 
     assert dsp["hyper"]["g1"] == -dsm["hyper"]["g1"]
     assert dsp["hyper"]["g2"] == -dsm["hyper"]["g2"]
-    assert sigma_e == dsm["hyper"]["sigma_e"]
+    assert sigma_e == dsm["hyper"]["shape_noise"]
     assert sigma_e_int == dsm["hyper"]["sigma_e_int"]
     assert mean_logflux == dsm["hyper"]["mean_logflux"]
     assert mean_loghlr == dsm["hyper"]["mean_loghlr"]
     assert jnp.all(dsp["truth"]["e1"] == dsm["truth"]["e1"])
-    assert jnp.all(dsp["truth"]["f"] == dsm["truth"]["f"])
+    assert jnp.all(dsp["truth"]["lf"] == dsm["truth"]["lf"])
 
     logprior_fnc = partial(
         true_all_params_skew_logprior,
@@ -77,7 +78,7 @@ def main(
         sigma_logflux=sigma_logflux,
         mean_loghlr=mean_loghlr,
         sigma_loghlr=sigma_loghlr,
-        min_logflux=min_logflux,
+        a_logflux=a_logflux,
     )
     interim_logprior_fnc = partial(
         interim_gprops_logprior,
@@ -100,12 +101,17 @@ def main(
         out = raw_pipeline(k, d)
         return {"g1": out[..., 0], "g2": out[..., 1]}
 
+    # jit pipe function (to avoid memory error)
+    print("Jitting pipeline...")
+    _ = pipe(rng_key, {k: v[0, None] for k, v in post_params_plus.items()})
+    print("Pipeline jitted.")
+
     samples_plus, samples_minus = run_bootstrap_shear_pipeline(
         rng_key,
         post_params_plus=post_params_plus,
         post_params_minus=post_params_minus,
         shear_pipeline=pipe,
-        n_gals=samples_plus["e1"].shape[0],
+        n_gals=post_params_plus["e1"].shape[0],
         n_boots=n_boots,
         no_bar=no_bar,
     )

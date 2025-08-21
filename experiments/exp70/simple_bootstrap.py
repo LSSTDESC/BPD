@@ -17,6 +17,7 @@ def main(
     tag: str = typer.Option(),
     samples_plus_fname: str = typer.Option(),
     samples_minus_fname: str = typer.Option(),
+    n_gals: int | None = None,
     initial_step_size: float = 0.1,
     n_samples: int = 1000,
     n_boots: int = 25,
@@ -31,12 +32,15 @@ def main(
     dsp = load_dataset_jax(samples_plus_fpath)
     dsm = load_dataset_jax(samples_minus_fpath)
 
-    e1p = dsp["samples"]["e1"]
-    e2p = dsp["samples"]["e2"]
+    if n_gals is None:
+        n_gals = dsp["samples"]["e1"].shape[0]
+
+    e1p = dsp["samples"]["e1"][:n_gals]
+    e2p = dsp["samples"]["e2"][:n_gals]
     e1e2p = jnp.stack([e1p, e2p], axis=-1)
 
-    e1m = dsm["samples"]["e1"]
-    e2m = dsm["samples"]["e2"]
+    e1m = dsm["samples"]["e1"][:n_gals]
+    e2m = dsm["samples"]["e2"][:n_gals]
     e1e2m = jnp.stack([e1m, e2m], axis=-1)
 
     sigma_e = dsp["hyper"]["shape_noise"]

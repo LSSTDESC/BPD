@@ -19,7 +19,7 @@ from bpd.sample import (
     get_true_params_from_galaxy_params,
     sample_galaxy_params_skew,
 )
-from bpd.utils import DEFAULT_HYPERPARAMS
+from bpd.utils import DEFAULT_HYPERPARAMS, MAX_N_GALS_PER_GPU, process_in_batches
 
 
 def _init_function(key: PRNGKeyArray, *, data: Array, true_params: dict):
@@ -41,7 +41,7 @@ def _init_function(key: PRNGKeyArray, *, data: Array, true_params: dict):
 
 def main(
     seed: int,
-    tag: str,
+    tag: str = typer.Option(),
     mode: str = "",
     n_gals: int = 2000,
     n_samples_per_gal: int = 300,
@@ -51,7 +51,8 @@ def main(
     slen: int = 63,
     fft_size: int = 256,
     background: float = 1.0,
-    initial_step_size: float = 0.1,
+    initial_step_size: float = 0.01,
+    max_n_gals_per_gpu: int = MAX_N_GALS_PER_GPU,
 ):
     assert (g1 > 0 and mode == "plus") or (g1 < 0 and mode == "minus") or (not mode)
 
@@ -126,7 +127,17 @@ def main(
         {k: v[0, None] for k, v in true_params.items()},
     )
 
-    samples = vpipe(gkeys, target_images, fixed_params, true_params)
+    print("Pipeline compiled, now running on all galaxies...")
+    samples = process_in_batches(
+        vpipe,
+        gkeys,
+        target_images,
+        fixed_params,
+        true_params,
+        n_points=n_gals,
+        batch_size=min(max_n_gals_per_gpu, n_gals),
+    )
+    assert samples["e1"].shape == (n_gals, n_samples_per_gal)
 
     save_dataset(
         {

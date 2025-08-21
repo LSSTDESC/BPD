@@ -100,6 +100,12 @@ def get_timing_figure(
         )
         t_per_obj_dict[n_chains] = t_per_obj_arr / avg_ess
 
+        if n_gals_str == max_n_gal_str:
+            print(
+                f"Global best efficiency: {t_per_obj_per_sample_sampling / avg_ess:.2g} sec"
+            )
+            print(f"Global best warmup: {t_per_obj_warmup:.2g} sec")
+
     # first option
     fig1, ax = plt.subplots(1, 1, figsize=figsize)
     ax.set_prop_cycle(cycles)

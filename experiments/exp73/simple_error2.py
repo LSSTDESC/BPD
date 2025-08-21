@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""In this version, we use the posterior obtained on the full dataset as the prior on each split."""
 
 from functools import partial
 from pathlib import Path
@@ -72,14 +73,27 @@ def main(
     initial_step_size: float = 0.01,
     n_splits: int = 500,
     n_samples: int = 1000,
+    start: int = 0,
+    end: int = -1,
 ):
+    if end == -1:
+        end = n_splits
+        txt = ""
+    else:
+        txt = f"_{start}_{end}"
+    if start >= end:
+        raise ValueError("start must be less than end")
+    if end > n_splits:
+        raise ValueError("end must be less than or equal to n_splits")
+
     rng_key = random.key(seed)
 
     dirpath = DATA_DIR / "cache_chains" / tag
     pfpath = Path(samples_plus_fpath)
     mfpath = Path(samples_minus_fpath)
     posterior_fpath = Path(posterior_fpath)
-    fpath = dirpath / f"g_samples_{seed}_errs2.npz"
+    fpath = dirpath / f"g_samples_{seed}_errs2{txt}.npz"
+    print("output path:", fpath)
 
     assert dirpath.exists()
     assert pfpath.exists(), "ellipticity samples file does not exist"
@@ -210,14 +224,19 @@ def main(
     k2s = random.split(k2, n_splits)
 
     print("Running inference plus...")
-    samples_plus = vmap(pipe)(k2s, ppp, init_positions)
+    samples_plus = vmap(pipe)(
+        k2s[start:end],
+        {k: v[start:end] for k, v in ppp.items()},
+        {k: v[start:end] for k, v in init_positions.items()},
+    )
 
     print("Running inference minus...")
-    samples_minus = vmap(pipe)(k2s, ppm, init_positions)
-
-    assert samples_plus["g"].shape == (n_splits, n_samples, 2), (
-        "shear samples do not match"
+    samples_minus = vmap(pipe)(
+        k2s[start:end],
+        {k: v[start:end] for k, v in ppm.items()},
+        {k: v[start:end] for k, v in init_positions.items()},
     )
+
     save_dataset(
         {
             "plus": {
@@ -233,6 +252,10 @@ def main(
         },
         fpath,
         overwrite=True,
+    )
+
+    assert samples_plus["g"].shape == (end - start, n_samples, 2), (
+        "shear samples do not match"
     )
 
 

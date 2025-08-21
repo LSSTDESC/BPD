@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import math
 from functools import partial
 from pathlib import Path
 
@@ -12,6 +13,7 @@ from bpd import DATA_DIR
 from bpd.chains import run_inference_nuts
 from bpd.io import load_dataset_jax, save_dataset
 from bpd.pipelines import logtarget_shear_and_sn
+from bpd.utils import process_in_batches
 
 
 def main(
@@ -19,8 +21,9 @@ def main(
     tag: str = typer.Option(),
     plus_samples_fpath: str = typer.Option(),
     minus_samples_fpath: str = typer.Option(),
-    initial_step_size: float = 1e-3,
+    initial_step_size: float = 0.01,
     n_splits: int = 500,
+    n_batches: int = 5,
 ):
     rng_key = jax.random.key(seed)
 
@@ -29,7 +32,8 @@ def main(
     mfpath = Path(minus_samples_fpath)
     fpath = dirpath / f"g_samples_{seed}_errs.npz"
 
-    assert dirpath.exists()
+    if not dirpath.exists():
+        dirpath.mkdir(parents=True, exist_ok=True)
     assert pfpath.exists(), "ellipticity samples file does not exist"
     assert mfpath.exists(), "ellipticity samples file does not exist"
 
@@ -53,8 +57,8 @@ def main(
     split_size = e1e2p.shape[0] // n_splits
     assert split_size * n_splits == e1e2p.shape[0], "dimensions do not match"
     # Reshape ellipticity samples
-    e1e2p = jnp.reshape(e1e2p, (n_splits, split_size, 300, 2))
-    e1e2m = jnp.reshape(e1e2m, (n_splits, split_size, 300, 2))
+    e1e2ps = jnp.reshape(e1e2p, (n_splits, split_size, 300, 2))
+    e1e2ms = jnp.reshape(e1e2m, (n_splits, split_size, 300, 2))
 
     k1, k2 = random.split(rng_key)
 
@@ -76,16 +80,36 @@ def main(
     init_positions = {"g": jnp.zeros((n_splits, 2)), "sigma_e": sigma_e_inits}
 
     # run shear inference pipeline
+    # split into batches to avoid memory issues
+    batch_size = math.ceil(n_splits / n_batches)
     keys = jax.random.split(k2, n_splits)
-    print("Running shear inference pipeline (plus)...")
-    plus_samples = vmap(pipe)(keys, e1e2p, init_positions)
-    print("Running shear inference pipeline (minus)...")
-    minus_samples = vmap(pipe)(keys, e1e2m, init_positions)
-    assert plus_samples["g"].shape == (n_splits, 1000, 2), "shear samples do not match"
+    samples_plus = process_in_batches(
+        vmap(pipe),
+        keys,
+        e1e2ps,
+        init_positions,
+        n_points=n_splits,
+        batch_size=batch_size,
+    )
+    samples_minus = process_in_batches(
+        vmap(pipe),
+        keys,
+        e1e2ms,
+        init_positions,
+        n_points=n_splits,
+        batch_size=batch_size,
+    )
+
+    assert samples_plus["g"].shape == (n_splits, 1000, 2), "shear samples do not match"
+    assert samples_minus["g"].shape == (n_splits, 1000, 2), "shear samples do not match"
+    assert samples_plus["sigma_e"].shape == (n_splits, 1000), (
+        "sigma_e samples do not match"
+    )
+
     save_dataset(
         {
-            "plus": {"g": plus_samples["g"], "sigma_e": plus_samples["sigma_e"]},
-            "minus": {"g": minus_samples["g"], "sigma_e": minus_samples["sigma_e"]},
+            "plus": {"g": samples_plus["g"], "sigma_e": samples_plus["sigma_e"]},
+            "minus": {"g": samples_minus["g"], "sigma_e": samples_minus["sigma_e"]},
         },
         fpath,
         overwrite=True,

@@ -33,18 +33,19 @@ CHAIN_DIR = DATA_DIR / "cache_chains"
 INPUT_PATHS = {
     "timing_results": CHAIN_DIR / "exp23_43" / "timing_results_43.npz",
     "timing_conv": CHAIN_DIR / "exp23_43" / "convergence_results_43.npz",
-    "exp70_sp": CHAIN_DIR / "exp70_44" / "g_samples_442_plus.npy",
-    "exp70_sm": CHAIN_DIR / "exp70_44" / "g_samples_442_minus.npy",
-    "exp70_errs": CHAIN_DIR / "exp70_44" / "g_samples_449_errs.npz",
-    "exp71_sp": CHAIN_DIR / "exp71_44" / "shear_samples_442_plus.npz",
-    "exp71_sm": CHAIN_DIR / "exp71_44" / "shear_samples_442_minus.npz",
-    "exp71_errs": CHAIN_DIR / "exp71_44" / "g_samples_449_errs.npz",
-    "exp72_sp": CHAIN_DIR / "exp72_45" / "g_samples_452_plus.npy",
-    "exp72_sm": CHAIN_DIR / "exp72_45" / "g_samples_452_minus.npy",
-    "exp72_errs": CHAIN_DIR / "exp72_45" / "g_samples_454_errs.npz",
-    "exp73_sp": CHAIN_DIR / "exp73_45" / "shear_samples_452_plus.npz",
-    "exp73_sm": CHAIN_DIR / "exp73_45" / "shear_samples_452_minus.npz",
-    "exp73_errs": CHAIN_DIR / "exp73_45" / "tmp2" / "g_samples_454_errs.npz",
+    "exp70_sp": CHAIN_DIR / "exp70_51" / "g_samples_512_plus.npy",
+    "exp70_sm": CHAIN_DIR / "exp70_51" / "g_samples_512_minus.npy",
+    "exp70_errs": CHAIN_DIR / "exp70_51" / "g_samples_514_errs.npz",
+    "exp71_sp": CHAIN_DIR / "exp71_51" / "shear_samples_512_plus.npz",
+    "exp71_sm": CHAIN_DIR / "exp71_51" / "shear_samples_512_minus.npz",
+    "exp71_errs": CHAIN_DIR / "exp71_51" / "g_samples_514_errs.npz",
+    "exp72_sp": CHAIN_DIR / "exp72_51" / "g_samples_512_plus.npy",
+    "exp72_sm": CHAIN_DIR / "exp72_51" / "g_samples_512_minus.npy",
+    "exp72_errs": CHAIN_DIR / "exp72_51" / "g_samples_514_errs.npz",
+    "exp73_sp": CHAIN_DIR / "exp73_51" / "shear_samples_512_plus.npz",
+    "exp73_sm": CHAIN_DIR / "exp73_51" / "shear_samples_512_minus.npz",
+    "exp73_errs": CHAIN_DIR / "exp73_51" / "g_samples_514_errs_514.npz",
+    "exp72_interim_samples": CHAIN_DIR / "exp72_51" / "interim_samples_511_plus.npz",
 }
 
 
@@ -270,13 +271,16 @@ def make_errorbar_figure(fpath: str | Path):
     fig.savefig(fpath, format="png")
 
 
-def make_contour_shear_figure1(fpath: str | Path):
+def make_contour_shear_figure(fpath: str | Path):
     set_rc_params()  # reset to default fontsize
     g_exp72 = np.load(INPUT_PATHS["exp72_sp"])
     samples_exp73 = load_dataset(INPUT_PATHS["exp73_sp"])
     g_exp73 = jnp.stack(
         [samples_exp73["samples"]["g1"], samples_exp73["samples"]["g2"]], axis=-1
     )
+    ds_int = load_dataset(INPUT_PATHS["exp72_interim_samples"])
+    e1_mean = ds_int["truth"]["e1"].mean()
+    e2_mean = ds_int["truth"]["e2"].mean()
     assert g_exp72.ndim == 2
     assert g_exp72.shape[1] == 2
     assert g_exp73.ndim == 2
@@ -296,7 +300,13 @@ def make_contour_shear_figure1(fpath: str | Path):
 
     c.add_chain(chain)
     c.set_override(ChainConfig(sigmas=[0, 1, 2]))
-    c.add_truth(Truth(location={"g1": 0.02, "g2": 0.0}, color="k", line_width=2.0))
+    c.add_truth(
+        Truth(
+            location={"g1": 0.02 + e1_mean, "g2": 0.0 + e2_mean},
+            color="k",
+            line_width=2.0,
+        )
+    )
 
     # now the other too
     data2 = {"g1": g_exp73[:, 0], "g2": g_exp73[:, 1]}
@@ -308,7 +318,6 @@ def make_contour_shear_figure1(fpath: str | Path):
     )
     c.add_chain(chain2)
     c.set_override(ChainConfig(sigmas=[0, 1, 2]))
-    c.add_truth(Truth(location={"g1": 0.02, "g2": 0.0}, color="k", line_width=2.0))
 
     c.set_plot_config(
         PlotConfig(
@@ -359,7 +368,7 @@ def make_contour_hyper_figure(fpath: str | Path):
     c.set_plot_config(
         PlotConfig(
             usetex=True,
-            plot_hists=True,
+            plot_hists=False,
             labels={
                 "sigma_e": r"$\sigma_{e}$",
                 "a_logflux": r"$a_{f}$",
@@ -369,7 +378,7 @@ def make_contour_hyper_figure(fpath: str | Path):
                 "sigma_loghlr": r"$\sigma_{s}$",
             },
             label_font_size=60,
-            summarise=True,
+            summarise=False,
             summary_font_size=45,
             tick_font_size=50,
             diagonal_tick_labels=True,
@@ -457,21 +466,21 @@ def get_bias_table(fpath: str | Path):
     # in format for each m, c: mean +- std
     # use f-strings
     table = r"""
-\begin{table}[h]
+\begin{table*}
     \centering
-    \begin{tabular}{|c|c|c|c|c|}
+    \begin{tabular}{|c|c|c|c|c|c|}
         \hline
-        \textbf{Experiment} & \textbf{Multiplicative Bias $m$} & \textbf{Additive Bias $c$} \\
+        \textbf{Experiment} & \textbf{Properties Used} & \textbf{Prior Known?} & \textbf{Multiplicative Bias $m / 10^{-3}$} & \textbf{Additive Bias $c / 10^{-3}$} \\
         \hline
-        1 & $%.3g \pm %.3g$ & $%.3g \pm %.3g$ \\
-        2 & $%.3g \pm %.3g$ & $%.3g \pm %.3g$ \\
-        3 & $%.3g \pm %.3g$ & $%.3g \pm %.3g$ \\
-        4 & $%.3g \pm %.3g$ & $%.3g \pm %.3g$ \\
+        \texttt{shapes-fixed} & Ellipticities & Yes & $%.3g \pm %.3g$ & $%.3g \pm %.3f$ \\
+        \texttt{shapes-free} & Ellipticities & No & $%.3g \pm %.3g$ & $%.3g \pm %.3f$ \\
+        \texttt{all-fixed} & All & Yes & $%.3g \pm %.3g$ & $%.3g \pm %.3f$ \\
+        \texttt{all-free} & All & No & $%.3g \pm %.3g$ & $%.3g \pm %.3f$ \\
         \hline
     \end{tabular}
-    \caption{Multiplicative and additive bias for each experiment.}
+    \caption{\textbf{Multiplicative and additive bias for different settings.}}
     \label{tab:bias}
-\end{table}
+\end{table*}
     """ % (
         m1_mean / 1e-3,
         3 * m1_std / 1e-3,
@@ -496,11 +505,11 @@ def get_bias_table(fpath: str | Path):
 
 
 def main(overwrite: bool = False):
-    # make_distribution_figure(OUT_PATHS["galaxy_distributions"], overwrite=overwrite)
     make_timing_figure(OUT_PATHS["timing"], OUT_PATHS["timing2"])
-    # make_contour_shear_figure1(OUT_PATHS["contour_shear"])
-    # make_contour_hyper_figure(OUT_PATHS["contour_hyper"])
-    # get_bias_table(OUT_PATHS["bias"])
+    make_distribution_figure(OUT_PATHS["galaxy_distributions"], overwrite=overwrite)
+    make_contour_shear_figure(OUT_PATHS["contour_shear"])
+    make_contour_hyper_figure(OUT_PATHS["contour_hyper"])
+    get_bias_table(OUT_PATHS["bias"])
 
 
 if __name__ == "__main__":

@@ -18,7 +18,7 @@ def main(
     tag: str = typer.Option(),
     samples_plus_fpath: str = typer.Option(),
     samples_minus_fpath: str = typer.Option(),
-    initial_step_size: float = 1e-3,
+    initial_step_size: float = 0.01,
     n_splits: int = 500,
     n_samples: int = 1000,
 ):

@@ -23,7 +23,7 @@ def main(
     tag: str = typer.Option(),
     samples_fpath: str = typer.Option(),
     mode: str = "",
-    initial_step_size: float = 1e-2,
+    initial_step_size: float = 0.001,
     n_samples: int = 3000,
     overwrite: bool = False,
 ):

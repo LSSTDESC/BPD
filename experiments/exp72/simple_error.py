@@ -11,6 +11,7 @@ from bpd import DATA_DIR
 from bpd.io import load_dataset_jax, save_dataset
 from bpd.pipelines import pipeline_shear_inference
 from bpd.prior import interim_gprops_logprior, true_all_params_skew_logprior
+from bpd.utils import process_in_batches
 
 
 def main(
@@ -18,8 +19,9 @@ def main(
     tag: str = typer.Option(),
     samples_plus_fpath: str = typer.Option(),
     samples_minus_fpath: str = typer.Option(),
-    initial_step_size: float = 1e-3,
+    initial_step_size: float = 0.001,
     n_splits: int = 500,
+    n_gals: int | None = None,
 ):
     rng_key = random.key(seed)
 
@@ -35,20 +37,21 @@ def main(
     ds_plus = load_dataset_jax(pfpath)
     ds_minus = load_dataset_jax(mfpath)
 
-    samples_plus = ds_plus["samples"]
+    if n_gals is None:
+        n_gals = ds_plus["samples"]["e1"].shape[0]
+
     ppp = {
-        "lf": samples_plus["lf"],
-        "lhlr": samples_plus["lhlr"],
-        "e1": samples_plus["e1"],
-        "e2": samples_plus["e2"],
+        "lf": ds_plus["samples"]["lf"][:n_gals],
+        "lhlr": ds_plus["samples"]["lhlr"][:n_gals],
+        "e1": ds_plus["samples"]["e1"][:n_gals],
+        "e2": ds_plus["samples"]["e2"][:n_gals],
     }
 
-    samples_minus = ds_minus["samples"]
     ppm = {
-        "lf": samples_minus["lf"],
-        "lhlr": samples_minus["lhlr"],
-        "e1": samples_minus["e1"],
-        "e2": samples_minus["e2"],
+        "lf": ds_minus["samples"]["lf"][:n_gals],
+        "lhlr": ds_minus["samples"]["lhlr"][:n_gals],
+        "e1": ds_minus["samples"]["e1"][:n_gals],
+        "e2": ds_minus["samples"]["e2"][:n_gals],
     }
 
     sigma_e = ds_plus["hyper"]["shape_noise"]
@@ -99,14 +102,19 @@ def main(
     assert split_size * n_splits == ppp["e1"].shape[0], "dimensions do not match"
 
     # Reshape samples
-    ppp = {k: jnp.reshape(v, (n_splits, split_size, 300)) for k, v in ppp.items()}
-    ppm = {k: jnp.reshape(v, (n_splits, split_size, 300)) for k, v in ppm.items()}
+    ppp = {k: jnp.reshape(v, (n_splits, split_size, -1)) for k, v in ppp.items()}
+    ppm = {k: jnp.reshape(v, (n_splits, split_size, -1)) for k, v in ppm.items()}
 
     # run shear inference pipeline
     keys = random.split(rng_key, n_splits)
 
-    gp = vmap(pipe)(keys, ppp)
-    gm = vmap(pipe)(keys, ppm)
+    gp = process_in_batches(
+        vmap(pipe), keys, ppp, n_points=ppp["e1"].shape[0], batch_size=100
+    )
+    gm = process_in_batches(
+        vmap(pipe), keys, ppm, n_points=ppm["e1"].shape[0], batch_size=100
+    )
+
     assert gp.shape == (n_splits, 1000, 2), "shear samples do not match"
     assert gm.shape == (n_splits, 1000, 2), "shear samples do not match"
 

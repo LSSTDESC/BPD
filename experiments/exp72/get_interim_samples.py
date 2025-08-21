@@ -20,7 +20,7 @@ from bpd.sample import (
     get_true_params_from_galaxy_params,
     sample_galaxy_params_skew,
 )
-from bpd.utils import DEFAULT_HYPERPARAMS
+from bpd.utils import DEFAULT_HYPERPARAMS, MAX_N_GALS_PER_GPU, process_in_batches
 
 
 def _init_fnc(key: PRNGKeyArray, *, data: Array, true_params: dict):
@@ -51,7 +51,7 @@ def _init_fnc(key: PRNGKeyArray, *, data: Array, true_params: dict):
 
 def main(
     seed: int,
-    tag: str,
+    tag: str = typer.Option(),
     mode: str = "",
     n_gals: int = 3000,
     n_samples_per_gal: int = 300,
@@ -61,7 +61,8 @@ def main(
     slen: int = 63,
     fft_size: int = 256,
     background: float = 1.0,
-    initial_step_size: float = 0.1,
+    initial_step_size: float = 0.01,
+    batch_size: int = MAX_N_GALS_PER_GPU,
 ):
     assert (g1 > 0 and mode == "plus") or (g1 < 0 and mode == "minus") or (not mode)
 
@@ -136,7 +137,15 @@ def main(
         {k: v[0, None] for k, v in true_params.items()},
     )
 
-    samples = vpipe(gkeys, target_images, fixed_params, true_params)
+    samples = process_in_batches(
+        vpipe,
+        gkeys,
+        target_images,
+        fixed_params,
+        true_params,
+        n_points=n_gals,
+        batch_size=batch_size,
+    )
 
     save_dataset(
         {

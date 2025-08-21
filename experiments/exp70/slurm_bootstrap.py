@@ -13,8 +13,9 @@ def main(
     tag: str = typer.Option(),
     samples_plus_fname: str = typer.Option(),
     samples_minus_fname: str = typer.Option(),
-    n_boots: int = 500,
-    n_nodes: int = 5,
+    n_boots: int = 200,
+    n_nodes: int = 1,
+    n_gals: int | None = None,
     time: str = "00:30",  # HH:MM
     mem_per_gpu: str = "10G",
     qos: str = "debug",
@@ -27,7 +28,7 @@ def main(
         base_cmd = """../exp70/simple_bootstrap.py {new_seed}
         --samples-plus-fname {samples_plus_fname}
         --samples-minus-fname {samples_minus_fname}
-        --tag {tag} --n-boots {split_size}
+        --tag {tag} --n-boots {split_size} --n-gals {n_gals}
         """
         base_cmd = " ".join(base_cmd.split())
         new_seed = f"{seed}{ii}"
@@ -37,6 +38,7 @@ def main(
             split_size=split_size,
             samples_plus_fname=samples_plus_fname,
             samples_minus_fname=samples_minus_fname,
+            n_gals=n_gals,
         )
         cmds.append(cmd)
 

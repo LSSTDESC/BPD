@@ -1,17 +1,17 @@
 
-\begin{table}[h]
+\begin{table*}
     \centering
-    \begin{tabular}{|c|c|c|c|c|}
+    \begin{tabular}{|c|c|c|c|c|c|}
         \hline
-        \textbf{Experiment} & \textbf{Multiplicative Bias $m$} & \textbf{Additive Bias $c$} \\
+        \textbf{Experiment} & \textbf{Properties Used} & \textbf{Prior Known?} & \textbf{Multiplicative Bias $m / 10^{-3}$} & \textbf{Additive Bias $c / 10^{-3}$} \\
         \hline
-        1 & $-1.07 \pm 0.592$ & $-1.26 \pm 0.74$ \\
-        2 & $-0.761 \pm 0.735$ & $-1.26 \pm 0.739$ \\
-        3 & $0.205 \pm 0.628$ & $-0.755 \pm 0.757$ \\
-        4 & $-0.0012 \pm 1.71$ & $-0.738 \pm 0.757$ \\
+        \texttt{shapes-fixed} & Ellipticities & Yes & $-0.361 \pm 0.758$ & $-0.176 \pm 1.000$ \\
+        \texttt{shapes-free} & Ellipticities & No & $-0.267 \pm 0.946$ & $-0.172 \pm 0.999$ \\
+        \texttt{all-fixed} & All & Yes & $-0.177 \pm 0.778$ & $-0.155 \pm 1.004$ \\
+        \texttt{all-free} & All & No & $-0.313 \pm 1.33$ & $-0.16 \pm 1.004$ \\
         \hline
     \end{tabular}
-    \caption{Multiplicative and additive bias for each experiment.}
+    \caption{\textbf{Multiplicative and additive bias for different settings.}}
     \label{tab:bias}
-\end{table}
+\end{table*}
     

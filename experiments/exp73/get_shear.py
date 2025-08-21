@@ -17,8 +17,8 @@ from bpd.pipelines import init_all_params, logtarget_all_free
 
 def main(
     seed: int,
-    samples_fpath: str = typer.Option(),
     tag: str = typer.Option(),
+    samples_fpath: str = typer.Option(),
     initial_step_size: float = 0.01,
     n_samples: int = 3000,
     overwrite: bool = False,
