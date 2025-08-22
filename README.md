@@ -9,7 +9,7 @@ This repository contains functions to run HMC (Hamiltonian Monte Carlo) using [J
 ```bash
 # fresh conda env
 pip install --upgrade pip
-conda create -n bpd python=3.13
+conda create -n bpd python=3.12 # only 3.10, 3.11, and 3.12 supported.
 conda activate bpd
 
 # Install JAX (on GPU)
