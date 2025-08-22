@@ -50,7 +50,7 @@ def main(
     assert g_samples.ndim == 2
     assert g_samples.shape[1] == 2
 
-    save_dataset({"g1": g_samples[:, 0], "g2": g_samples[:, 1]}, fpath)
+    save_dataset({"samples": {"g1": g_samples[:, 0], "g2": g_samples[:, 1]}}, fpath)
 
 
 if __name__ == "__main__":

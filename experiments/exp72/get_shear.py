@@ -91,7 +91,9 @@ def main(
     assert g_samples.ndim == 2
     assert g_samples.shape[1] == 2
 
-    save_dataset({"g1": np.array(g_samples[:, 0]), "g2": np.array(g_samples[:, 1])})
+    save_dataset(
+        {"samples": {"g1": np.array(g_samples[:, 0]), "g2": np.array(g_samples[:, 1])}}
+    )
 
 
 if __name__ == "__main__":
