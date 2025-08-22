@@ -120,8 +120,8 @@ def main(
 
     save_dataset(
         {
-            "gp": gp,
-            "gm": gm,
+            "plus": {"g1": gp[:, :, 0], "g2": gp[:, :, 1]},
+            "minus": {"g1": gm[:, :, 0], "g2": gm[:, :, 1]},
         },
         fpath,
         overwrite=True,

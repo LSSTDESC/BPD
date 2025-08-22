@@ -82,8 +82,8 @@ def main(
 
     save_dataset(
         {
-            "g_plus": g_plus,
-            "g_minus": g_minus,
+            "plus": {"g1": g_plus[:, :, 0], "g2": g_plus[:, :, 1]},
+            "minus": {"g1": g_minus[:, :, 0], "g2": g_minus[:, :, 1]},
             "sigma_e": sigma_e,
             "sigma_e_int": sigma_e_int,
         },
