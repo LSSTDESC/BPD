@@ -33,14 +33,14 @@ CHAIN_DIR = DATA_DIR / "cache_chains"
 INPUT_PATHS = {
     "timing_results": CHAIN_DIR / "exp23_43" / "timing_results_43.npz",
     "timing_conv": CHAIN_DIR / "exp23_43" / "convergence_results_43.npz",
-    "exp70_sp": CHAIN_DIR / "exp70_51" / "g_samples_512_plus.npy",
-    "exp70_sm": CHAIN_DIR / "exp70_51" / "g_samples_512_minus.npy",
+    "exp70_sp": CHAIN_DIR / "exp70_51" / "g_samples_512_plus.npz",
+    "exp70_sm": CHAIN_DIR / "exp70_51" / "g_samples_512_minus.npz",
     "exp70_errs": CHAIN_DIR / "exp70_51" / "g_samples_514_errs.npz",
     "exp71_sp": CHAIN_DIR / "exp71_51" / "shear_samples_512_plus.npz",
     "exp71_sm": CHAIN_DIR / "exp71_51" / "shear_samples_512_minus.npz",
     "exp71_errs": CHAIN_DIR / "exp71_51" / "g_samples_514_errs.npz",
-    "exp72_sp": CHAIN_DIR / "exp72_51" / "g_samples_512_plus.npy",
-    "exp72_sm": CHAIN_DIR / "exp72_51" / "g_samples_512_minus.npy",
+    "exp72_sp": CHAIN_DIR / "exp72_51" / "g_samples_512_plus.npz",
+    "exp72_sm": CHAIN_DIR / "exp72_51" / "g_samples_512_minus.npz",
     "exp72_errs": CHAIN_DIR / "exp72_51" / "g_samples_514_errs.npz",
     "exp73_sp": CHAIN_DIR / "exp73_51" / "shear_samples_512_plus.npz",
     "exp73_sm": CHAIN_DIR / "exp73_51" / "shear_samples_512_minus.npz",
@@ -219,18 +219,11 @@ def make_timing_figure(fpath1: Path, fpath2: Path):
 
 def make_errorbar_figure(fpath: str | Path):
     set_rc_params()  # reset to default fontsize
-    g_exp1 = np.load(INPUT_PATHS["exp70_sp"])
-    g_exp3 = np.load(INPUT_PATHS["exp72_sp"])
+    data1 = load_dataset(INPUT_PATHS["exp70_sp"])["samples"]
+    data3 = load_dataset(INPUT_PATHS["exp72_sp"])["samples"]
     c = ChainConsumer()
-    assert g_exp1.ndim == 2
-    assert g_exp1.shape[1] == 2
-    assert g_exp3.ndim == 2
-    assert g_exp3.shape[1] == 2
-
-    data1 = {"g1": g_exp1[:, 0], "g2": g_exp1[:, 1]}
+    assert "g1" in data1 and "g2" in data1 and "g1" in data3 and "g2" in data3
     df1 = pandas.DataFrame.from_dict(data1)
-
-    data3 = {"g1": g_exp3[:, 0], "g2": g_exp3[:, 1]}
     df3 = pandas.DataFrame.from_dict(data3)
 
     # Customise the chain when you add it
@@ -273,11 +266,10 @@ def make_errorbar_figure(fpath: str | Path):
 
 def make_contour_shear_figure(fpath: str | Path):
     set_rc_params()  # reset to default fontsize
-    g_exp72 = np.load(INPUT_PATHS["exp72_sp"])
-    samples_exp73 = load_dataset(INPUT_PATHS["exp73_sp"])
-    g_exp73 = jnp.stack(
-        [samples_exp73["samples"]["g1"], samples_exp73["samples"]["g2"]], axis=-1
-    )
+    data3 = load_dataset(INPUT_PATHS["exp72_sp"])
+    data4 = load_dataset(INPUT_PATHS["exp73_sp"])
+    g_exp72 = jnp.stack([data3["samples"]["g1"], data3["samples"]["g2"]], axis=-1)
+    g_exp73 = jnp.stack([data4["samples"]["g1"], data4["samples"]["g2"]], axis=-1)
     ds_int = load_dataset(INPUT_PATHS["exp72_interim_samples"])
     e1_mean = ds_int["truth"]["e1"].mean()
     e2_mean = ds_int["truth"]["e2"].mean()
@@ -396,18 +388,20 @@ def get_bias_table(fpath: str | Path):
     """Create a latex table of mean multiplicative and additive bias, as well as their errors from each experiment."""
 
     # load datasets
-    gp1 = np.load(INPUT_PATHS["exp70_sp"])
-    gm1 = np.load(INPUT_PATHS["exp70_sm"])
-    assert gp1.ndim == 2 and gm1.ndim == 2
+    dsp1 = load_dataset(INPUT_PATHS["exp70_sp"])
+    dsm1 = load_dataset(INPUT_PATHS["exp70_sm"])
+    gp1 = jnp.stack([dsp1["samples"]["g1"], dsp1["samples"]["g2"]], axis=-1)
+    gm1 = jnp.stack([dsm1["samples"]["g1"], dsm1["samples"]["g2"]], axis=-1)
 
     dsp2 = load_dataset(INPUT_PATHS["exp71_sp"])
     dsm2 = load_dataset(INPUT_PATHS["exp71_sm"])
     gp2 = jnp.stack([dsp2["samples"]["g1"], dsp2["samples"]["g2"]], axis=-1)
     gm2 = jnp.stack([dsm2["samples"]["g1"], dsm2["samples"]["g2"]], axis=-1)
 
-    gp3 = np.load(INPUT_PATHS["exp72_sp"])
-    gm3 = np.load(INPUT_PATHS["exp72_sm"])
-    assert gp3.ndim == 2 and gm3.ndim == 2
+    dsp3 = load_dataset(INPUT_PATHS["exp72_sp"])
+    dsm3 = load_dataset(INPUT_PATHS["exp72_sm"])
+    gp3 = jnp.stack([dsp3["samples"]["g1"], dsp3["samples"]["g2"]], axis=-1)
+    gm3 = jnp.stack([dsm3["samples"]["g1"], dsm3["samples"]["g2"]], axis=-1)
 
     dsp4 = load_dataset(INPUT_PATHS["exp73_sp"])
     dsm4 = load_dataset(INPUT_PATHS["exp73_sm"])
@@ -429,14 +423,20 @@ def get_bias_table(fpath: str | Path):
 
     # get std of multiplicative and additive bias for each experiment
     # we need to load error files
-    gps1 = load_dataset(INPUT_PATHS["exp70_errs"])["g_plus"]
-    gms1 = load_dataset(INPUT_PATHS["exp70_errs"])["g_minus"]
-    gps2 = load_dataset(INPUT_PATHS["exp71_errs"])["plus"]["g"]
-    gms2 = load_dataset(INPUT_PATHS["exp71_errs"])["minus"]["g"]
-    gps3 = load_dataset(INPUT_PATHS["exp72_errs"])["gp"]
-    gms3 = load_dataset(INPUT_PATHS["exp72_errs"])["gm"]
-    gps4 = load_dataset(INPUT_PATHS["exp73_errs"])["plus"]["g"]
-    gms4 = load_dataset(INPUT_PATHS["exp73_errs"])["minus"]["g"]
+    gps = []
+    gms = []
+    for n in ("70", "71", "72", "73"):
+        gp1s = load_dataset(INPUT_PATHS[f"exp{n}_errs"])["plus"]["g1"]
+        gp2s = load_dataset(INPUT_PATHS[f"exp{n}_errs"])["plus"]["g2"]
+        gm1s = load_dataset(INPUT_PATHS[f"exp{n}_errs"])["minus"]["g1"]
+        gm2s = load_dataset(INPUT_PATHS[f"exp{n}_errs"])["minus"]["g2"]
+        gp = np.stack([gp1s, gp2s], axis=-1)
+        gm = np.stack([gm1s, gm2s], axis=-1)
+        gps.append(gp)
+        gms.append(gm)
+
+    gps1, gps2, gps3, gps4 = gps
+    gms1, gms2, gms3, gms4 = gms
     assert gps1.ndim == 3 and gms1.ndim == 3
     assert gps2.ndim == 3 and gms2.ndim == 3
     assert gps3.ndim == 3 and gms3.ndim == 3
