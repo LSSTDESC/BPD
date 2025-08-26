@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = ""
 os.environ["JAX_PLATFORMS"] = "cpu"
 
 from functools import partial
