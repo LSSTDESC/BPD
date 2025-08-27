@@ -24,6 +24,7 @@ def main(
     n_batches: int = 5,
 ):
     rng_key = jax.random.key(seed)
+    k1, k2 = jax.random.split(rng_key)
 
     dirpath = DATA_DIR / "cache_chains" / tag
     pfpath = DATA_DIR / "cache_chains" / tag / plus_samples_fname
@@ -35,17 +36,23 @@ def main(
     assert mfpath.exists(), "ellipticity samples file does not exist"
 
     dsp = load_dataset_jax(pfpath)
-    if n_gals is None:
-        n_gals = dsp["samples"]["e1"].shape[0]
-    e1 = dsp["samples"]["e1"][:n_gals]
-    e2 = dsp["samples"]["e2"][:n_gals]
+    total_n_gals = dsp["samples"]["e1"].shape[0]
+    if n_gals is not None:
+        subset = random.choice(
+            k1, jnp.arange(total_n_gals), shape=(n_gals,), replace=False
+        )
+    else:
+        subset = jnp.arange(total_n_gals)
+
+    e1 = dsp["samples"]["e1"][subset]
+    e2 = dsp["samples"]["e2"][subset]
     e1e2p = jnp.stack([e1, e2], axis=-1)
     sigma_e = dsp["hyper"]["shape_noise"]
     sigma_e_int = dsp["hyper"]["sigma_e_int"]
 
     dsm = load_dataset_jax(mfpath)
-    e1 = dsm["samples"]["e1"][:n_gals]
-    e2 = dsm["samples"]["e2"][:n_gals]
+    e1 = dsm["samples"]["e1"][subset]
+    e2 = dsm["samples"]["e2"][subset]
     e1e2m = jnp.stack([e1, e2], axis=-1)
     assert e1e2p.shape == e1e2m.shape, "ellipticity samples do not match"
     assert sigma_e == dsm["hyper"]["shape_noise"], "shape noise does not match"
@@ -70,7 +77,7 @@ def main(
     pipe = vmap(_pipe, in_axes=(0, 0))
 
     # run shear inference pipeline in batches
-    keys = random.split(rng_key, n_splits)
+    keys = random.split(k2, n_splits)
     g_plus = process_in_batches(
         pipe, keys, e1e2ps, n_points=n_splits, n_batches=n_batches
     )
