@@ -26,32 +26,38 @@ def main(
     no_bar: bool = False,
     n_gals: int | None = None,
 ):
+    rng_key = random.key(seed)
+    k1, k2 = random.split(rng_key)
+
     dirpath = DATA_DIR / "cache_chains" / tag
     pfpath = Path(samples_plus_fpath)
     mfpath = Path(samples_minus_fpath)
     assert dirpath.exists() and pfpath.exists() and mfpath.exists()
     fpath = dirpath / f"g_samples_boots_{seed}.npz"
 
-    rng_key = random.key(seed)
-
     dsp = load_dataset_jax(samples_plus_fpath)
     dsm = load_dataset_jax(samples_minus_fpath)
 
-    if n_gals is None:
-        n_gals = dsp["samples"]["e1"].shape[0]
+    total_n_gals = dsp["samples"]["e1"].shape[0]
+    if n_gals is not None:
+        subset = random.choice(
+            k1, jnp.arange(total_n_gals), shape=(n_gals,), replace=False
+        )
+    else:
+        subset = jnp.arange(total_n_gals)
 
     # positions are not used as we assume true and interim prior cancels
     post_params_plus = {
-        "lf": dsp["samples"]["lf"][:n_gals],
-        "lhlr": dsp["samples"]["lhlr"][:n_gals],
-        "e1": dsp["samples"]["e1"][:n_gals],
-        "e2": dsp["samples"]["e2"][:n_gals],
+        "lf": dsp["samples"]["lf"][subset],
+        "lhlr": dsp["samples"]["lhlr"][subset],
+        "e1": dsp["samples"]["e1"][subset],
+        "e2": dsp["samples"]["e2"][subset],
     }
     post_params_minus = {
-        "lf": dsm["samples"]["lf"][:n_gals],
-        "lhlr": dsm["samples"]["lhlr"][:n_gals],
-        "e1": dsm["samples"]["e1"][:n_gals],
-        "e2": dsm["samples"]["e2"][:n_gals],
+        "lf": dsm["samples"]["lf"][subset],
+        "lhlr": dsm["samples"]["lhlr"][subset],
+        "e1": dsm["samples"]["e1"][subset],
+        "e2": dsm["samples"]["e2"][subset],
     }
 
     sigma_e = dsp["hyper"]["shape_noise"]
@@ -103,11 +109,11 @@ def main(
 
     # jit pipe function (to avoid memory error)
     print("Jitting pipeline...")
-    _ = pipe(rng_key, {k: v[0, None] for k, v in post_params_plus.items()})
+    _ = pipe(k2, {k: v[0, None] for k, v in post_params_plus.items()})
     print("Pipeline jitted.")
 
     samples_plus, samples_minus = run_bootstrap_shear_pipeline(
-        rng_key,
+        k2,
         post_params_plus=post_params_plus,
         post_params_minus=post_params_minus,
         shear_pipeline=pipe,
