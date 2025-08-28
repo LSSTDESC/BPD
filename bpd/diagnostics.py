@@ -48,11 +48,15 @@ def get_gauss_pc_fig(
 
 
 def get_pc_fig(
-    ax: Axes, samples: np.ndarray, truth: float, param_name: str | None = None
+    ax: Axes,
+    samples: np.ndarray,
+    truth: float,
+    param_name: str | None = None,
+    n_bins: int = 20,
 ) -> None:
     """Get a marginal probability calibration figure using `hpdi` from `numpyro`."""
     assert samples.ndim == 2  # (n_chains, n_samples)
-    ci_bins = np.linspace(0.05, 1, 20)  # confidence intervals
+    ci_bins = np.linspace(0.05, 1, n_bins)  # confidence intervals
     ci_bins[-1] = 0.99  # prevent weird behavior at 1
     fractions = []
     for c in ci_bins:
