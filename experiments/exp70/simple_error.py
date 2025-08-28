@@ -78,15 +78,18 @@ def main(
 
     # run shear inference pipeline in batches
     keys = random.split(k2, n_splits)
+    batch_size = n_splits // n_batches
+    assert batch_size * n_batches == n_splits
     g_plus = process_in_batches(
-        pipe, keys, e1e2ps, n_points=n_splits, n_batches=n_batches
+        pipe, keys, e1e2ps, n_points=n_splits, batch_size=batch_size
     )
     g_minus = process_in_batches(
-        pipe, keys, e1e2ms, n_points=n_splits, n_batches=n_batches
+        pipe, keys, e1e2ms, n_points=n_splits, batch_size=batch_size
     )
     assert g_plus.shape == g_minus.shape, "shear samples do not match"
     assert g_plus.shape == (n_splits, 1000, 2), "shear samples do not match"
 
+    print("Saving output from simple_error.py")
     save_dataset(
         {
             "plus": {"g1": g_plus[:, :, 0], "g2": g_plus[:, :, 1]},
