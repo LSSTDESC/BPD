@@ -37,12 +37,9 @@ def main(
 
     dsp = load_dataset_jax(pfpath)
     total_n_gals = dsp["samples"]["e1"].shape[0]
-    if n_gals is not None:
-        subset = random.choice(
-            k1, jnp.arange(total_n_gals), shape=(n_gals,), replace=False
-        )
-    else:
-        subset = jnp.arange(total_n_gals)
+    if n_gals is None:
+        n_gals = total_n_gals
+    subset = random.choice(k1, jnp.arange(total_n_gals), shape=(n_gals,), replace=False)
 
     e1 = dsp["samples"]["e1"][subset]
     e2 = dsp["samples"]["e2"][subset]
