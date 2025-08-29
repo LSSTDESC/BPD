@@ -67,6 +67,8 @@ def run_bootstrap_shear_vectorized(
     n_splits: int = 10,
     no_bar: bool = True,
 ):
+    for p in post_params_plus:
+        assert n_gals == post_params_plus[p].shape[0]
     pipe = vmap(jit(shear_pipeline), in_axes=(0, 0, 0))
 
     k1, k2 = random.split(rng_key)
