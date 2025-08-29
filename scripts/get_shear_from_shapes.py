@@ -3,7 +3,6 @@
 
 import jax
 import jax.numpy as jnp
-import numpy as np
 import typer
 
 from bpd import DATA_DIR
