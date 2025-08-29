@@ -11,19 +11,26 @@ version = "0.0.1"
 license = { file = "LICENSE" }
 readme = "README.md"
 dependencies = [
-    "numpy >=1.18.0",
+    "numpy >=2.0.0",
     "galsim >=2.3.0",
     "blackjax >=1.2.0",
     "optax >=0.2.0",
     "numpyro >=0.13.0",
-    "quadax",
+    "quadax>=0.2.5",
     "tensorflow-probability >=0.21.0",
-    "arviz",
+    "arviz>=0.21.0",
 ]
 
 
 [project.optional-dependencies]
-dev = ["pytest", "typer", "ruff", "ChainConsumer", "ipython", "ipykernel"]
+dev = [
+    "pytest",
+    "typer",
+    "ruff",
+    "ChainConsumer>=1.2.0", #v1.2.2 still requires python < 3.13
+    "ipython",
+    "ipykernel",
+]
 
 
 [project.urls]

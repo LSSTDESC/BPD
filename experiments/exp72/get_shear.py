@@ -10,7 +10,7 @@ import numpy as np
 import typer
 
 from bpd import DATA_DIR
-from bpd.io import load_dataset_jax
+from bpd.io import load_dataset_jax, save_dataset
 from bpd.pipelines import pipeline_shear_inference
 from bpd.prior import (
     interim_gprops_logprior,
@@ -35,7 +35,7 @@ def main(
     samples_fpath = Path(samples_fpath)
     assert dirpath.exists()
     assert samples_fpath.exists(), "ellipticity samples file does not exist"
-    out_fpath = dirpath / f"g_samples_{seed}{mode_txt}.npy"
+    out_fpath = dirpath / f"g_samples_{seed}{mode_txt}.npz"
 
     if out_fpath.exists() and not overwrite:
         raise IOError("overwriting...")
@@ -88,8 +88,12 @@ def main(
         n_samples=n_samples,
         initial_step_size=initial_step_size,
     )
+    assert g_samples.ndim == 2
+    assert g_samples.shape[1] == 2
 
-    np.save(out_fpath, np.asarray(g_samples))
+    save_dataset(
+        {"samples": {"g1": np.array(g_samples[:, 0]), "g2": np.array(g_samples[:, 1])}}
+    )
 
 
 if __name__ == "__main__":

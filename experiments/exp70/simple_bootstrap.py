@@ -5,6 +5,7 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 import typer
+from jax import random
 
 from bpd import DATA_DIR
 from bpd.io import load_dataset_jax, save_dataset
@@ -20,7 +21,7 @@ def main(
     n_gals: int | None = None,
     initial_step_size: float = 0.1,
     n_samples: int = 1000,
-    n_boots: int = 25,
+    n_boots: int = 125,
     no_bar: bool = False,
 ):
     dirpath = DATA_DIR / "cache_chains" / tag
@@ -32,15 +33,21 @@ def main(
     dsp = load_dataset_jax(samples_plus_fpath)
     dsm = load_dataset_jax(samples_minus_fpath)
 
-    if n_gals is None:
-        n_gals = dsp["samples"]["e1"].shape[0]
+    rng_key = random.key(seed)
+    k1, k2 = random.split(rng_key)
 
-    e1p = dsp["samples"]["e1"][:n_gals]
-    e2p = dsp["samples"]["e2"][:n_gals]
+    total_n_gals = dsp["samples"]["e1"].shape[0]
+    if n_gals is None:
+        n_gals = total_n_gals
+    assert n_gals <= total_n_gals
+    subset = random.choice(k1, jnp.arange(total_n_gals), shape=(n_gals,), replace=False)
+
+    e1p = dsp["samples"]["e1"][subset]
+    e2p = dsp["samples"]["e2"][subset]
     e1e2p = jnp.stack([e1p, e2p], axis=-1)
 
-    e1m = dsm["samples"]["e1"][:n_gals]
-    e2m = dsm["samples"]["e2"][:n_gals]
+    e1m = dsm["samples"]["e1"][subset]
+    e2m = dsm["samples"]["e2"][subset]
     e1e2m = jnp.stack([e1m, e2m], axis=-1)
 
     sigma_e = dsp["hyper"]["shape_noise"]
@@ -50,7 +57,6 @@ def main(
     assert jnp.all(dsp["truth"]["e1"] == dsm["truth"]["e1"])
     assert jnp.all(dsp["truth"]["lf"] == dsm["truth"]["lf"])
 
-    rng_key = jax.random.key(seed)
     raw_pipeline = partial(
         pipeline_shear_inference_simple,
         init_g=jnp.array([0.0, 0.0]),
@@ -66,7 +72,7 @@ def main(
         return {"g1": out[..., 0], "g2": out[..., 1]}
 
     samples_plus, samples_minus = run_bootstrap_shear_pipeline(
-        rng_key,
+        k2,
         post_params_plus={"e1e2": e1e2p},
         post_params_minus={"e1e2": e1e2m},
         shear_pipeline=pipe,
@@ -78,10 +84,14 @@ def main(
     assert samples_plus["g1"].shape == (n_boots, n_samples)
     assert samples_minus["g1"].shape == (n_boots, n_samples)
 
-    gp = jnp.stack([samples_plus["g1"], samples_plus["g2"]], axis=-1)
-    gm = jnp.stack([samples_minus["g1"], samples_minus["g2"]], axis=-1)
-
-    save_dataset({"gp": gp, "gm": gm}, fpath, overwrite=True)
+    save_dataset(
+        {
+            "plus": {"g1": samples_plus["g1"], "g2": samples_plus["g2"]},
+            "minus": {"g1": samples_minus["g1"], "g2": samples_minus["g2"]},
+        },
+        fpath,
+        overwrite=True,
+    )
 
 
 if __name__ == "__main__":

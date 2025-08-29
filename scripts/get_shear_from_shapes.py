@@ -3,11 +3,10 @@
 
 import jax
 import jax.numpy as jnp
-import numpy as np
 import typer
 
 from bpd import DATA_DIR
-from bpd.io import load_dataset_jax
+from bpd.io import load_dataset_jax, save_dataset
 from bpd.pipelines import pipeline_shear_inference_simple
 
 
@@ -23,7 +22,7 @@ def main(
     extra_txt = f"_{extra_tag}" if extra_tag else ""
     dirpath = DATA_DIR / "cache_chains" / tag
     interim_samples_fpath = DATA_DIR / "cache_chains" / tag / interim_samples_fname
-    fpath = DATA_DIR / "cache_chains" / tag / f"g_samples_{seed}{extra_txt}.npy"
+    fpath = DATA_DIR / "cache_chains" / tag / f"g_samples_{seed}{extra_txt}.npz"
 
     assert dirpath.exists()
     assert interim_samples_fpath.exists(), "ellipticity samples file does not exist"
@@ -47,8 +46,10 @@ def main(
         n_samples=n_samples,
         initial_step_size=initial_step_size,
     )
+    assert g_samples.ndim == 2
+    assert g_samples.shape[1] == 2
 
-    np.save(fpath, np.asarray(g_samples))
+    save_dataset({"samples": {"g1": g_samples[:, 0], "g2": g_samples[:, 1]}}, fpath)
 
 
 if __name__ == "__main__":

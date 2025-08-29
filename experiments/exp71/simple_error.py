@@ -108,8 +108,16 @@ def main(
 
     save_dataset(
         {
-            "plus": {"g": samples_plus["g"], "sigma_e": samples_plus["sigma_e"]},
-            "minus": {"g": samples_minus["g"], "sigma_e": samples_minus["sigma_e"]},
+            "plus": {
+                "g1": samples_plus["g"][:, :, 0],
+                "g2": samples_plus["g"][:, :, 1],
+                "sigma_e": samples_plus["sigma_e"],
+            },
+            "minus": {
+                "g1": samples_minus["g"][:, :, 0],
+                "g2": samples_minus["g"][:, :, 1],
+                "sigma_e": samples_minus["sigma_e"],
+            },
         },
         fpath,
         overwrite=True,

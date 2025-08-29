@@ -24,6 +24,7 @@ def main(
     n_gals: int | None = None,
 ):
     rng_key = random.key(seed)
+    k1, k2 = random.split(rng_key)
 
     dirpath = DATA_DIR / "cache_chains" / tag
     pfpath = Path(samples_plus_fpath)
@@ -34,42 +35,45 @@ def main(
     assert pfpath.exists(), "ellipticity samples file does not exist"
     assert mfpath.exists(), "ellipticity samples file does not exist"
 
-    ds_plus = load_dataset_jax(pfpath)
-    ds_minus = load_dataset_jax(mfpath)
+    dsp = load_dataset_jax(pfpath)
+    dsm = load_dataset_jax(mfpath)
 
+    total_n_gals = dsp["samples"]["e1"].shape[0]
     if n_gals is None:
-        n_gals = ds_plus["samples"]["e1"].shape[0]
+        n_gals = total_n_gals
+    assert n_gals <= total_n_gals
+    subset = random.choice(k1, jnp.arange(total_n_gals), shape=(n_gals,), replace=False)
 
     ppp = {
-        "lf": ds_plus["samples"]["lf"][:n_gals],
-        "lhlr": ds_plus["samples"]["lhlr"][:n_gals],
-        "e1": ds_plus["samples"]["e1"][:n_gals],
-        "e2": ds_plus["samples"]["e2"][:n_gals],
+        "lf": dsp["samples"]["lf"][subset],
+        "lhlr": dsp["samples"]["lhlr"][subset],
+        "e1": dsp["samples"]["e1"][subset],
+        "e2": dsp["samples"]["e2"][subset],
     }
 
     ppm = {
-        "lf": ds_minus["samples"]["lf"][:n_gals],
-        "lhlr": ds_minus["samples"]["lhlr"][:n_gals],
-        "e1": ds_minus["samples"]["e1"][:n_gals],
-        "e2": ds_minus["samples"]["e2"][:n_gals],
+        "lf": dsm["samples"]["lf"][subset],
+        "lhlr": dsm["samples"]["lhlr"][subset],
+        "e1": dsm["samples"]["e1"][subset],
+        "e2": dsm["samples"]["e2"][subset],
     }
 
-    sigma_e = ds_plus["hyper"]["shape_noise"]
-    sigma_e_int = ds_plus["hyper"]["sigma_e_int"]
-    mean_logflux = ds_plus["hyper"]["mean_logflux"]
-    sigma_logflux = ds_plus["hyper"]["sigma_logflux"]
-    mean_loghlr = ds_plus["hyper"]["mean_loghlr"]
-    sigma_loghlr = ds_plus["hyper"]["sigma_loghlr"]
-    a_logflux = ds_plus["hyper"]["a_logflux"]
+    sigma_e = dsp["hyper"]["shape_noise"]
+    sigma_e_int = dsp["hyper"]["sigma_e_int"]
+    mean_logflux = dsp["hyper"]["mean_logflux"]
+    sigma_logflux = dsp["hyper"]["sigma_logflux"]
+    mean_loghlr = dsp["hyper"]["mean_loghlr"]
+    sigma_loghlr = dsp["hyper"]["sigma_loghlr"]
+    a_logflux = dsp["hyper"]["a_logflux"]
 
-    assert ds_plus["hyper"]["g1"] == -ds_minus["hyper"]["g1"]
-    assert ds_plus["hyper"]["g2"] == -ds_minus["hyper"]["g2"]
-    assert sigma_e == ds_minus["hyper"]["shape_noise"]
-    assert sigma_e_int == ds_minus["hyper"]["sigma_e_int"]
-    assert mean_logflux == ds_minus["hyper"]["mean_logflux"]
-    assert mean_loghlr == ds_minus["hyper"]["mean_loghlr"]
-    assert jnp.all(ds_plus["truth"]["e1"] == ds_minus["truth"]["e1"])
-    assert jnp.all(ds_plus["truth"]["lf"] == ds_minus["truth"]["lf"])
+    assert dsp["hyper"]["g1"] == -dsm["hyper"]["g1"]
+    assert dsp["hyper"]["g2"] == -dsm["hyper"]["g2"]
+    assert sigma_e == dsm["hyper"]["shape_noise"]
+    assert sigma_e_int == dsm["hyper"]["sigma_e_int"]
+    assert mean_logflux == dsm["hyper"]["mean_logflux"]
+    assert mean_loghlr == dsm["hyper"]["mean_loghlr"]
+    assert jnp.all(dsp["truth"]["e1"] == dsm["truth"]["e1"])
+    assert jnp.all(dsp["truth"]["lf"] == dsm["truth"]["lf"])
 
     logprior_fnc = partial(
         true_all_params_skew_logprior,
@@ -106,7 +110,7 @@ def main(
     ppm = {k: jnp.reshape(v, (n_splits, split_size, -1)) for k, v in ppm.items()}
 
     # run shear inference pipeline
-    keys = random.split(rng_key, n_splits)
+    keys = random.split(k2, n_splits)
 
     gp = process_in_batches(
         vmap(pipe), keys, ppp, n_points=ppp["e1"].shape[0], batch_size=100
@@ -120,8 +124,8 @@ def main(
 
     save_dataset(
         {
-            "gp": gp,
-            "gm": gm,
+            "plus": {"g1": gp[:, :, 0], "g2": gp[:, :, 1]},
+            "minus": {"g1": gm[:, :, 0], "g2": gm[:, :, 1]},
         },
         fpath,
         overwrite=True,
