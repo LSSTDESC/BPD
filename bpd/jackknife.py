@@ -6,6 +6,8 @@ import jax.numpy as jnp
 from jax import jit, random, vmap
 from tqdm import tqdm
 
+from bpd.utils import process_in_batches
+
 
 def run_bootstrap_shear_pipeline(
     rng_key,
@@ -50,6 +52,48 @@ def run_bootstrap_shear_pipeline(
     for k in results_plus[0]:
         samples_plus[k] = jnp.stack([rs[k] for rs in results_plus], axis=0)
         samples_minus[k] = jnp.stack([rs[k] for rs in results_minus], axis=0)
+
+    return samples_plus, samples_minus
+
+
+def run_bootstrap_shear_vectorized(
+    rng_key,
+    *args,  # repeated arguments to vectorize like "init_positions".
+    post_params_plus: dict,
+    post_params_minus: dict,
+    shear_pipeline: Callable,
+    n_gals: int,
+    n_boots: int = 100,
+    n_splits: int = 10,
+    no_bar: bool = True,
+):
+    pipe = vmap(jit(shear_pipeline), in_axes=(0, 0, 0))
+
+    k1, k2 = random.split(rng_key)
+    k2s = random.split(k2, n_boots)
+    indices = random.randint(k1, shape=(n_boots, n_gals), minval=0, maxval=n_gals)
+    boot_ppp = {k: v[indices] for k, v in post_params_plus.items()}
+    boot_ppm = {k: v[indices] for k, v in post_params_minus.items()}
+
+    batch_size = n_boots // n_splits
+    samples_plus = process_in_batches(
+        pipe,
+        k2s,
+        boot_ppp,
+        *args,
+        n_points=n_boots,
+        batch_size=batch_size,
+        no_bar=no_bar,
+    )
+    samples_minus = process_in_batches(
+        pipe,
+        k2s,
+        boot_ppm,
+        *args,
+        n_points=n_boots,
+        batch_size=batch_size,
+        no_bar=no_bar,
+    )
 
     return samples_plus, samples_minus
 
