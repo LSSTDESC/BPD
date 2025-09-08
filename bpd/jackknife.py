@@ -56,7 +56,7 @@ def run_bootstrap_shear_vectorized(
     *args,  # arguments to vectorize like "init_positions".
     post_params_plus: dict,
     post_params_minus: dict,
-    shear_pipeline: Callable,  # already vectorized
+    shear_pipeline: Callable,
     n_gals: int,
     n_boots: int = 100,
     n_splits: int = 10,
