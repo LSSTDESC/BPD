@@ -1,4 +1,3 @@
-from functools import partial
 from math import ceil
 from typing import Callable
 
@@ -11,16 +10,17 @@ from bpd.utils import process_in_batches
 
 def run_bootstrap_shear_pipeline(
     rng_key,
-    *,
+    *args,  # like init positions, shared across + and -
     post_params_plus: dict,
     post_params_minus: dict,
     shear_pipeline: Callable,
     n_gals: int,
     n_boots: int = 100,
     no_bar: bool = True,
-    init_positions: list | None = None,
 ):
     """Obtain boostrap samples of shear posteriors from a 'plus' and 'minus' sims."""
+    for p in post_params_plus:
+        assert n_gals == post_params_plus[p].shape[0]
 
     results_plus = []
     results_minus = []
@@ -29,20 +29,15 @@ def run_bootstrap_shear_pipeline(
     pipe = jit(shear_pipeline)
 
     for ii in tqdm(range(n_boots), desc="Bootstrap #", disable=no_bar):
-        if init_positions is not None:
-            _pipe_ii = partial(pipe, ip=init_positions[ii])
-        else:
-            _pipe_ii = pipe
-
-        k_ii = keys[ii]
-        k1, k2 = random.split(k_ii)
+        k1, k2 = random.split(keys[ii])
+        args_ii = (x[ii] for x in args)
         indices = random.randint(k1, shape=(n_gals,), minval=0, maxval=n_gals)
 
         _params_jack_pos = {k: v[indices] for k, v in post_params_plus.items()}
         _params_jack_neg = {k: v[indices] for k, v in post_params_minus.items()}
 
-        samples_plus_ii = _pipe_ii(k2, _params_jack_pos)
-        samples_minus_ii = _pipe_ii(k2, _params_jack_neg)
+        samples_plus_ii = pipe(k2, _params_jack_pos, *args_ii)
+        samples_minus_ii = pipe(k2, _params_jack_neg, *args_ii)
 
         results_plus.append(samples_plus_ii)
         results_minus.append(samples_minus_ii)
@@ -58,7 +53,7 @@ def run_bootstrap_shear_pipeline(
 
 def run_bootstrap_shear_vectorized(
     rng_key,
-    *args,  # repeated arguments to vectorize like "init_positions".
+    *args,  # arguments to vectorize like "init_positions".
     post_params_plus: dict,
     post_params_minus: dict,
     shear_pipeline: Callable,
@@ -69,7 +64,6 @@ def run_bootstrap_shear_vectorized(
 ):
     for p in post_params_plus:
         assert n_gals == post_params_plus[p].shape[0]
-    pipe = vmap(jit(shear_pipeline), in_axes=(0, 0, 0))
 
     k1, k2 = random.split(rng_key)
     k2s = random.split(k2, n_boots)
@@ -79,7 +73,7 @@ def run_bootstrap_shear_vectorized(
 
     batch_size = n_boots // n_splits
     samples_plus = process_in_batches(
-        pipe,
+        vmap(shear_pipeline),
         k2s,
         boot_ppp,
         *args,
@@ -88,7 +82,7 @@ def run_bootstrap_shear_vectorized(
         no_bar=no_bar,
     )
     samples_minus = process_in_batches(
-        pipe,
+        vmap(shear_pipeline),
         k2s,
         boot_ppm,
         *args,

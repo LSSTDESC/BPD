@@ -15,7 +15,7 @@ conda activate bpd
 # Install JAX (on GPU)
 git clone git@github.com:LSSTDESC/BPD.git
 cd BPD
-pip install -U "jax[cuda12]<0.7.0"
+pip install -U "jax[cuda12]<0.7.0" # jax-galsim (tfp) not compatible with newer jax versions
 pip install -e .
 pip install -e ".[dev]"
 
