@@ -168,3 +168,5 @@ experiments/samples/*.hdf5
 **log**.txt
 **/jobs_out/**
 **/notebooks/images/**.png
+**/notebooks/**.npy
+**/notebooks/**.npz
