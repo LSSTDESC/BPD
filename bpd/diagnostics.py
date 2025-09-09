@@ -3,12 +3,13 @@ import pandas as pd
 from chainconsumer import Chain, ChainConsumer, Truth
 from matplotlib.figure import Figure
 from matplotlib.pyplot import Axes
+from numpy import ndarray
 from numpyro.diagnostics import hpdi
 from scipy import stats
 
 
 def get_contour_plot(
-    samples_list: list[dict[str, np.ndarray]],
+    samples_list: list[dict[str, ndarray]],
     names: list[str],
     truth: dict[str, float],
     figsize: tuple[float, float] = (7, 7),
@@ -23,7 +24,7 @@ def get_contour_plot(
 
 
 def get_gauss_pc_fig(
-    ax: Axes, samples: np.ndarray, truth: float, param_name: str | None = None
+    ax: Axes, samples: ndarray, truth: float | ndarray, param_name: str | None = None
 ) -> None:
     """Get a marginal pc figure assuming Gaussian distribution of samples."""
     assert samples.ndim == 2  # (n_chains, n_samples)
@@ -49,8 +50,8 @@ def get_gauss_pc_fig(
 
 def get_pc_fig(
     ax: Axes,
-    samples: np.ndarray,
-    truth: float,
+    samples: ndarray,
+    truth: float | ndarray,
     param_name: str | None = None,
     n_bins: int = 20,
 ) -> None:
