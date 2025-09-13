@@ -2,6 +2,7 @@ from functools import partial
 from typing import Callable
 
 import jax.numpy as jnp
+import numpy as np
 from jax.scipy.stats import uniform
 from jax.tree_util import tree_map
 from jax.typing import ArrayLike
@@ -78,3 +79,41 @@ def process_in_batches(
         results.append(fnc(*args_batch))
 
     return tree_map(lambda *x: jnp.concatenate(x, axis=0), *results)
+
+
+def combine_subposts_gaussian(sub_samples: ArrayLike):
+    # assume subposteriors and final full posterior approximates a Gaussian distribution
+    # (Bernstein-Von Mises Theorem) and return mean and Sigma of full posterior.
+    assert sub_samples.ndim == 3
+    n_posts = sub_samples.shape[0]
+    n_dim = sub_samples.shape[2]  # usually 2 for shear
+    ss = sub_samples
+
+    # compute mean of each subposterior
+    mus = ss.mean(axis=1)
+
+    # compute covariances of each subposterior
+    covs = []
+    for ii in range(n_posts):
+        samples_ii = ss[ii]
+        cov_ii = np.cov(samples_ii, rowvar=False)
+        covs.append(cov_ii)
+    covs = np.stack(covs, axis=0)
+    assert covs.shape == (n_posts, n_dim, n_dim)
+
+    # get full covariance
+    fcov = 0.0
+    for ii in range(n_posts):
+        fcov += np.linalg.inv(covs[ii])
+    fcov = np.linalg.inv(fcov)
+
+    # get full mean
+    fmu = 0.0
+    for ii in range(n_posts):
+        mu_ii = mus[ii].reshape(n_dim, 1)
+        fmu += np.linalg.inv(covs[ii]).dot(mu_ii)
+
+    assert fmu.shape == (n_dim, 1)
+    fmu = fcov.dot(fmu)
+
+    return fmu, fcov
