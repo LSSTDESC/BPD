@@ -81,12 +81,12 @@ def process_in_batches(
     return tree_map(lambda *x: jnp.concatenate(x, axis=0), *results)
 
 
-def combine_subposts_gaussian(sub_samples: ArrayLike):
+def combine_subposts_gaussian(sub_samples: ArrayLike, n_dim: int = 2):
     # assume subposteriors and final full posterior approximates a Gaussian distribution
     # (Bernstein-Von Mises Theorem) and return mean and Sigma of full posterior.
     assert sub_samples.ndim == 3
+    assert sub_samples.shape[2] == n_dim
     n_posts = sub_samples.shape[0]
-    n_dim = sub_samples.shape[2]  # usually 2 for shear
     ss = sub_samples
 
     # compute mean of each subposterior
