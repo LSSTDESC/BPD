@@ -17,6 +17,7 @@ from chainconsumer.plotting.config import PlotConfig
 from tqdm import tqdm
 
 from bpd import DATA_DIR, HOME_DIR
+from bpd.diagnostics import get_pc_fig
 from bpd.draw import draw_exponential_galsim
 from bpd.io import load_dataset, save_dataset
 from bpd.plotting import (
@@ -45,6 +46,7 @@ INPUT_PATHS = {
     "exp73_sm": CHAIN_DIR / "exp73_51" / "shear_samples_512_minus.npz",
     "exp73_errs": CHAIN_DIR / "exp73_51" / "g_samples_514_errs_514.npz",
     "exp72_interim_samples": CHAIN_DIR / "exp72_51" / "interim_samples_511_plus.npz",
+    "eta_pc": CHAIN_DIR / "exp81_52" / "eta_shear_samples.npz",
 }
 
 
@@ -56,6 +58,7 @@ OUT_PATHS = {
     "contour_shear": FIG_DIR / "contour_shear.png",
     "contour_hyper": FIG_DIR / "contour_hyper.png",
     "bias": FIG_DIR / "table_bias.txt",
+    "eta_pc": FIG_DIR / "eta_pc.png",
 }
 
 
@@ -503,11 +506,38 @@ def get_bias_table(fpath: str | Path):
         f.write(table)
 
 
+def make_eta_posterior_calibration_figure(fpath: str | Path):
+    set_rc_params(fontsize=24)
+
+    ds = load_dataset(INPUT_PATHS["eta_pc"])
+    g_samples = ds["g_samples"]
+    true_gs = ds["true_g"]
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 7), sharey=True)
+    g1_samples = g_samples[:, :, 0]
+    g1_truth = true_gs[:, 0]
+    get_pc_fig(ax1, g1_samples, g1_truth)
+    ax1.set_ylabel(r"\rm Realized Coverage")
+    ax1.set_xlabel(r"\rm Target Coverage")
+    ax1.legend(loc="best")
+    ax1.set_title(r"\rm $g_{1}$")
+
+    g2_samples = g_samples[:, :, 1]
+    g2_truth = true_gs[:, 1]
+    ax2.set_xlabel(r"\rm Target Coverage")
+    ax2.set_title(r"\rm $g_{2}$")
+    get_pc_fig(ax2, g2_samples, g2_truth)
+
+    fig.tight_layout()
+    fig.savefig(fpath, format="png")
+
+
 def main(overwrite: bool = False):
     make_timing_figure(OUT_PATHS["timing"], OUT_PATHS["timing2"])
     make_distribution_figure(OUT_PATHS["galaxy_distributions"], overwrite=overwrite)
     make_contour_shear_figure(OUT_PATHS["contour_shear"])
     make_contour_hyper_figure(OUT_PATHS["contour_hyper"])
+    make_eta_posterior_calibration_figure(OUT_PATHS["eta_pc"])
     get_bias_table(OUT_PATHS["bias"])
 
 
