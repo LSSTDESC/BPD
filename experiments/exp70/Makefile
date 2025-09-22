@@ -24,6 +24,13 @@ figures:
 collate_boot:
 	../exp70/collate_samples.py 111 --tag ${TAG} --mode "" --start-string "g_samples_boots"
 
+test_boot:
+	export CUDA_VISIBLE_DEVICES=0
+	./simple_bootstrap.py 99 --tag ${TAG} --samples-plus-fname "interim_samples_${SEED}1_plus.npz" --samples-minus-fname "interim_samples_${SEED}1_minus.npz"
+
+new_boot:
+	./slurm_bootstrap.py ${SEED}5 --tag ${TAG} --samples-plus-fname "interim_samples_${SEED}1_plus.npz" --samples-minus-fname "interim_samples_${SEED}1_minus.npz" --time 07:00 --n-boots 200
+
 boot:
 	./slurm_bootstrap.py 111 --tag ${TAG} --samples-plus-fname "interim_samples_${SEED}1_plus.npz" --samples-minus-fname "interim_samples_${SEED}1_minus.npz" --n-gals 10_000 --time 00:30
 
