@@ -71,6 +71,11 @@ def main(
         out = raw_pipeline(k, d["e1e2"])
         return {"g1": out[..., 0], "g2": out[..., 1]}
 
+    # jit
+    print("JITing function")
+    _ = pipe(k2, {"e1e2": e1e2p[:2]})
+    print("JITing done")
+
     samples_plus, samples_minus = run_bootstrap_shear_pipeline(
         k2,
         post_params_plus={"e1e2": e1e2p},
