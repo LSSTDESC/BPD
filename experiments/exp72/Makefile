@@ -26,6 +26,15 @@ figures:
 error:
 	./simple_error.py ${SEED}4 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH}
 
+
+new_boot_test1:
+	./slurm_bootstrap.py ${SEED}51 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH} --n-boots 50 --n-nodes 2 --qos regular
+
+test_run_one_boot:
+	./simple_bootstrap.py 99 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH} --n-boots 5 --n-gals 300_000
+
+#### verify error 
+
 verify_error:
 	./simple_error.py 111 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH} --n-gals 10_000
 
@@ -34,6 +43,8 @@ collate_boot:
 
 boot:
 	./slurm_bootstrap.py 111 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH} --n-boots 200 --n-gals 10_000
+
+####
 
 shear_plus: 
 	export CUDA_VISIBLE_DEVICES=0
