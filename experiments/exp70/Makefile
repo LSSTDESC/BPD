@@ -24,15 +24,18 @@ figures:
 collate_boot:
 	../exp70/collate_samples.py 111 --tag ${TAG} --mode "" --start-string "g_samples_boots"
 
+test_boot2:
+	./slurm_bootstrap.py 992 --tag ${TAG} --samples-plus-fname "interim_samples_${SEED}1_plus.npz" --samples-minus-fname "interim_samples_${SEED}1_minus.npz" --time 00:30 --n-boots 8 --n-nodes 1 --qos debug
+
 test_boot:
 	export CUDA_VISIBLE_DEVICES=0
-	./simple_bootstrap.py 99 --tag ${TAG} --samples-plus-fname "interim_samples_${SEED}1_plus.npz" --samples-minus-fname "interim_samples_${SEED}1_minus.npz"
+	./simple_bootstrap.py 991 --tag ${TAG} --samples-plus-fname "interim_samples_${SEED}1_plus.npz" --samples-minus-fname "interim_samples_${SEED}1_minus.npz"
 
-new_boot:
-	./slurm_bootstrap.py ${SEED}52 --tag ${TAG} --samples-plus-fname "interim_samples_${SEED}1_plus.npz" --samples-minus-fname "interim_samples_${SEED}1_minus.npz" --time 04:00 --n-boots 200 --n-nodes 2 --qos regular
+new_boot2:
+	./slurm_bootstrap.py ${SEED}52 --tag ${TAG} --samples-plus-fname "interim_samples_${SEED}1_plus.npz" --samples-minus-fname "interim_samples_${SEED}1_minus.npz" --time 04:00 --n-boots 300 --n-nodes 3 --qos regular
 
-new_boot_test1:
-	./slurm_bootstrap.py ${SEED}51 --tag ${TAG} --samples-plus-fname "interim_samples_${SEED}1_plus.npz" --samples-minus-fname "interim_samples_${SEED}1_minus.npz" --time 01:00 --n-boots 50 --n-nodes 2 --qos regular
+new_boot2:
+	./slurm_bootstrap.py ${SEED}51 --tag ${TAG} --samples-plus-fname "interim_samples_${SEED}1_plus.npz" --samples-minus-fname "interim_samples_${SEED}1_minus.npz" --time 04:00 --n-boots 300 --n-nodes 2 --qos regular
 
 boot:
 	./slurm_bootstrap.py 111 --tag ${TAG} --samples-plus-fname "interim_samples_${SEED}1_plus.npz" --samples-minus-fname "interim_samples_${SEED}1_minus.npz" --n-gals 10_000 --time 00:30
