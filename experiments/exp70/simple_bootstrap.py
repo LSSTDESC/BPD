@@ -79,6 +79,7 @@ def main(
     samples_plus = run_bootstrap(
         k2,
         post_params={"e1e2": e1e2p},
+        pipeline=pipe,
         n_gals=e1e2p.shape[0],
         n_boots=n_boots,
         no_bar=no_bar,
@@ -86,6 +87,7 @@ def main(
     samples_minus = run_bootstrap(
         k2,
         post_params={"e1e2": e1e2m},
+        pipeline=pipe,
         n_gals=e1e2m.shape[0],
         n_boots=n_boots,
         no_bar=no_bar,
