@@ -13,7 +13,7 @@ def run_bootstrap(
     post_params: dict,
     pipeline: Callable,
     n_gals: int,
-    n_boots: int = 10,
+    n_boots: int,
     no_bar: bool = True,
     cpu=None,  # device_put does nothing by default
     gpu=None,
