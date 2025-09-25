@@ -21,7 +21,7 @@ MINUS_SAMPLES_FPATH := ${DIR}/interim_samples_${SEED}1_minus.npz
 export JAX_ENABLE_X64=True
 
 
-new_boot1:
+boot1:
 	./slurm_bootstrap.py ${SEED}51 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH} --n-boots 200 --n-nodes 2 --qos regular --time 05:00 --mem-per-gpu 40G
 
 # Verify error w/ bootstrap (small)

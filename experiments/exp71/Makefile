@@ -15,9 +15,9 @@ MINUS_FILE := /pscratch/sd/i/imendoza/data/cache_chains/exp70_51/interim_samples
 export JAX_ENABLE_X64=True
 
 
-bootstrap1:
+boot1:
 	export CUDA_VISIBLE_DEVICES=0
-	./slurm_bootstrap.py ${SEED}31 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE}  --samples-minus-fpath ${MINUS_FILE} --n-boots 200 --n-nodes 12 --qos regular
+	./slurm_bootstrap.py ${SEED}51 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE}  --samples-minus-fpath ${MINUS_FILE} --n-boots 200 --n-nodes 2 --qos regular --time 06:00
 
 # main pipeline
 error: 

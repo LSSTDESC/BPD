@@ -19,11 +19,11 @@ MEM_PER_GPU := 10G
 export JAX_ENABLE_X64=True
 
 # Bootstrap
-new_boot1:
-	./slurm_bootstrap.py ${SEED}52 --tag ${TAG} --samples-plus-fname "interim_samples_${SEED}1_plus.npz" --samples-minus-fname "interim_samples_${SEED}1_minus.npz" --time 04:00 --n-boots 300 --n-nodes 3 --qos regular
+boot1:
+	./slurm_bootstrap.py ${SEED}51 --tag ${TAG} --samples-plus-fname "interim_samples_${SEED}1_plus.npz" --samples-minus-fname "interim_samples_${SEED}1_minus.npz" --time 04:00 --n-boots 200 --n-nodes 2 --qos regular
 
-new_boot2:
-	./slurm_bootstrap.py ${SEED}51 --tag ${TAG} --samples-plus-fname "interim_samples_${SEED}1_plus.npz" --samples-minus-fname "interim_samples_${SEED}1_minus.npz" --time 04:00 --n-boots 300 --n-nodes 2 --qos regular
+boot2:
+	./slurm_bootstrap.py ${SEED}52 --tag ${TAG} --samples-plus-fname "interim_samples_${SEED}1_plus.npz" --samples-minus-fname "interim_samples_${SEED}1_minus.npz" --time 04:00 --n-boots 300 --n-nodes 3 --qos regular
 
 
 # Error verifcation experiment 
