@@ -19,7 +19,6 @@ MEM_PER_GPU := 10G
 export JAX_ENABLE_X64=True
 
 # Bootstrap
-
 new_boot1:
 	./slurm_bootstrap.py ${SEED}52 --tag ${TAG} --samples-plus-fname "interim_samples_${SEED}1_plus.npz" --samples-minus-fname "interim_samples_${SEED}1_minus.npz" --time 04:00 --n-boots 300 --n-nodes 3 --qos regular
 
@@ -28,18 +27,16 @@ new_boot2:
 
 
 # Error verifcation experiment 
-
-boot:
+verify_boot:
 	./slurm_bootstrap.py 111 --tag ${TAG} --samples-plus-fname "interim_samples_${SEED}1_plus.npz" --samples-minus-fname "interim_samples_${SEED}1_minus.npz" --n-gals 10_000 --time 00:30
-
-collate_boot:
-	../exp70/collate_samples.py 111 --tag ${TAG} --mode "" --start-string "g_samples_boots"
 
 verify_error:
 	./simple_error.py 111 --tag ${TAG} --plus-samples-fname "interim_samples_${SEED}1_plus.npz" --minus-samples-fname "interim_samples_${SEED}1_minus.npz" --n-gals 10_000
 
-# Main Pipeline
+collate_verify_boot:
+	../exp70/collate_samples.py 111 --tag ${TAG} --mode "" --start-string "g_samples_boots"
 
+# Main Pipeline
 error:
 	./simple_error.py ${SEED}4 --tag ${TAG} --plus-samples-fname "interim_samples_${SEED}1_plus.npz" --minus-samples-fname "interim_samples_${SEED}1_minus.npz"
 
@@ -64,7 +61,6 @@ samples_minus:
 	./slurm_get_interim_samples.py ${SEED}1 --tag ${TAG} --g1 -${SHEAR} --g2 0.0 --n-gals ${N_GALS} --n-samples-per-gal ${N_SAMPLES_PER_GAL} --time ${TIME_SAMPLE} --mode "minus" --mem-per-gpu ${MEM_PER_GPU} --qos ${QOS} --nodes ${NODES_SAMPLE}  --n-tasks-per-node ${NTASKS_SAMPLE}
 
 # Testing
-
 test_boot_slurm:
 	./slurm_bootstrap.py 992 --tag ${TAG} --samples-plus-fname "interim_samples_${SEED}1_plus.npz" --samples-minus-fname "interim_samples_${SEED}1_minus.npz" --time 00:30 --n-boots 8 --n-nodes 1 --qos debug
 
@@ -76,7 +72,6 @@ test_samples:
 	./slurm_get_interim_samples.py ${SEED}1 --tag ${TAG} --g1 0.02 --g2 0.0 --n-gals 10_000 --n-samples-per-gal 100 --time 02:00 --mode "plus" --mem-per-gpu ${MEM_PER_GPU} --qos "regular" --nodes 1 --n-tasks-per-node 1
 
 # Misc.
-
 figures:
 	../exp70/get_figures.py ${SEED} --tag ${TAG}
 
