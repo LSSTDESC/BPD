@@ -20,31 +20,23 @@ MINUS_SAMPLES_FPATH := ${DIR}/interim_samples_${SEED}1_minus.npz
 
 export JAX_ENABLE_X64=True
 
-figures:
-	../exp70/get_figures.py ${SEED} --tag ${TAG}
 
-error:
-	./simple_error.py ${SEED}4 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH}
+new_boot1:
+	./slurm_bootstrap.py ${SEED}51 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH} --n-boots 200 --n-nodes 2 --qos regular --time 05:00 --mem-per-gpu 40G
 
-
-new_boot_test1:
-	./slurm_bootstrap.py ${SEED}51 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH} --n-boots 50 --n-nodes 2 --qos regular
-
-test_run_one_boot:
-	./simple_bootstrap.py 99 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH} --n-boots 5 --n-gals 300_000
-
-#### verify error 
-
+# Verify error w/ bootstrap (small)
 verify_error:
 	./simple_error.py 111 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH} --n-gals 10_000
 
-collate_boot:
-	../exp70/collate_samples.py 111 --tag ${TAG} --mode "" --start-string "g_samples_boots"
-
-boot:
+verify_boot:
 	./slurm_bootstrap.py 111 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH} --n-boots 200 --n-gals 10_000
 
-####
+collate_verify_boot:
+	../exp70/collate_samples.py 111 --tag ${TAG} --mode "" --start-string "g_samples_boots"
+
+# Main pipeline
+error:
+	./simple_error.py ${SEED}4 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH}
 
 shear_plus: 
 	export CUDA_VISIBLE_DEVICES=0
@@ -66,8 +58,20 @@ samples_plus:
 samples_minus:
 	./slurm_get_interim_samples.py ${SEED}1 --tag ${TAG} --g1 -${SHEAR} --g2 0.0 --n-gals ${N_GALS} --n-samples-per-gal ${N_SAMPLES_PER_GAL} --time ${TIME_SAMPLE} --mode "minus" --mem-per-gpu ${MEM_PER_GPU} --qos ${QOS} --nodes ${NODES_SAMPLE}  --n-tasks-per-node ${NTASKS_SAMPLE}
 
+
+# Testing
+test_new_boot_slurm:
+	./slurm_bootstrap.py 992 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH} --n-boots 8 --n-nodes 1 --qos debug --time 00:30 --mem-per-gpu 40G
+
+test_boot:
+	./simple_bootstrap.py 991 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH} --n-boots 5 --n-gals 100
+
 test_sample:
 	./slurm_get_interim_samples.py 111 --tag ${TAG} --g1 0.02 --g2 0.0 --n-gals 10_000 --n-samples-per-gal 300 --time 02:00 --mode "plus" --mem-per-gpu 10G --qos regular --nodes 1 --n-tasks-per-node 1
+
+# Misc.
+figures:
+	../exp70/get_figures.py ${SEED} --tag ${TAG}
 
 clean: 
 	rm -f ${DIR}/g_samples_*.npy ${DIR}/interim_samples_*.npz ${DIR}/g_samples_*.npz

@@ -14,15 +14,17 @@ MINUS_FILE := /pscratch/sd/i/imendoza/data/cache_chains/exp70_51/interim_samples
 
 export JAX_ENABLE_X64=True
 
+
+bootstrap1:
+	export CUDA_VISIBLE_DEVICES=0
+	./slurm_bootstrap.py ${SEED}31 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE}  --samples-minus-fpath ${MINUS_FILE} --n-boots 200 --n-nodes 12 --qos regular
+
+# main pipeline
 error: 
 	./simple_error.py ${SEED}4 --tag ${TAG} --plus-samples-fpath ${PLUS_FILE} --minus-samples-fpath ${MINUS_FILE}
 
 collate_boot:
 	../exp70/collate_samples.py ${SEED}3 --tag ${TAG} --mode "" --start-string "g_samples_boots"
-
-bootstrap:
-	export CUDA_VISIBLE_DEVICES=0
-	./slurm_bootstrap.py ${SEED}3 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE}  --samples-minus-fpath ${MINUS_FILE} --n-boots 200
 
 shear_plus: 
 	export CUDA_VISIBLE_DEVICES=0
@@ -32,6 +34,15 @@ shear_minus:
 	export CUDA_VISIBLE_DEVICES=0
 	../../scripts/get_shear_and_sn_from_shapes.py ${SEED}2 --samples-fpath ${MINUS_FILE} --tag ${TAG} --overwrite --extra-tag "minus"
 
+# Testing
+test_boot2:
+	export CUDA_VISIBLE_DEVICES=0
+	./slurm_bootstrap.py 992 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE} --samples-minus-fpath ${MINUS_FILE} --n-boots 8 --n-nodes 1 --time 00:30 --qos debug --mem-per-gpu 10G
 
+test_boot1:
+	export CUDA_VISIBLE_DEVICES=0
+	./simple_bootstrap.py 991 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE} --samples-minus-fpath ${MINUS_FILE} --n-boots 2 --n-gals 100
+
+# Misc.
 clean: 
 	rm -f ${DIR}/g_samples_*.npy ${DIR}/interim_samples_*.npz ${DIR}/g_samples_*.npz
