@@ -9,7 +9,7 @@ from bpd.utils import process_in_batches
 
 def run_bootstrap(
     rng_key,
-    *args,  # like init positions, shared across + and -
+    *args,  # additional arguments to pass in (list)
     post_params: dict,
     pipeline: Callable,
     n_gals: int,
@@ -27,11 +27,11 @@ def run_bootstrap(
     pipe = jit(pipeline)
 
     post_params = device_put(post_params, cpu)
-    args = (device_put(x, cpu) for x in args)
+    args = tuple(device_put(x, cpu) for x in args)
 
     for ii in tqdm(range(n_boots), desc="Bootstrap #", disable=no_bar):
         k1, k2 = random.split(keys[ii])
-        args_ii = (device_put(x[ii], gpu) for x in args)
+        args_ii = tuple(device_put(x[ii], gpu) for x in args)
         indices = random.randint(k1, shape=(n_gals,), minval=0, maxval=n_gals)
         _params = device_put({k: v[indices] for k, v in post_params.items()}, gpu)
         samples_ii = device_put(pipe(k2, _params, *args_ii), cpu)
