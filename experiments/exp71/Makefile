@@ -14,6 +14,9 @@ MINUS_FILE := /pscratch/sd/i/imendoza/data/cache_chains/exp70_51/interim_samples
 
 export JAX_ENABLE_X64=True
 
+boot2:
+	export CUDA_VISIBLE_DEVICES=0
+	./slurm_bootstrap.py ${SEED}52 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE}  --samples-minus-fpath ${MINUS_FILE} --n-boots 300 --n-nodes 3 --qos regular --time 08:00
 
 boot1:
 	export CUDA_VISIBLE_DEVICES=0
