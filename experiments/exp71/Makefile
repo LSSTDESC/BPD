@@ -19,6 +19,9 @@ boot1:
 	export CUDA_VISIBLE_DEVICES=0
 	./slurm_bootstrap.py ${SEED}51 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE}  --samples-minus-fpath ${MINUS_FILE} --n-boots 200 --n-nodes 2 --qos regular --time 06:00
 
+collate_boot1:
+	../exp70/collate_samples.py --tag ${TAG} --mode "" --start-string "g_samples_boots_${SEED}51"
+
 # main pipeline
 error: 
 	./simple_error.py ${SEED}4 --tag ${TAG} --plus-samples-fpath ${PLUS_FILE} --minus-samples-fpath ${MINUS_FILE}

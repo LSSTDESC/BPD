@@ -24,6 +24,9 @@ export JAX_ENABLE_X64=True
 boot1:
 	./slurm_bootstrap.py ${SEED}51 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH} --n-boots 200 --n-nodes 2 --qos regular --time 05:00 --mem-per-gpu 40G
 
+collate_boot1:
+	../exp70/collate_samples.py --tag ${TAG} --mode "" --start-string "g_samples_boots_${SEED}51"
+
 # Verify error w/ bootstrap (small)
 verify_error:
 	./simple_error.py 111 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH} --n-gals 10_000

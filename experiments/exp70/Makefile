@@ -22,6 +22,9 @@ export JAX_ENABLE_X64=True
 boot1:
 	./slurm_bootstrap.py ${SEED}51 --tag ${TAG} --samples-plus-fname "interim_samples_${SEED}1_plus.npz" --samples-minus-fname "interim_samples_${SEED}1_minus.npz" --time 04:00 --n-boots 200 --n-nodes 2 --qos regular
 
+collate_boot1:
+	../exp70/collate_samples.py --tag ${TAG} --mode "" --start-string "g_samples_boots_${SEED}51"
+
 boot2:
 	./slurm_bootstrap.py ${SEED}52 --tag ${TAG} --samples-plus-fname "interim_samples_${SEED}1_plus.npz" --samples-minus-fname "interim_samples_${SEED}1_minus.npz" --time 04:00 --n-boots 300 --n-nodes 3 --qos regular
 
