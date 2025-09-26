@@ -9,10 +9,13 @@ import typer
 from jax import random
 
 from bpd import DATA_DIR
-from bpd.io import load_dataset_jax, save_dataset
-from bpd.jackknife import run_bootstrap_shear_pipeline
+from bpd.bootstrap import run_bootstrap
+from bpd.io import load_dataset, save_dataset
 from bpd.pipelines import pipeline_shear_inference
 from bpd.prior import interim_gprops_logprior, true_all_params_skew_logprior
+
+CPU = jax.devices("cpu")[0]
+GPU = jax.devices("gpu")[0]
 
 
 def main(
@@ -35,8 +38,9 @@ def main(
     assert dirpath.exists() and pfpath.exists() and mfpath.exists()
     fpath = dirpath / f"g_samples_boots_{seed}.npz"
 
-    dsp = load_dataset_jax(samples_plus_fpath)
-    dsm = load_dataset_jax(samples_minus_fpath)
+    # start in cpu to avoid memory issues.
+    dsp = load_dataset(samples_plus_fpath)
+    dsm = load_dataset(samples_minus_fpath)
 
     total_n_gals = dsp["samples"]["e1"].shape[0]
     if n_gals is None:
@@ -105,28 +109,43 @@ def main(
         out = raw_pipeline(k, d)
         return {"g1": out[..., 0], "g2": out[..., 1]}
 
-    # jit pipe function (to avoid memory error)
+    # jit pipe function
     print("Jitting pipeline...")
+    # small (inconsequential) memory transfer
     _ = pipe(k2, {k: v[0, None] for k, v in post_params_plus.items()})
     print("Pipeline jitted.")
 
-    samples_plus, samples_minus = run_bootstrap_shear_pipeline(
+    _n_gals = post_params_plus["e1"].shape[0]
+    samples_plus = run_bootstrap(
         k2,
-        post_params_plus=post_params_plus,
-        post_params_minus=post_params_minus,
-        shear_pipeline=pipe,
-        n_gals=post_params_plus["e1"].shape[0],
+        post_params=post_params_plus,
+        pipeline=pipe,
+        n_gals=_n_gals,
         n_boots=n_boots,
         no_bar=no_bar,
+        cpu=CPU,
+        gpu=GPU,
     )
+    samples_minus = run_bootstrap(
+        k2,
+        post_params=post_params_minus,
+        pipeline=pipe,
+        n_gals=_n_gals,
+        n_boots=n_boots,
+        no_bar=no_bar,
+        cpu=CPU,
+        gpu=GPU,
+    )
+    assert samples_plus["g1"].shape == (n_boots, n_samples)
 
-    gp = jnp.stack([samples_plus["g1"], samples_plus["g2"]], axis=-1)
-    gm = jnp.stack([samples_minus["g1"], samples_minus["g2"]], axis=-1)
-
-    assert gp.shape == (n_boots, n_samples, 2)
-    assert gm.shape == (n_boots, n_samples, 2)
-
-    save_dataset({"gp": gp, "gm": gm}, fpath, overwrite=True)
+    save_dataset(
+        {
+            "plus": {"g1": samples_plus["g1"], "g2": samples_plus["g2"]},
+            "minus": {"g1": samples_minus["g1"], "g2": samples_minus["g2"]},
+        },
+        fpath,
+        overwrite=True,
+    )
 
 
 if __name__ == "__main__":

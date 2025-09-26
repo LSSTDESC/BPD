@@ -25,10 +25,11 @@ def main(
 
     cmds = []
     for ii in range(n_splits):
+        n_gals_txt = f" --n-gals {n_gals}" if n_gals else ""
         base_cmd = """../exp70/simple_bootstrap.py {new_seed}
         --samples-plus-fname {samples_plus_fname}
         --samples-minus-fname {samples_minus_fname}
-        --tag {tag} --n-boots {split_size} --n-gals {n_gals}
+        --tag {tag} --n-boots {split_size}{n_gals_txt}
         """
         base_cmd = " ".join(base_cmd.split())
         new_seed = f"{seed}{ii}"
@@ -38,7 +39,7 @@ def main(
             split_size=split_size,
             samples_plus_fname=samples_plus_fname,
             samples_minus_fname=samples_minus_fname,
-            n_gals=n_gals,
+            n_gals_txt=n_gals_txt,
         )
         cmds.append(cmd)
 
