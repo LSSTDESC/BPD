@@ -1,0 +1,60 @@
+#!/usr/bin/env python3
+import math
+
+import typer
+
+from bpd.slurm import run_multi_gpu_job
+
+
+def main(
+    seed: int,
+    tag: str = typer.Option(),
+    samples_plus_fpath: str = typer.Option(),
+    samples_minus_fpath: str = typer.Option(),
+    n_gals: int | None = None,
+    n_boots: int = 100,
+    n_nodes: int = 1,
+    n_samples: int = 1000,
+    n_warmup_steps: int = 1000,
+    time: str = "02:00",  # HH:MM
+    mem_per_gpu: str = "40G",
+    qos: str = "regular",
+):
+    n_splits = n_nodes * 4
+    split_size = math.ceil(n_boots / n_splits)
+
+    cmds = []
+    for ii in range(n_splits):
+        n_gals_txt = f" --n-gals {n_gals}" if n_gals else ""
+        base_cmd = """./simple_bootstrap.py {new_seed}
+        --samples-plus-fpath {samples_plus_fpath}
+        --samples-minus-fpath {samples_minus_fpath}
+        --tag {tag} --n-boots {split_size}{n_gals_txt}
+        --n-samples {n_samples} --n-warmup-steps {n_warmup_steps}
+        """
+        base_cmd = " ".join(base_cmd.split())
+        new_seed = f"{seed}{ii}"
+        cmd = base_cmd.format(
+            new_seed=new_seed,
+            tag=tag,
+            split_size=split_size,
+            samples_plus_fpath=samples_plus_fpath,
+            samples_minus_fpath=samples_minus_fpath,
+            n_gals_txt=n_gals_txt,
+            n_samples=n_samples,
+            n_warmup_steps=n_warmup_steps,
+        )
+        cmds.append(cmd)
+
+    run_multi_gpu_job(
+        cmds,
+        jobname=f"{tag}_boot",
+        time=time,
+        mem_per_gpu=mem_per_gpu,
+        qos=qos,
+        nodes=n_nodes,
+    )
+
+
+if __name__ == "__main__":
+    typer.run(main)

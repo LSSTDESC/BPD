@@ -25,12 +25,14 @@ def main(
     samples_minus_fpath: str = typer.Option(),
     initial_step_size: float = 0.01,
     n_samples: int = 1000,
-    n_boots=100,
+    n_warmup_steps: int = 1000,
+    n_boots: int = 100,
     overwrite: bool = False,
     no_bar: bool = False,
     n_gals: int | None = None,
 ):
-    k1, k2, k3 = random.split(seed, 3)
+    rng_key = random.key(seed)
+    k1, k2, k3 = random.split(rng_key, 3)
 
     # directory structure
     dirpath = DATA_DIR / "cache_chains" / tag
@@ -101,23 +103,23 @@ def main(
 
     _pipe = partial(
         run_inference_nuts,
-        init_positions=init_positions,
         logtarget=_logtarget,
         n_samples=n_samples,
         initial_step_size=initial_step_size,
         max_num_doublings=7,
-        n_warmup_steps=1000,
+        n_warmup_steps=n_warmup_steps,
     )
     pipe = jit(_pipe)
 
     # jit function quickly
     print("JITting function...")
-    _ = pipe(k3, data={k: v[0, None] for k, v in ppp.items()})
+    _ = pipe(k3, {k: v[0, None] for k, v in ppp.items()}, init_positions[0])
 
     samples_plus = run_bootstrap(
         k3,
         init_positions,
         post_params=ppp,
+        pipeline=pipe,
         n_gals=ppp["e1"].shape[0],
         n_boots=n_boots,
         no_bar=no_bar,
@@ -128,6 +130,7 @@ def main(
     samples_minus = run_bootstrap(
         k3,
         init_positions,
+        pipeline=pipe,
         post_params=ppm,
         n_gals=ppm["e1"].shape[0],
         n_boots=n_boots,
@@ -136,15 +139,15 @@ def main(
         gpu=GPU,
     )
 
-    assert samples_plus["g"] == (n_samples, 2)
-    assert samples_minus["g"] == (n_samples, 2)
+    assert samples_plus["g"].shape == (n_boots, n_samples, 2)
+    assert samples_minus["g"].shape == (n_boots, n_samples, 2)
 
     gp = samples_plus.pop("g")
     gm = samples_minus.pop("g")
-    g1p = gp[:, 0]
-    g2p = gp[:, 1]
-    g1m = gm[:, 0]
-    g2m = gm[:, 1]
+    g1p = gp[..., 0]
+    g2p = gp[..., 1]
+    g1m = gm[..., 0]
+    g2m = gm[..., 1]
 
     out = {
         "plus": {"g1": g1p, "g2": g2p, **samples_plus},
