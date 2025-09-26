@@ -9,6 +9,18 @@ MINUS_FILE := /pscratch/sd/i/imendoza/data/cache_chains/exp72_51/interim_samples
 
 export JAX_ENABLE_X64=True
 
+test_boot_slurm2:
+	./slurm_bootstrap.py 994 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE}  --samples-minus-fpath ${MINUS_FILE} --n-boots 8 --n-nodes 1 --qos regular --time 06:00
+
+test_boot_slurm1:
+	./slurm_bootstrap.py 993 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE}  --samples-minus-fpath ${MINUS_FILE} --n-boots 8 --n-nodes 1 --qos debug --time 00:30 --n-samples 10 --n-warmup-steps 10
+
+test_boot2: # memory
+	./simple_bootstrap.py 992 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE}  --samples-minus-fpath ${MINUS_FILE} --n-boots 2 --n-gals 300000 --n-samples 10 --n-warmup-steps 10
+
+test_boot1:
+	./simple_bootstrap.py 991 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE}  --samples-minus-fpath ${MINUS_FILE} --n-boots 2 --n-gals 100 --n-samples 10
+
 figures:
 	../exp70/get_figures.py ${SEED} --tag ${TAG}
 
