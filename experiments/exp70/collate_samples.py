@@ -8,18 +8,21 @@ from bpd.io import load_dataset, merge_dicts, save_dataset
 
 
 def main(
-    seed: int,
     tag: str = typer.Option(),
     mode: str = typer.Option(),
-    start_string: str = "interim_samples",
+    start_string: str = typer.Option(),
+    overwrite: bool = False,
 ):
     assert mode in ("plus", "minus", "")
     mode_txt = f"_{mode}" if mode else ""
     dirpath = DATA_DIR / "cache_chains" / tag
-    newpath = dirpath / f"{start_string}_{seed}{mode_txt}.npz"
+    newpath = dirpath / f"{start_string}{mode_txt}.npz"
 
     if newpath.exists():
-        os.remove(newpath)
+        if overwrite:
+            os.remove(newpath)
+        else:
+            raise FileExistsError("File already exists that is being collated.")
 
     # first collect all relevant files
     fps = []

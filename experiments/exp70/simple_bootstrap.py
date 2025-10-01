@@ -8,8 +8,8 @@ import typer
 from jax import random
 
 from bpd import DATA_DIR
+from bpd.bootstrap import run_bootstrap
 from bpd.io import load_dataset_jax, save_dataset
-from bpd.jackknife import run_bootstrap_shear_pipeline
 from bpd.pipelines import pipeline_shear_inference_simple
 
 
@@ -71,12 +71,24 @@ def main(
         out = raw_pipeline(k, d["e1e2"])
         return {"g1": out[..., 0], "g2": out[..., 1]}
 
-    samples_plus, samples_minus = run_bootstrap_shear_pipeline(
+    # jit
+    print("JITing function")
+    _ = pipe(k2, {"e1e2": e1e2p[:2]})
+    print("JITing done")
+
+    samples_plus = run_bootstrap(
         k2,
-        post_params_plus={"e1e2": e1e2p},
-        post_params_minus={"e1e2": e1e2m},
-        shear_pipeline=pipe,
+        post_params={"e1e2": e1e2p},
+        pipeline=pipe,
         n_gals=e1e2p.shape[0],
+        n_boots=n_boots,
+        no_bar=no_bar,
+    )
+    samples_minus = run_bootstrap(
+        k2,
+        post_params={"e1e2": e1e2m},
+        pipeline=pipe,
+        n_gals=e1e2m.shape[0],
         n_boots=n_boots,
         no_bar=no_bar,
     )
