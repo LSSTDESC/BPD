@@ -19,7 +19,6 @@ MEM_PER_GPU := 10G
 export JAX_ENABLE_X64=True
 
 # Bootstrap
-
 boot2:
 	./slurm_bootstrap.py ${SEED}52 --tag ${TAG} --samples-plus-fname "interim_samples_${SEED}1_plus.npz" --samples-minus-fname "interim_samples_${SEED}1_minus.npz" --time 05:00 --n-boots 300 --n-nodes 3 --qos regular
 
@@ -29,10 +28,8 @@ boot1:
 collate_boot:
 	../exp70/collate_samples.py --tag ${TAG} --mode "" --start-string "g_samples_boots_${SEED}5"
 
-
 collate_boot1:
 	../exp70/collate_samples.py --tag ${TAG} --mode "" --start-string "g_samples_boots_${SEED}51"
-
 
 
 # Error verifcation experiment 
