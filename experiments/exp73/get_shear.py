@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""This file creates toy samples of ellipticities and saves them to .hdf5 file."""
 
 from functools import partial
 from pathlib import Path
