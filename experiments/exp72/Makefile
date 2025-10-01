@@ -41,7 +41,7 @@ verify_boot:
 	./slurm_bootstrap.py 111 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH} --n-boots 200 --n-gals 10_000
 
 collate_verify_boot:
-	../exp70/collate_samples.py 111 --tag ${TAG} --mode "" --start-string "g_samples_boots"
+	../exp70/collate_samples.py --tag ${TAG} --mode "" --start-string "g_samples_boots_111"
 
 # Main pipeline
 error:
@@ -56,10 +56,10 @@ shear_minus:
 	./get_shear.py ${SEED}2 --samples-fpath ${MINUS_SAMPLES_FPATH} --tag ${TAG} --overwrite --mode "minus"
 
 collate_plus:
-	../exp70/collate_samples.py ${SEED}1 --tag ${TAG} --mode "plus"
+	../exp70/collate_samples.py --tag ${TAG} --mode "plus" --start-string "interim_samples_${SEED}1"
 
 collate_minus:
-	../exp70/collate_samples.py ${SEED}1 --tag ${TAG} --mode "minus"
+	../exp70/collate_samples.py ${SEED}1 --tag ${TAG} --mode "minus" --start-string "interim_samples_${SEED}1"
 
 samples_plus: 
 	./slurm_get_interim_samples.py ${SEED}1 --tag ${TAG} --g1 ${SHEAR} --g2 0.0 --n-gals ${N_GALS} --n-samples-per-gal ${N_SAMPLES_PER_GAL} --time ${TIME_SAMPLE} --mode "plus" --mem-per-gpu ${MEM_PER_GPU} --qos ${QOS} --nodes ${NODES_SAMPLE} --n-tasks-per-node ${NTASKS_SAMPLE}

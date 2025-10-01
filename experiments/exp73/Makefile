@@ -28,7 +28,7 @@ figures:
 	../exp70/get_figures.py ${SEED} --tag ${TAG}
 
 collate_error_post:
-	../exp70/collate_samples.py ${SEED}4 --tag ${TAG} --mode "" --start-string "g_samples_514_errs"
+	../exp70/collate_samples.py --tag ${TAG} --mode "" --start-string "g_samples_${SEED}4_errs"
 
 slurm_error_post:
 	./slurm_simple_error2.py ${SEED}4 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE} --samples-minus-fpath ${MINUS_FILE} --posterior-fpath ${DIR}/shear_samples_512_plus.npz

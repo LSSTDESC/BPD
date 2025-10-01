@@ -40,7 +40,7 @@ verify_error:
 	./simple_error.py 111 --tag ${TAG} --plus-samples-fname "interim_samples_${SEED}1_plus.npz" --minus-samples-fname "interim_samples_${SEED}1_minus.npz" --n-gals 10_000
 
 collate_verify_boot:
-	../exp70/collate_samples.py 111 --tag ${TAG} --mode "" --start-string "g_samples_boots"
+	../exp70/collate_samples.py --tag ${TAG} --mode "" --start-string "g_samples_boots111"
 
 # Main Pipeline
 error:
@@ -55,10 +55,10 @@ shear_minus:
 	../../scripts/get_shear_from_shapes.py ${SEED}2 --interim-samples-fname "interim_samples_${SEED}1_minus.npz" --tag ${TAG} --overwrite --extra-tag "minus"
 
 collate_plus:
-	../exp70/collate_samples.py ${SEED}1 --tag ${TAG} --mode "plus"
+	../exp70/collate_samples.py  --tag ${TAG} --mode "plus" --start-string "interim_samples_${SEED}1"
 
 collate_minus:
-	../exp70/collate_samples.py ${SEED}1 --tag ${TAG} --mode "minus"
+	../exp70/collate_samples.py --tag ${TAG} --mode "minus" --start-string "interim_samples_${SEED}1"
 
 samples_plus:
 	./slurm_get_interim_samples.py ${SEED}1 --tag ${TAG} --g1 ${SHEAR} --g2 0.0 --n-gals ${N_GALS} --n-samples-per-gal ${N_SAMPLES_PER_GAL} --time ${TIME_SAMPLE} --mode "plus" --mem-per-gpu ${MEM_PER_GPU} --qos ${QOS} --nodes ${NODES_SAMPLE} --n-tasks-per-node ${NTASKS_SAMPLE}
