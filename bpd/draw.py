@@ -31,30 +31,6 @@ def draw_gaussian(
     return image.array
 
 
-def draw_gaussian_galsim(
-    *,
-    f: float,
-    hlr: float,
-    e1: float,
-    e2: float,
-    g1: float,
-    g2: float,
-    x: float,  # pixels
-    y: float,
-    slen: int,
-    psf_fwhm: float = 0.8,
-    pixel_scale: float = 0.2,
-):
-    gal = galsim.Gaussian(flux=f, half_light_radius=hlr)
-    gal = gal.shear(g1=e1, g2=e2)  # intrinsic ellipticity
-    gal = gal.shear(g1=g1, g2=g2)
-
-    psf = galsim.Gaussian(flux=1.0, fwhm=psf_fwhm)
-    gal_conv = galsim.Convolve([gal, psf])
-    image = gal_conv.drawImage(nx=slen, ny=slen, scale=pixel_scale, offset=(x, y))
-    return image.array
-
-
 def draw_exponential(
     *,
     f: float,
@@ -75,6 +51,30 @@ def draw_exponential(
 
     psf = xgalsim.Gaussian(flux=1.0, fwhm=psf_fwhm)
     gal_conv = xgalsim.Convolve([gal, psf]).withGSParams(gsparams)
+    image = gal_conv.drawImage(nx=slen, ny=slen, scale=pixel_scale, offset=(x, y))
+    return image.array
+
+
+def draw_gaussian_galsim(
+    *,
+    f: float,
+    hlr: float,
+    e1: float,
+    e2: float,
+    g1: float,
+    g2: float,
+    x: float,  # pixels
+    y: float,
+    slen: int,
+    psf_fwhm: float = 0.8,
+    pixel_scale: float = 0.2,
+):
+    gal = galsim.Gaussian(flux=f, half_light_radius=hlr)
+    gal = gal.shear(g1=e1, g2=e2)  # intrinsic ellipticity
+    gal = gal.shear(g1=g1, g2=g2)
+
+    psf = galsim.Gaussian(flux=1.0, fwhm=psf_fwhm)
+    gal_conv = galsim.Convolve([gal, psf])
     image = gal_conv.drawImage(nx=slen, ny=slen, scale=pixel_scale, offset=(x, y))
     return image.array
 
