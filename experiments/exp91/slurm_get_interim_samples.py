@@ -17,18 +17,20 @@ def main(
     g2: float = 0.0,
     n_gals: int = typer.Option(),
     n_samples_per_gal: int = 300,
+    batch_size: int | None = None,
     mem_per_gpu: str = "10G",
 ):
     assert mode in ("plus", "minus", "")
     mode_txt = f"_{mode}" if mode else ""
     jobname = f"{tag}{mode_txt}"
 
-    base_cmd = """python /global/u2/i/imendoza/BPD/experiments/exp91/get_interim_samples.py
+    batch_size_txt = f" --batch-size {batch_size}" if batch_size else ""
+    base_cmd = """python /global/u2/i/imendoza/tmp/bpd2/experiments/exp91/get_interim_samples.py
                {{seed}} --tag {tag}
                --mode {mode}
                --g1 {g1} --g2 {g2}
                --n-gals {n_gals}
-               --n-samples-per-gal {n_samples_per_gal}
+               --n-samples-per-gal {n_samples_per_gal}{batch_size_txt}
                """
     base_cmd = " ".join(base_cmd.split())
     base_cmd = base_cmd.format(
@@ -38,6 +40,7 @@ def main(
         g2=g2,
         n_gals=n_gals,
         n_samples_per_gal=n_samples_per_gal,
+        batch_size_txt=batch_size_txt,
     )
 
     cmds = []

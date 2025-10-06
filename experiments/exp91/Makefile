@@ -1,6 +1,6 @@
 SHELL=/bin/bash
 SEED := 51
-EXP := exp92
+EXP := exp91
 TAG := ${EXP}_${SEED}
 DIR := /pscratch/sd/i/imendoza/data/cache_chains/${TAG}
 
@@ -12,7 +12,6 @@ QOS := regular
 
 TIME_SAMPLE := 02:00
 NODES_SAMPLE := 8
-NTASKS_SAMPLE := 4
 MEM_PER_GPU := 10G
 
 PLUS_SAMPLES_FPATH := ${DIR}/interim_samples_${SEED}1_plus.npz
@@ -36,11 +35,14 @@ collate_minus:
 	../exp70/collate_samples.py --tag ${TAG} --mode "minus" --start-string "interim_samples_${SEED}1"
 
 samples_plus: 
-	./slurm_get_interim_samples.py ${SEED}1 --tag ${TAG} --g1 ${SHEAR} --g2 0.0 --n-gals ${N_GALS} --n-samples-per-gal ${N_SAMPLES_PER_GAL} --time ${TIME_SAMPLE} --mode "plus" --mem-per-gpu ${MEM_PER_GPU} --qos ${QOS} --nodes ${NODES_SAMPLE} --n-tasks-per-node ${NTASKS_SAMPLE}
+	./slurm_get_interim_samples.py ${SEED}1 --tag ${TAG} --g1 ${SHEAR} --g2 0.0 --n-gals ${N_GALS} --n-samples-per-gal ${N_SAMPLES_PER_GAL} --time ${TIME_SAMPLE} --mode "plus" --mem-per-gpu ${MEM_PER_GPU} --qos ${QOS} --nodes ${NODES_SAMPLE}
 
 samples_minus:
-	./slurm_get_interim_samples.py ${SEED}1 --tag ${TAG} --g1 -${SHEAR} --g2 0.0 --n-gals ${N_GALS} --n-samples-per-gal ${N_SAMPLES_PER_GAL} --time ${TIME_SAMPLE} --mode "minus" --mem-per-gpu ${MEM_PER_GPU} --qos ${QOS} --nodes ${NODES_SAMPLE}  --n-tasks-per-node ${NTASKS_SAMPLE}
+	./slurm_get_interim_samples.py ${SEED}1 --tag ${TAG} --g1 -${SHEAR} --g2 0.0 --n-gals ${N_GALS} --n-samples-per-gal ${N_SAMPLES_PER_GAL} --time ${TIME_SAMPLE} --mode "minus" --mem-per-gpu ${MEM_PER_GPU} --qos ${QOS} --nodes ${NODES_SAMPLE}
 
-samples_test:
-	./get_interim_samples.py 991 --tag ${TAG} --g1 ${SHEAR} --g2 0.0 --n-gals 1000 --n-samples-per-gal 300 --mode "plus"
+test_slurm_samples:
+	./slurm_get_interim_samples.py 992 --tag ${TAG} --g1 ${SHEAR} --g2 0.0 --n-gals 1000 --n-samples-per-gal 300 --mode "plus" --batch-size 1000 --qos "debug" --nodes 1 --time 00:10
+
+test_samples:
+	./get_interim_samples.py 991 --tag ${TAG} --g1 ${SHEAR} --g2 0.0 --n-gals 1000 --n-samples-per-gal 300 --mode "plus" --batch-size 1000
 
