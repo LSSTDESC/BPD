@@ -105,7 +105,9 @@ def main(
     assert g_samples.shape[1] == 2
 
     save_dataset(
-        {"samples": {"g1": np.array(g_samples[:, 0]), "g2": np.array(g_samples[:, 1])}}
+        {"samples": {"g1": np.array(g_samples[:, 0]), "g2": np.array(g_samples[:, 1])}},
+        out_fpath,
+        overwrite=overwrite,
     )
 
 
