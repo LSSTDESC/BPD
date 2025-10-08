@@ -19,14 +19,16 @@ MINUS_SAMPLES_FPATH := ${DIR}/interim_samples_${SEED}1_minus.npz
 
 export JAX_ENABLE_X64=True
 
+error:
+	../exp72/simple_error.py ${SEED}3 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH}
 
 shear_plus: 
 	export CUDA_VISIBLE_DEVICES=0
-	./get_shear.py ${SEED}2 --samples-fpath ${PLUS_SAMPLES_FPATH} --tag ${TAG} --overwrite --mode "plus"
+	../exp72/get_shear.py ${SEED}2 --samples-fpath ${PLUS_SAMPLES_FPATH} --tag ${TAG} --overwrite --mode "plus"
 
 shear_minus:
 	export CUDA_VISIBLE_DEVICES=0
-	./get_shear.py ${SEED}2 --samples-fpath ${MINUS_SAMPLES_FPATH} --tag ${TAG} --overwrite --mode "minus"
+	../exp72/get_shear.py ${SEED}2 --samples-fpath ${MINUS_SAMPLES_FPATH} --tag ${TAG} --overwrite --mode "minus"
 
 collate_plus:
 	../exp70/collate_samples.py --tag ${TAG} --mode "plus" --start-string "interim_samples_${SEED}1"
