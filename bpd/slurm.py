@@ -34,7 +34,7 @@ def setup_sbatch_job_gpu(
             f"#SBATCH --account=m1727\n"
             f"#SBATCH --qos={qos}\n"
             f"#SBATCH --mail-type=begin,end,fail\n"
-            f"#SBATCH --mail-user=imendoza@umich.edu\n"
+            f"#SBATCH --mail-user=ismael@umd.edu\n"
             f"#SBATCH -C gpu\n"
             f"#SBATCH --output={JOB_DIR}/{jobname}_%j.out\n"
             f"#SBATCH --time={time}:00\n"

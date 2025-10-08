@@ -85,6 +85,7 @@ def save_dataset(ds: dict, fpath: str | Path, overwrite: bool = False) -> None:
 
 
 def load_dataset(fpath: str) -> dict:
+    """Load dataset using numpy."""
     assert Path(fpath).exists(), "file path does not exists"
     assert Path(fpath).suffix == ".npz"
 
@@ -96,6 +97,7 @@ def load_dataset(fpath: str) -> dict:
 
 
 def load_dataset_jax(fpath: str) -> dict:
+    """Load dataset using jax."""
     assert Path(fpath).exists(), "file path does not exists"
     assert Path(fpath).suffix == ".npz"
 
