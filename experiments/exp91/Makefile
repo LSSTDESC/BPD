@@ -19,7 +19,7 @@ MINUS_SAMPLES_FPATH := ${DIR}/interim_samples_${SEED}1_minus.npz
 
 export JAX_ENABLE_X64=True
 
-error:
+subset_error:
 	../exp72/simple_error.py ${SEED}3 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH}
 
 shear_plus: 
