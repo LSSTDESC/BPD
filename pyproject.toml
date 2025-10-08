@@ -20,6 +20,7 @@ dependencies = [
     "tensorflow-probability >=0.21.0",
     "arviz>=0.21.0",
 ]
+requires-python = ">=3.10,<3.13"
 
 
 [project.optional-dependencies]
