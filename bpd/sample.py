@@ -6,7 +6,12 @@ from jax import Array, random, vmap
 from jax._src.prng import PRNGKeyArray
 from scipy.stats import skewnorm, truncnorm
 
-from bpd.draw import add_noise, draw_exponential_galsim, draw_gaussian_galsim
+from bpd.draw import (
+    add_noise,
+    draw_exponential_galsim,
+    draw_gaussian_galsim,
+    draw_sersic_galsim,
+)
 from bpd.prior import ellip_mag_prior
 from bpd.shear import scalar_shear_transformation, shear_transformation
 
@@ -191,15 +196,19 @@ def get_target_image_single(
     background: float,
     slen: int,
     draw_type: str,
+    n_sersic: float | None,
     n_samples: int = 1,  # single noise realization,
 ) -> Array:
     """Multiple noise realizations of single galaxy (GalSim)."""
-    assert draw_type in ("gaussian", "exponential")
+    assert draw_type in ("gaussian", "exponential", "sersic")
 
     if draw_type == "gaussian":
         noiseless = draw_gaussian_galsim(**single_galaxy_params, slen=slen)
     elif draw_type == "exponential":
         noiseless = draw_exponential_galsim(**single_galaxy_params, slen=slen)
+    elif draw_type == "sersic":
+        assert n_sersic is not None
+        noiseless = draw_sersic_galsim(**single_galaxy_params, slen=slen, n=n_sersic)
     else:
         raise NotImplementedError("The galaxy type selected has not been implemented.")
 
@@ -213,6 +222,7 @@ def get_target_images(
     background: float,
     slen: int,
     draw_type: str,
+    n_sersic: float | None = None,
 ) -> Array:
     """Single noise realization of multiple galaxies (GalSim)."""
     n_gals = galaxy_params["f"].shape[0]
@@ -228,6 +238,7 @@ def get_target_images(
             slen=slen,
             n_samples=1,
             draw_type=draw_type,
+            n_sersic=n_sersic,
         )
         assert one_image.shape == (1, slen, slen)
         target_images.append(jnp.asarray(one_image))

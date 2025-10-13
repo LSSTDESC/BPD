@@ -8,14 +8,17 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import typer
+from jax import jit
 
 from bpd import DATA_DIR
-from bpd.io import load_dataset_jax, save_dataset
+from bpd.io import load_dataset, save_dataset
 from bpd.pipelines import pipeline_shear_inference
 from bpd.prior import (
     interim_gprops_logprior,
     true_all_params_skew_logprior,
 )
+
+GPU = jax.devices("gpu")[0]
 
 
 def main(
@@ -27,6 +30,8 @@ def main(
     n_samples: int = 3000,
     overwrite: bool = False,
 ):
+    rng_key = jax.random.key(seed)
+
     assert mode in ("plus", "minus", "")
     mode_txt = f"_{mode}" if mode else ""
 
@@ -40,7 +45,7 @@ def main(
     if out_fpath.exists() and not overwrite:
         raise IOError("overwriting...")
 
-    ds = load_dataset_jax(samples_fpath)
+    ds = load_dataset(samples_fpath)  # memory conscious
 
     # data
     samples = ds["samples"]
@@ -50,6 +55,7 @@ def main(
         "e1": samples["e1"],
         "e2": samples["e2"],
     }
+    post_params = jax.device_put(post_params, GPU)
 
     # prior parameters
     hyper = ds["hyper"]
@@ -78,21 +84,30 @@ def main(
         free_dxdy=False,
     )
 
-    rng_key = jax.random.key(seed)
-    g_samples = pipeline_shear_inference(
-        rng_key,
-        post_params,
+    # jit
+    pipe = partial(
+        pipeline_shear_inference,
         init_g=jnp.array([0.0, 0.0]),
         logprior=logprior_fnc,
         interim_logprior=interim_logprior_fnc,
         n_samples=n_samples,
         initial_step_size=initial_step_size,
     )
+
+    # this part also helps with memory usage in GPU for some reason
+    print("JITting")
+    pipe = jit(pipe)
+    pipe(rng_key, {k: v[0, None] for k, v in post_params.items()})
+    print("Done JITting!")
+
+    g_samples = pipe(rng_key, post_params)
     assert g_samples.ndim == 2
     assert g_samples.shape[1] == 2
 
     save_dataset(
-        {"samples": {"g1": np.array(g_samples[:, 0]), "g2": np.array(g_samples[:, 1])}}
+        {"samples": {"g1": np.array(g_samples[:, 0]), "g2": np.array(g_samples[:, 1])}},
+        out_fpath,
+        overwrite=overwrite,
     )
 
 

@@ -9,8 +9,22 @@ MINUS_FILE := /pscratch/sd/i/imendoza/data/cache_chains/exp72_51/interim_samples
 
 export JAX_ENABLE_X64=True
 
-boot_slurm1:
-	./slurm_bootstrap.py ${SEED}51 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE}  --samples-minus-fpath ${MINUS_FILE} --n-boots 100 --n-nodes 5 --qos regular --time 20:00
+collate_boot:
+	../exp70/collate_samples.py --tag ${TAG} --mode "" --start-string "g_samples_boots_${SEED}5"
+
+boot_slurm3:
+	./slurm_bootstrap.py ${SEED}54 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE}  --samples-minus-fpath ${MINUS_FILE} --n-boots 20 --n-nodes 1 --qos regular --time 15:00
+	./slurm_bootstrap.py ${SEED}55 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE}  --samples-minus-fpath ${MINUS_FILE} --n-boots 20 --n-nodes 1 --qos regular --time 15:00
+	./slurm_bootstrap.py ${SEED}56 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE}  --samples-minus-fpath ${MINUS_FILE} --n-boots 20 --n-nodes 1 --qos regular --time 15:00
+	./slurm_bootstrap.py ${SEED}57 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE}  --samples-minus-fpath ${MINUS_FILE} --n-boots 20 --n-nodes 1 --qos regular --time 15:00
+	./slurm_bootstrap.py ${SEED}58 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE}  --samples-minus-fpath ${MINUS_FILE} --n-boots 20 --n-nodes 1 --qos regular --time 15:00
+	./slurm_bootstrap.py ${SEED}59 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE}  --samples-minus-fpath ${MINUS_FILE} --n-boots 20 --n-nodes 1 --qos regular --time  15:00
+
+boot_slurm2:
+	./slurm_bootstrap.py ${SEED}53 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE}  --samples-minus-fpath ${MINUS_FILE} --n-boots 20 --n-nodes 1 --qos regular --time 20:00
+
+# boot_slurm1:
+# 	./slurm_bootstrap.py ${SEED}51 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE}  --samples-minus-fpath ${MINUS_FILE} --n-boots 100 --n-nodes 5 --qos regular --time 20:00
 
 test_boot_slurm2:
 	./slurm_bootstrap.py 994 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE}  --samples-minus-fpath ${MINUS_FILE} --n-boots 8 --n-nodes 1 --qos regular --time 06:00
