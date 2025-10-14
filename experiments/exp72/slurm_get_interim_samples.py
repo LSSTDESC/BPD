@@ -2,6 +2,7 @@
 
 import typer
 
+from bpd import HOME_DIR
 from bpd.slurm import run_multi_gpu_job
 
 
@@ -23,7 +24,8 @@ def main(
     mode_txt = f"_{mode}" if mode else ""
     jobname = f"{tag}{mode_txt}"
 
-    base_cmd = """python /global/u2/i/imendoza/BPD/experiments/exp72/get_interim_samples.py
+    script_path = HOME_DIR / "experiments" / "exp72" / "get_interim_samples.py"
+    base_cmd = """python {script}
                {{seed}} --tag {tag}
                --mode {mode}
                --g1 {g1} --g2 {g2}
@@ -32,6 +34,7 @@ def main(
                """
     base_cmd = " ".join(base_cmd.split())
     base_cmd = base_cmd.format(
+        script=script_path,
         tag=tag,
         mode=mode,
         g1=g1,
