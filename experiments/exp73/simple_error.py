@@ -19,7 +19,7 @@ def main(
     samples_plus_fpath: str = typer.Option(),
     samples_minus_fpath: str = typer.Option(),
     initial_step_size: float = 0.01,
-    n_splits: int = 500,
+    n_splits: int = 125,
     n_samples: int = 1000,
 ):
     rng_key = random.key(seed)
@@ -27,7 +27,7 @@ def main(
     dirpath = DATA_DIR / "cache_chains" / tag
     pfpath = Path(samples_plus_fpath)
     mfpath = Path(samples_minus_fpath)
-    fpath = dirpath / f"g_samples_{seed}_errs.npz"
+    fpath = dirpath / f"g_samples_{seed}_errs_simple.npz"
 
     assert dirpath.exists()
     assert pfpath.exists(), "ellipticity samples file does not exist"
@@ -37,7 +37,7 @@ def main(
     ds_minus = load_dataset_jax(mfpath)
 
     samples_plus = ds_plus["samples"]
-    ppp = {
+    _ppp = {
         "lf": samples_plus["lf"],
         "lhlr": samples_plus["lhlr"],
         "e1": samples_plus["e1"],
@@ -45,7 +45,7 @@ def main(
     }
 
     samples_minus = ds_minus["samples"]
-    ppm = {
+    _ppm = {
         "lf": samples_minus["lf"],
         "lhlr": samples_minus["lhlr"],
         "e1": samples_minus["e1"],
@@ -78,17 +78,19 @@ def main(
     assert jnp.all(ds_plus["truth"]["e1"] == ds_minus["truth"]["e1"])
     assert jnp.all(ds_plus["truth"]["lf"] == ds_minus["truth"]["lf"])
 
-    k1, k2 = random.split(rng_key)
+    k1, k2, k3 = random.split(rng_key, 3)
     _logtarget = jit(partial(logtarget_all_free, sigma_e_int=sigma_e_int))
 
     # Reshape samples
-    split_size = ppp["e1"].shape[0] // n_splits
-    assert split_size * n_splits == ppp["e1"].shape[0], "dimensions do not match"
-    ppp = {k: jnp.reshape(v, (n_splits, split_size, 300)) for k, v in ppp.items()}
-    ppm = {k: jnp.reshape(v, (n_splits, split_size, 300)) for k, v in ppm.items()}
+    n_gals = _ppp["e1"].shape[0]
+    split_size = n_gals // n_splits
+    resample = random.choice(k1, jnp.arange(n_gals), shape=(n_gals,), replace=False)
+    assert split_size * n_splits == n_gals, "dimensions do not match"
+    ppp = {k: v[resample].reshape(n_splits, split_size, -1) for k, v in _ppp.items()}
+    ppm = {k: v[resample].reshape(n_splits, split_size, -1) for k, v in _ppm.items()}
 
     # initialize positions randomly uniform from true parameters
-    k1s = random.split(k1, n_splits)
+    k2s = random.split(k2, n_splits)
     true_params = {
         "sigma_e": sigma_e,
         "mean_logflux": mean_logflux,
@@ -102,7 +104,7 @@ def main(
         true_params=true_params,
         p=0.1,
     )
-    init_positions = vmap(_init_fnc)(k1s)
+    init_positions = vmap(_init_fnc)(k2s)
     init_positions["g"] = jnp.zeros((n_splits, 2))
 
     # setup pipeline
@@ -120,30 +122,33 @@ def main(
     # jit function quickly
     print("JITting function...")
     _ = pipe(
-        k2,
+        k3,
         data={k: v[0] for k, v in ppp.items()},
         init_positions={k: v[0] for k, v in init_positions.items()},
     )
 
     # run shear inference pipeline
-    k2s = random.split(k2, n_splits)
-
+    k3s = random.split(k3, n_splits)
     print("Running inference...")
-    samples_plus = vmap(pipe)(k2s, ppp, init_positions)
-    samples_minus = vmap(pipe)(k2s, ppm, init_positions)
+
+    samples_plus = vmap(pipe)(k3s, ppp, init_positions)
+    print("Finished plus")
+
+    samples_minus = vmap(pipe)(k3s, ppm, init_positions)
+    print("Finished minus")
     assert samples_plus["g"].shape == (n_splits, n_samples, 2), (
         "shear samples do not match"
     )
     save_dataset(
         {
             "plus": {
-                "g1": samples_plus["g"][:, :, 0],
-                "g2": samples_plus["g"][:, :, 1],
+                "g1": samples_plus["g"][..., 0],
+                "g2": samples_plus["g"][..., 1],
                 **samples_plus,
             },
             "minus": {
-                "g1": samples_minus["g"][:, :, 0],
-                "g2": samples_minus["g"][:, :, 1],
+                "g1": samples_minus["g"][..., 0],
+                "g2": samples_minus["g"][..., 1],
                 **samples_minus,
             },
         },
