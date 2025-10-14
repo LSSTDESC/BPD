@@ -50,6 +50,12 @@ slurm_error_post:
 error_post:
 	./simple_error2.py ${SEED}4 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE} --samples-minus-fpath ${MINUS_FILE} --posterior-fpath ${DIR}/shear_samples_512_plus.npz
 
+error_simple:
+	./simple_error.py ${SEED}3 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE} --samples-minus-fpath ${MINUS_FILE}
+
+slurm_error_simple:
+	./slurm_simple_error.py ${SEED}31 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE} --samples-minus-fpath ${MINUS_FILE}
+
 slurm_shear:
 	./slurm_get_shear.py ${SEED}2 --samples-fpath ${PLUS_FILE} --tag ${TAG} --extra-tag "plus"
 	./slurm_get_shear.py ${SEED}2 --samples-fpath ${MINUS_FILE} --tag ${TAG} --extra-tag "minus"
