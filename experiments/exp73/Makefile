@@ -9,6 +9,9 @@ MINUS_FILE := /pscratch/sd/i/imendoza/data/cache_chains/exp72_51/interim_samples
 
 export JAX_ENABLE_X64=True
 
+boot_sanity_figures:
+	./get_bootstrap_figures.py ${SEED}6 --boot-name "g_samples_boots_515.npz" --tag ${TAG} --fpp-name "shear_samples_512_plus.npz"
+
 collate_boot:
 	../exp70/collate_samples.py --tag ${TAG} --mode "" --start-string "g_samples_boots_${SEED}5"
 
