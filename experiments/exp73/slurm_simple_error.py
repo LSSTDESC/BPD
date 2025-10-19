@@ -11,7 +11,7 @@ def main(
     tag: str = typer.Option(),
     samples_plus_fpath: str = typer.Option(),
     samples_minus_fpath: str = typer.Option(),
-    time: str = "05:00",  # HH:MM
+    time: str = "05:30",  # HH:MM
     mem_per_gpu: str = "10G",
     qos: str = "regular",
 ):
@@ -32,7 +32,7 @@ def main(
 
     run_single_gpu_job(
         cmd,
-        jobname="exp73_simple_error",
+        jobname=f"exp{tag}_simple_error",
         time=time,
         mem_per_gpu=mem_per_gpu,
         qos=qos,
