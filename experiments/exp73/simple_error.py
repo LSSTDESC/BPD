@@ -20,7 +20,7 @@ def main(
     samples_minus_fpath: str = typer.Option(),
     initial_step_size: float = 0.01,
     n_splits: int = 125,
-    n_samples: int = 1000,
+    n_samples: int = 2000,
 ):
     rng_key = random.key(seed)
 
