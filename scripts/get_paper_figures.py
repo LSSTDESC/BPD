@@ -138,7 +138,7 @@ def make_distribution_figure(fpath: str | Path, overwrite: bool = False):
         np.median(params["snr"]),
         linestyle="--",
         color="k",
-        label=r"\rm Median SNR = {:.2f}".format(np.median(params["snr"])),
+        label=r"\rm Median = {:.2f}".format(np.median(params["snr"])),
     )
     ax2.set_xlabel(r"\rm SNR")
     ax2.legend()
@@ -154,7 +154,7 @@ def make_distribution_figure(fpath: str | Path, overwrite: bool = False):
         histtype="step",
         density=True,
     )
-    ax3.set_xlabel(r"\rm HLR")
+    ax3.set_xlabel(r"\rm $s$ (HLR)")
     ax3.axvline(
         np.median(params["hlr"]),
         linestyle="--",
@@ -293,7 +293,7 @@ def make_contour_shear_figure(fpath: str | Path):
     )
 
     c.add_chain(chain)
-    c.set_override(ChainConfig(sigmas=[0, 1, 2]))
+    c.set_override(ChainConfig(sigmas=[0, 1, 2], kde=1.0))
     c.add_truth(
         Truth(
             location={"g1": 0.02 + e1_mean, "g2": 0.0 + e2_mean},
@@ -311,7 +311,7 @@ def make_contour_shear_figure(fpath: str | Path):
         marker_style="*",
     )
     c.add_chain(chain2)
-    c.set_override(ChainConfig(sigmas=[0, 1, 2]))
+    c.set_override(ChainConfig(sigmas=[0, 1, 2], kde=1.0))
 
     c.set_plot_config(
         PlotConfig(
@@ -356,7 +356,7 @@ def make_contour_hyper_figure(fpath: str | Path):
     chain = Chain(samples=df, name="Example I", marker_style="*")
 
     c.add_chain(chain)
-    c.set_override(ChainConfig(sigmas=[0, 1, 2]))
+    c.set_override(ChainConfig(sigmas=[0, 1, 2], kde=1.0))
     c.add_truth(Truth(location=truth, color="k", line_width=4.0))
 
     c.set_plot_config(
@@ -533,12 +533,12 @@ def make_eta_posterior_calibration_figure(fpath: str | Path):
 
 
 def main(overwrite: bool = False):
-    make_timing_figure(OUT_PATHS["timing"], OUT_PATHS["timing2"])
-    make_distribution_figure(OUT_PATHS["galaxy_distributions"], overwrite=overwrite)
-    make_contour_shear_figure(OUT_PATHS["contour_shear"])
+    # make_timing_figure(OUT_PATHS["timing"], OUT_PATHS["timing2"])
+    # make_distribution_figure(OUT_PATHS["galaxy_distributions"], overwrite=overwrite)
+    # make_contour_shear_figure(OUT_PATHS["contour_shear"])
     make_contour_hyper_figure(OUT_PATHS["contour_hyper"])
-    make_eta_posterior_calibration_figure(OUT_PATHS["eta_pc"])
-    get_bias_table(OUT_PATHS["bias"])
+    # make_eta_posterior_calibration_figure(OUT_PATHS["eta_pc"])
+    # get_bias_table(OUT_PATHS["bias"])
 
 
 if __name__ == "__main__":
