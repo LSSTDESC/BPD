@@ -1,0 +1,17 @@
+
+\begin{table*}
+    \centering
+    \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        \textbf{Experiment} & \textbf{Properties Used} & \textbf{Prior Known?} & \textbf{Multiplicative Bias $m / 10^{-3}$} & \textbf{Additive Bias $c / 10^{-3}$} \\
+        \hline
+        \texttt{shapes-fixed} & Ellipticities & Yes & $-0.361 \pm 0.758$ & $-0.176 \pm 1.000$ \\
+        \texttt{shapes-free} & Ellipticities & No & $-0.267 \pm 0.946$ & $-0.172 \pm 0.999$ \\
+        \texttt{all-fixed} & All & Yes & $-0.177 \pm 0.778$ & $-0.155 \pm 1.004$ \\
+        \texttt{all-free} & All & No & $-0.313 \pm 1.33$ & $-0.16 \pm 1.004$ \\
+        \hline
+    \end{tabular}
+    \caption{\textbf{Multiplicative and additive bias for different settings.}}
+    \label{tab:bias}
+\end{table*}
+    

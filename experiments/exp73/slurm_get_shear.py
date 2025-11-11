@@ -3,6 +3,7 @@
 
 import typer
 
+from bpd import HOME_DIR
 from bpd.slurm import run_single_gpu_job
 
 
@@ -17,7 +18,8 @@ def main(
     mem_per_gpu: str = "10G",
     qos: str = "regular",
 ):
-    base_cmd = """python /global/u2/i/imendoza/BPD/experiments/exp73/get_shear.py
+    script_path = HOME_DIR / "experiments" / "exp73" / "get_shear.py"
+    base_cmd = """python {script}
                 {seed} --tag {tag}
                 --samples-fpath {samples_fpath}
                 --initial-step-size {initial_step_size}
@@ -27,6 +29,7 @@ def main(
                 """
     base_cmd = " ".join(base_cmd.split())
     cmd = base_cmd.format(
+        script=script_path,
         seed=seed,
         tag=tag,
         samples_fpath=samples_fpath,

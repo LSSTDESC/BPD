@@ -9,6 +9,9 @@ MINUS_FILE := /pscratch/sd/i/imendoza/data/cache_chains/exp72_51/interim_samples
 
 export JAX_ENABLE_X64=True
 
+boot_sanity_figures:
+	./get_bootstrap_figures.py ${SEED}6 --boot-name "g_samples_boots_515.npz" --tag ${TAG} --fpp-name "shear_samples_512_plus.npz"
+
 collate_boot:
 	../exp70/collate_samples.py --tag ${TAG} --mode "" --start-string "g_samples_boots_${SEED}5"
 
@@ -49,6 +52,18 @@ slurm_error_post:
 
 error_post:
 	./simple_error2.py ${SEED}4 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE} --samples-minus-fpath ${MINUS_FILE} --posterior-fpath ${DIR}/shear_samples_512_plus.npz
+
+error_simple:
+	./simple_error.py ${SEED}3 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE} --samples-minus-fpath ${MINUS_FILE}
+
+slurm_error_simple:
+	./slurm_simple_error.py ${SEED}31 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE} --samples-minus-fpath ${MINUS_FILE}
+
+slurm_check_shear_convergence:
+	./slurm_get_shear.py ${SEED}21 --samples-fpath ${PLUS_FILE} --tag ${TAG} --extra-tag "plus" --n-samples 1000
+	./slurm_get_shear.py ${SEED}22 --samples-fpath ${PLUS_FILE} --tag ${TAG} --extra-tag "plus" --n-samples 1000
+	./slurm_get_shear.py ${SEED}23 --samples-fpath ${PLUS_FILE} --tag ${TAG} --extra-tag "plus" --n-samples 1000
+	./slurm_get_shear.py ${SEED}24 --samples-fpath ${PLUS_FILE} --tag ${TAG} --extra-tag "plus" --n-samples 1000
 
 slurm_shear:
 	./slurm_get_shear.py ${SEED}2 --samples-fpath ${PLUS_FILE} --tag ${TAG} --extra-tag "plus"

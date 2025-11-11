@@ -166,7 +166,7 @@ def run_one_eta_experiment(
 # draw shear samples from prior (unit disk)
 def sample_shear_prior(rng_key):
     k1, k2 = random.split(rng_key)
-    g_mag = random.uniform(k1, minval=-0.0, maxval=1.0)
+    g_mag = random.uniform(k1, minval=0.0, maxval=1.0)
     theta = random.uniform(k2, minval=0.0, maxval=jnp.pi)
     g1 = g_mag * jnp.cos(2 * theta)
     g2 = g_mag * jnp.sin(2 * theta)

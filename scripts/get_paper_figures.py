@@ -45,6 +45,12 @@ INPUT_PATHS = {
     "exp73_sp": CHAIN_DIR / "exp73_51" / "shear_samples_512_plus.npz",
     "exp73_sm": CHAIN_DIR / "exp73_51" / "shear_samples_512_minus.npz",
     "exp73_errs": CHAIN_DIR / "exp73_51" / "g_samples_514_errs_514.npz",
+    "boot": {
+        "exp70": CHAIN_DIR / "exp70_51" / "g_samples_boots_515.npz",
+        "exp71": CHAIN_DIR / "exp71_51" / "g_samples_boots_515.npz",
+        "exp72": CHAIN_DIR / "exp72_51" / "g_samples_boots_515.npz",
+        "exp73": CHAIN_DIR / "exp73_51" / "g_samples_boots_515.npz",
+    },
     "exp72_interim_samples": CHAIN_DIR / "exp72_51" / "interim_samples_511_plus.npz",
     "eta_pc": CHAIN_DIR / "exp81_52" / "eta_shear_samples.npz",
 }
@@ -57,7 +63,8 @@ OUT_PATHS = {
     "error_bar": FIG_DIR / "error_bar.png",
     "contour_shear": FIG_DIR / "contour_shear.png",
     "contour_hyper": FIG_DIR / "contour_hyper.png",
-    "bias": FIG_DIR / "table_bias.txt",
+    "subset_bias": FIG_DIR / "table_bias_subset.txt",
+    "boot_bias": FIG_DIR / "table_bias_boot.txt",
     "eta_pc": FIG_DIR / "eta_pc.png",
 }
 
@@ -138,7 +145,7 @@ def make_distribution_figure(fpath: str | Path, overwrite: bool = False):
         np.median(params["snr"]),
         linestyle="--",
         color="k",
-        label=r"\rm Median SNR = {:.2f}".format(np.median(params["snr"])),
+        label=r"\rm Median = {:.2f}".format(np.median(params["snr"])),
     )
     ax2.set_xlabel(r"\rm SNR")
     ax2.legend()
@@ -154,7 +161,7 @@ def make_distribution_figure(fpath: str | Path, overwrite: bool = False):
         histtype="step",
         density=True,
     )
-    ax3.set_xlabel(r"\rm HLR")
+    ax3.set_xlabel(r"\rm $s$ (HLR)")
     ax3.axvline(
         np.median(params["hlr"]),
         linestyle="--",
@@ -293,7 +300,7 @@ def make_contour_shear_figure(fpath: str | Path):
     )
 
     c.add_chain(chain)
-    c.set_override(ChainConfig(sigmas=[0, 1, 2]))
+    c.set_override(ChainConfig(sigmas=[0, 1, 2], kde=1.0))
     c.add_truth(
         Truth(
             location={"g1": 0.02 + e1_mean, "g2": 0.0 + e2_mean},
@@ -311,7 +318,7 @@ def make_contour_shear_figure(fpath: str | Path):
         marker_style="*",
     )
     c.add_chain(chain2)
-    c.set_override(ChainConfig(sigmas=[0, 1, 2]))
+    c.set_override(ChainConfig(sigmas=[0, 1, 2], kde=1.0))
 
     c.set_plot_config(
         PlotConfig(
@@ -356,7 +363,7 @@ def make_contour_hyper_figure(fpath: str | Path):
     chain = Chain(samples=df, name="Example I", marker_style="*")
 
     c.add_chain(chain)
-    c.set_override(ChainConfig(sigmas=[0, 1, 2]))
+    c.set_override(ChainConfig(sigmas=[0, 1, 2], kde=1.0))
     c.add_truth(Truth(location=truth, color="k", line_width=4.0))
 
     c.set_plot_config(
@@ -386,7 +393,7 @@ def make_contour_hyper_figure(fpath: str | Path):
     plt.close(fig)
 
 
-def get_bias_table(fpath: str | Path):
+def get_bias_table_subset(fpath: str | Path):
     """Create a latex table of mean multiplicative and additive bias, as well as their errors from each experiment."""
 
     # load datasets
@@ -506,6 +513,118 @@ def get_bias_table(fpath: str | Path):
         f.write(table)
 
 
+def get_bias_table_boot(fpath: str | Path):
+    """Create a latex table of mean multiplicative and additive bias, as well as their errors from each experiment."""
+
+    # load datasets
+    dsp1 = load_dataset(INPUT_PATHS["exp70_sp"])
+    dsm1 = load_dataset(INPUT_PATHS["exp70_sm"])
+    gp1 = jnp.stack([dsp1["samples"]["g1"], dsp1["samples"]["g2"]], axis=-1)
+    gm1 = jnp.stack([dsm1["samples"]["g1"], dsm1["samples"]["g2"]], axis=-1)
+
+    dsp2 = load_dataset(INPUT_PATHS["exp71_sp"])
+    dsm2 = load_dataset(INPUT_PATHS["exp71_sm"])
+    gp2 = jnp.stack([dsp2["samples"]["g1"], dsp2["samples"]["g2"]], axis=-1)
+    gm2 = jnp.stack([dsm2["samples"]["g1"], dsm2["samples"]["g2"]], axis=-1)
+
+    dsp3 = load_dataset(INPUT_PATHS["exp72_sp"])
+    dsm3 = load_dataset(INPUT_PATHS["exp72_sm"])
+    gp3 = jnp.stack([dsp3["samples"]["g1"], dsp3["samples"]["g2"]], axis=-1)
+    gm3 = jnp.stack([dsm3["samples"]["g1"], dsm3["samples"]["g2"]], axis=-1)
+
+    dsp4 = load_dataset(INPUT_PATHS["exp73_sp"])
+    dsm4 = load_dataset(INPUT_PATHS["exp73_sm"])
+    gp4 = jnp.stack([dsp4["samples"]["g1"], dsp4["samples"]["g2"]], axis=-1)
+    gm4 = jnp.stack([dsm4["samples"]["g1"], dsm4["samples"]["g2"]], axis=-1)
+
+    # get mean multiplicative and additive bias for each experiment
+    m1_mean = np.mean(gp1[:, 0] - gm1[:, 0]) / 2 / 0.02 - 1
+    c1_mean = np.mean(gp1[:, 1] + gm1[:, 1]) / 2
+
+    m2_mean = np.mean(gp2[:, 0] - gm2[:, 0]) / 2 / 0.02 - 1
+    c2_mean = np.mean(gp2[:, 1] + gm2[:, 1]) / 2
+
+    m3_mean = np.mean(gp3[:, 0] - gm3[:, 0]) / 2 / 0.02 - 1
+    c3_mean = np.mean(gp3[:, 1] + gm3[:, 1]) / 2
+
+    m4_mean = np.mean(gp4[:, 0] - gm4[:, 0]) / 2 / 0.02 - 1
+    c4_mean = np.mean(gp4[:, 1] + gm4[:, 1]) / 2
+
+    # get std of multiplicative and additive bias for each experiment
+    # we need to load error files
+    gps = []
+    gms = []
+    for n in ("70", "71", "72", "73"):
+        gp1s = load_dataset(INPUT_PATHS["boot"][f"exp{n}"])["plus"]["g1"]
+        gp2s = load_dataset(INPUT_PATHS["boot"][f"exp{n}"])["plus"]["g2"]
+        gm1s = load_dataset(INPUT_PATHS["boot"][f"exp{n}"])["minus"]["g1"]
+        gm2s = load_dataset(INPUT_PATHS["boot"][f"exp{n}"])["minus"]["g2"]
+        gp = np.stack([gp1s, gp2s], axis=-1)
+        gm = np.stack([gm1s, gm2s], axis=-1)
+        gps.append(gp)
+        gms.append(gm)
+
+    gps1, gps2, gps3, gps4 = gps
+    gms1, gms2, gms3, gms4 = gms
+    assert gps1.ndim == 3 and gms1.ndim == 3
+    assert gps2.ndim == 3 and gms2.ndim == 3
+    assert gps3.ndim == 3 and gms3.ndim == 3
+    assert gps4.ndim == 3 and gms4.ndim == 3
+
+    m1s = (gps1[:, :, 0].mean(1) - gms1[:, :, 0].mean(1)) / 2 / 0.02 - 1
+    c1s = (gps1[:, :, 1].mean(1) + gms1[:, :, 1].mean(1)) / 2
+
+    m2s = (gps2[:, :, 0].mean(1) - gms2[:, :, 0].mean(1)) / 2 / 0.02 - 1
+    c2s = (gps2[:, :, 1].mean(1) + gms2[:, :, 1].mean(1)) / 2
+
+    m3s = (gps3[:, :, 0].mean(1) - gms3[:, :, 0].mean(1)) / 2 / 0.02 - 1
+    c3s = (gps3[:, :, 1].mean(1) + gms3[:, :, 1].mean(1)) / 2
+
+    m4s = (gps4[:, :, 0].mean(1) - gms4[:, :, 0].mean(1)) / 2 / 0.02 - 1
+    c4s = (gps4[:, :, 1].mean(1) + gms4[:, :, 1].mean(1)) / 2
+
+    # create table
+    # in format for each m, c: mean +- std
+    # use f-strings
+    table = r"""
+\begin{table*}
+    \centering
+    \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        \textbf{Experiment} & \textbf{Properties Used} & \textbf{Prior Known?} & \textbf{Multiplicative Bias $m / 10^{-3}$} & \textbf{Additive Bias $c / 10^{-3}$} \\
+        \hline
+        \texttt{shapes-fixed} & Ellipticities & Yes & $%.3g \pm %.3g$ & $%.3g \pm %.3f$ \\
+        \texttt{shapes-free} & Ellipticities & No & $%.3g \pm %.3g$ & $%.3g \pm %.3f$ \\
+        \texttt{all-fixed} & All & Yes & $%.3g \pm %.3g$ & $%.3g \pm %.3f$ \\
+        \texttt{all-free} & All & No & $%.3g \pm %.3g$ & $%.3g \pm %.3f$ \\
+        \hline
+    \end{tabular}
+    \caption{\textbf{Multiplicative and additive bias for different settings.}}
+    \label{tab:bias}
+\end{table*}
+    """ % (
+        m1_mean / 1e-3,
+        3 * m1s.std() / 1e-3,
+        c1_mean / 1e-3,
+        3 * c1s.std() / 1e-3,
+        m2_mean / 1e-3,
+        3 * m2s.std() / 1e-3,
+        c2_mean / 1e-3,
+        3 * c2s.std() / 1e-3,
+        m3_mean / 1e-3,
+        3 * m3s.std() / 1e-3,
+        c3_mean / 1e-3,
+        3 * c3s.std() / 1e-3,
+        m4_mean / 1e-3,
+        3 * m4s.std() / 1e-3,
+        c4_mean / 1e-3,
+        3 * c4s.std() / 1e-3,
+    )
+
+    with open(fpath, "w", encoding="utf-8") as f:
+        f.write(table)
+
+
 def make_eta_posterior_calibration_figure(fpath: str | Path):
     set_rc_params(fontsize=24)
 
@@ -538,7 +657,8 @@ def main(overwrite: bool = False):
     make_contour_shear_figure(OUT_PATHS["contour_shear"])
     make_contour_hyper_figure(OUT_PATHS["contour_hyper"])
     make_eta_posterior_calibration_figure(OUT_PATHS["eta_pc"])
-    get_bias_table(OUT_PATHS["bias"])
+    get_bias_table_subset(OUT_PATHS["subset_bias"])
+    get_bias_table_boot(OUT_PATHS["boot_bias"])
 
 
 if __name__ == "__main__":

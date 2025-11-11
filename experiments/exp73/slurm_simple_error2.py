@@ -2,6 +2,7 @@
 
 import typer
 
+from bpd import HOME_DIR
 from bpd.slurm import run_multi_gpu_job
 
 
@@ -18,7 +19,8 @@ def main(
     mem_per_gpu: str = "10G",
     qos: str = "regular",
 ):
-    base_cmd = """python /global/u2/i/imendoza/BPD/experiments/exp73/simple_error2.py
+    script_path = HOME_DIR / "experiments" / "exp73" / "simple_error2.py"
+    base_cmd = """python {script}
                 {seed} --tag {tag}
                 --posterior-fpath {posterior_fpath}
                 --samples-plus-fpath {samples_plus_fpath}
@@ -31,6 +33,7 @@ def main(
                 """
     base_cmd = " ".join(base_cmd.split())
     cmd = base_cmd.format(
+        script=script_path,
         seed=seed,
         tag=tag,
         posterior_fpath=posterior_fpath,
