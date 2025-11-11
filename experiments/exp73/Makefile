@@ -59,6 +59,12 @@ error_simple:
 slurm_error_simple:
 	./slurm_simple_error.py ${SEED}31 --tag ${TAG} --samples-plus-fpath ${PLUS_FILE} --samples-minus-fpath ${MINUS_FILE}
 
+slurm_check_shear_convergence:
+	./slurm_get_shear.py ${SEED}21 --samples-fpath ${PLUS_FILE} --tag ${TAG} --extra-tag "plus" --n-samples 1000
+	./slurm_get_shear.py ${SEED}22 --samples-fpath ${PLUS_FILE} --tag ${TAG} --extra-tag "plus" --n-samples 1000
+	./slurm_get_shear.py ${SEED}23 --samples-fpath ${PLUS_FILE} --tag ${TAG} --extra-tag "plus" --n-samples 1000
+	./slurm_get_shear.py ${SEED}24 --samples-fpath ${PLUS_FILE} --tag ${TAG} --extra-tag "plus" --n-samples 1000
+
 slurm_shear:
 	./slurm_get_shear.py ${SEED}2 --samples-fpath ${PLUS_FILE} --tag ${TAG} --extra-tag "plus"
 	./slurm_get_shear.py ${SEED}2 --samples-fpath ${MINUS_FILE} --tag ${TAG} --extra-tag "minus"
