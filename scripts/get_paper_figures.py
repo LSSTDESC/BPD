@@ -52,7 +52,7 @@ INPUT_PATHS = {
         "exp73": CHAIN_DIR / "exp73_51" / "g_samples_boots_515.npz",
     },
     "exp72_interim_samples": CHAIN_DIR / "exp72_51" / "interim_samples_511_plus.npz",
-    "eta_pc": CHAIN_DIR / "exp81_52" / "eta_shear_samples.npz",
+    "eta_pc": CHAIN_DIR / "exp81_53" / "eta_shear_samples.npz",
 }
 
 
@@ -656,9 +656,9 @@ def main(overwrite: bool = False):
     make_distribution_figure(OUT_PATHS["galaxy_distributions"], overwrite=overwrite)
     make_contour_shear_figure(OUT_PATHS["contour_shear"])
     make_contour_hyper_figure(OUT_PATHS["contour_hyper"])
-    make_eta_posterior_calibration_figure(OUT_PATHS["eta_pc"])
     get_bias_table_subset(OUT_PATHS["subset_bias"])
     get_bias_table_boot(OUT_PATHS["boot_bias"])
+    make_eta_posterior_calibration_figure(OUT_PATHS["eta_pc"])
 
 
 if __name__ == "__main__":
