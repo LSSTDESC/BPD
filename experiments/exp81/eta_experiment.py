@@ -173,7 +173,7 @@ def sample_shear_prior(rng_key):
     return jnp.array([g1, g2])
 
 
-def main(seed: int = 52, n_exps: int = 1000):
+def main(seed: int = 53, n_exps: int = 1000):
     save_dir = DATA_DIR / "cache_chains" / f"exp81_{seed}"
     save_dir.mkdir(exist_ok=True)
 
@@ -186,10 +186,10 @@ def main(seed: int = 52, n_exps: int = 1000):
         run_one_eta_experiment,
         n_gals=1000,
         n_samples_per_gal=300,
-        n_samples_shear=1024 - 1,
+        n_samples_shear=2000,
         sigma_e=0.2,
         sigma_e_int=0.3,
-        sigma_m=0.2,
+        sigma_m=0.1,  # compared to distribution of ellipticity samples in experiment 70
     )
     pipe = jit(pipe)
 
@@ -202,7 +202,7 @@ def main(seed: int = 52, n_exps: int = 1000):
         k2s,
         true_gs,
         n_points=n_exps,
-        batch_size=100,
+        batch_size=50,
     )
 
     save_dataset(

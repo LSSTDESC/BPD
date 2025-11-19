@@ -20,6 +20,14 @@ MINUS_SAMPLES_FPATH := ${DIR}/interim_samples_${SEED}1_minus.npz
 
 export JAX_ENABLE_X64=True
 
+error_on_subset:
+# 	./get_error_on_error_subset.py ${SEED}55 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH} --n-repeats 2 --n-splits 500
+# 	./slurm_error_on_error_subset.py ${SEED}55 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH} --n-repeats 10 --n-splits 500
+# 	./slurm_error_on_error_subset.py ${SEED}56 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH} --n-repeats 10 --n-splits 250
+# 	./slurm_error_on_error_subset.py ${SEED}57 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH} --n-repeats 2 --n-splits 500 --n-samples 10 --time 01:00
+	./slurm_error_on_error_subset.py ${SEED}58 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH} --n-repeats 10 --n-splits 500 --n-samples 2000
+
+
 # bootstraps
 boot2:
 	./slurm_bootstrap.py ${SEED}52 --tag ${TAG} --samples-plus-fpath ${PLUS_SAMPLES_FPATH} --samples-minus-fpath ${MINUS_SAMPLES_FPATH} --n-boots 300 --n-nodes 3 --qos regular --time 06:00 --mem-per-gpu 40G
