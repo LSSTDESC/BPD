@@ -11,12 +11,13 @@ def main(
     tag: str = typer.Option(),
     mode: str = typer.Option(),
     start_string: str = typer.Option(),
+    contains: str = "",
     overwrite: bool = False,
 ):
     assert mode in ("plus", "minus", "")
     mode_txt = f"_{mode}" if mode else ""
     dirpath = DATA_DIR / "cache_chains" / tag
-    newpath = dirpath / f"{start_string}{mode_txt}.npz"
+    newpath = dirpath / f"{start_string}{mode_txt}_{contains}.npz"
 
     if newpath.exists():
         if overwrite:
@@ -30,7 +31,8 @@ def main(
         cond1 = fp.name.startswith(start_string)
         cond2 = fp.name != newpath.name  # technically not necessary
         cond3 = mode in fp.name
-        if cond1 and cond2 and cond3:
+        cond4 = contains in fp.name
+        if cond1 and cond2 and cond3 and cond4:
             fps.append(fp)
 
     full_ds = {}
