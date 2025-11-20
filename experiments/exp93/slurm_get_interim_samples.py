@@ -5,6 +5,12 @@ import typer
 from bpd import HOME_DIR
 from bpd.slurm import run_multi_gpu_job
 
+_nu_hash = {
+    0.1: "10",
+    0.3: "30",
+    0.5: "50",
+}
+
 
 def main(
     seed: int,
@@ -24,7 +30,7 @@ def main(
 ):
     assert mode in ("plus", "minus", "")
     mode_txt = f"_{mode}" if mode else ""
-    jobname = f"{tag}{mode_txt}"
+    jobname = f"{tag}{mode_txt}_nu{_nu_hash[nu]}"
 
     script = HOME_DIR / "experiments" / "exp93" / "get_interim_samples.py"
     batch_size_txt = f"--batch-size {batch_size}" if batch_size else ""

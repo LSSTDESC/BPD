@@ -24,6 +24,7 @@ from bpd.utils import DEFAULT_HYPERPARAMS, MAX_N_GALS_PER_GPU, process_in_batche
 
 _nu_hash = {
     0.1: "10",
+    0.3: "30",
     0.5: "50",
 }
 
@@ -82,7 +83,6 @@ def main(
         dirpath.mkdir(exist_ok=True)
     extra_tag = f"_{mode}" if mode else ""
     out_fpath = dirpath / f"interim_samples_{seed}{extra_tag}_nu{_nu_hash[nu]}.npz"
-    print(out_fpath)
 
     # galaxy parameters from prior
     galaxy_params = sample_galaxy_params_skew(
