@@ -29,18 +29,20 @@ def main(
     initial_step_size: float = 0.001,
     n_samples: int = 3000,
     overwrite: bool = False,
+    extra: str = "",
 ):
     rng_key = jax.random.key(seed)
 
     assert mode in ("plus", "minus", "")
     mode_txt = f"_{mode}" if mode else ""
+    extra_txt = "" if not extra else "_{extra}"
 
     # directory structure
     dirpath = DATA_DIR / "cache_chains" / tag
     samples_fpath = Path(samples_fpath)
     assert dirpath.exists()
     assert samples_fpath.exists(), "ellipticity samples file does not exist"
-    out_fpath = dirpath / f"g_samples_{seed}{mode_txt}.npz"
+    out_fpath = dirpath / f"g_samples_{seed}{mode_txt}{extra_txt}.npz"
 
     if out_fpath.exists() and not overwrite:
         raise IOError("overwriting...")
@@ -103,6 +105,7 @@ def main(
     g_samples = pipe(rng_key, post_params)
     assert g_samples.ndim == 2
     assert g_samples.shape[1] == 2
+    print("Done running!")
 
     save_dataset(
         {"samples": {"g1": np.array(g_samples[:, 0]), "g2": np.array(g_samples[:, 1])}},
