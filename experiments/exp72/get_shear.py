@@ -35,7 +35,7 @@ def main(
 
     assert mode in ("plus", "minus", "")
     mode_txt = f"_{mode}" if mode else ""
-    extra_txt = "" if not extra else "_{extra}"
+    extra_txt = "" if not extra else f"_{extra}"
 
     # directory structure
     dirpath = DATA_DIR / "cache_chains" / tag
