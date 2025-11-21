@@ -55,6 +55,31 @@ def draw_exponential(
     return image.array
 
 
+def draw_spergel(
+    *,
+    nu: float,
+    f: float,
+    hlr: float,
+    e1: float,
+    e2: float,
+    x: float,  # pixels
+    y: float,
+    slen: int,
+    fft_size: int,  # rule of thumb: at least 4 times `slen`
+    psf_fwhm: float = 0.8,
+    pixel_scale: float = 0.2,
+):
+    gsparams = GSParams(minimum_fft_size=fft_size, maximum_fft_size=fft_size)
+
+    gal = xgalsim.Spergel(nu=nu, flux=f, half_light_radius=hlr)
+    gal = gal.shear(g1=e1, g2=e2)
+
+    psf = xgalsim.Gaussian(flux=1.0, fwhm=psf_fwhm)
+    gal_conv = xgalsim.Convolve([gal, psf]).withGSParams(gsparams)
+    image = gal_conv.drawImage(nx=slen, ny=slen, scale=pixel_scale, offset=(x, y))
+    return image.array
+
+
 def draw_gaussian_galsim(
     *,
     f: float,
