@@ -6,9 +6,15 @@ from bpd import HOME_DIR
 from bpd.slurm import run_multi_gpu_job
 
 _nu_hash = {
+    -0.6: "-60",
+    -0.4: "-40",
+    -0.2: "-20",
     0.1: "10",
     0.3: "30",
     0.5: "50",
+    1.0: "100",
+    2.0: "200",
+    3.0: "300",
 }
 
 
@@ -29,6 +35,7 @@ def main(
     mem_per_gpu: str = "10G",
 ):
     assert mode in ("plus", "minus", "")
+    assert nu in _nu_hash
     mode_txt = f"_{mode}" if mode else ""
     jobname = f"{tag}{mode_txt}_nu{_nu_hash[nu]}"
 
