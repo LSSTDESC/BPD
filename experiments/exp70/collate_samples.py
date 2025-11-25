@@ -9,8 +9,8 @@ from bpd.io import load_dataset, merge_dicts, save_dataset
 
 def main(
     tag: str = typer.Option(),
-    mode: str = typer.Option(),
     start_string: str = typer.Option(),
+    mode: str = typer.Option(),
     contains: str = "",
     overwrite: bool = False,
 ):
