@@ -23,9 +23,15 @@ from bpd.sample import (
 from bpd.utils import DEFAULT_HYPERPARAMS, MAX_N_GALS_PER_GPU, process_in_batches
 
 _nu_hash = {
+    -0.6: "-60",
+    -0.4: "-40",
+    -0.2: "-20",
     0.1: "10",
     0.3: "30",
     0.5: "50",
+    1.0: "100",
+    2.0: "200",
+    3.0: "300",
 }
 
 
