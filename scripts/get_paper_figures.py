@@ -6,6 +6,8 @@ os.environ["JAX_PLATFORMS"] = "cpu"
 from functools import partial
 from pathlib import Path
 
+import cycler
+import galsim
 import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
@@ -14,6 +16,7 @@ import pandas
 import typer
 from chainconsumer import Chain, ChainConfig, ChainConsumer, Truth
 from chainconsumer.plotting.config import PlotConfig
+from matplotlib.ticker import FuncFormatter
 from tqdm import tqdm
 
 from bpd import DATA_DIR, HOME_DIR
@@ -53,6 +56,63 @@ INPUT_PATHS = {
     },
     "exp72_interim_samples": CHAIN_DIR / "exp72_51" / "interim_samples_511_plus.npz",
     "eta_pc": CHAIN_DIR / "exp81_53" / "eta_shear_samples.npz",
+    "exp93": {
+        "shear": {
+            -0.6: {
+                "plus": CHAIN_DIR / "exp93_51" / "g_samples_512_plus_nu-60.npz",
+                "minus": CHAIN_DIR / "exp93_51" / "g_samples_512_minus_nu-60.npz",
+            },
+            -0.4: {
+                "plus": CHAIN_DIR / "exp93_51" / "g_samples_512_plus_nu-40.npz",
+                "minus": CHAIN_DIR / "exp93_51" / "g_samples_512_minus_nu-40.npz",
+            },
+            -0.2: {
+                "plus": CHAIN_DIR / "exp93_51" / "g_samples_512_plus_nu-20.npz",
+                "minus": CHAIN_DIR / "exp93_51" / "g_samples_512_minus_nu-20.npz",
+            },
+            0.1: {
+                "plus": CHAIN_DIR / "exp93_51" / "g_samples_512_plus_nu10.npz",
+                "minus": CHAIN_DIR / "exp93_51" / "g_samples_512_minus_nu10.npz",
+            },
+            0.3: {
+                "plus": CHAIN_DIR / "exp93_51" / "g_samples_512_plus_nu30.npz",
+                "minus": CHAIN_DIR / "exp93_51" / "g_samples_512_minus_nu30.npz",
+            },
+            0.5: {
+                "plus": CHAIN_DIR / "exp93_51" / "g_samples_512_plus_nu50.npz",
+                "minus": CHAIN_DIR / "exp93_51" / "g_samples_512_minus_nu50.npz",
+            },
+            1.0: {
+                "plus": CHAIN_DIR / "exp93_51" / "g_samples_512_plus_nu100.npz",
+                "minus": CHAIN_DIR / "exp93_51" / "g_samples_512_minus_nu100.npz",
+            },
+            2.0: {
+                "plus": CHAIN_DIR / "exp93_51" / "g_samples_512_plus_nu200.npz",
+                "minus": CHAIN_DIR / "exp93_51" / "g_samples_512_minus_nu200.npz",
+            },
+            3.0: {
+                "plus": CHAIN_DIR / "exp93_51" / "g_samples_512_plus_nu300.npz",
+                "minus": CHAIN_DIR / "exp93_51" / "g_samples_512_minus_nu300.npz",
+            },
+        },
+        "boot": {
+            -0.6: CHAIN_DIR / "exp93_51" / "g_samples_boots_513_nu-60.npz",
+            -0.4: CHAIN_DIR / "exp93_51" / "g_samples_boots_513_nu-40.npz",
+            -0.2: CHAIN_DIR / "exp93_51" / "g_samples_boots_513_nu-20.npz",
+            0.1: CHAIN_DIR / "exp93_51" / "g_samples_boots_513_nu10.npz",
+            0.3: CHAIN_DIR / "exp93_51" / "g_samples_boots_513_nu30.npz",
+            0.5: CHAIN_DIR / "exp93_51" / "g_samples_boots_513_nu50.npz",
+            1.0: CHAIN_DIR / "exp93_51" / "g_samples_boots_513_nu100.npz",
+            2.0: CHAIN_DIR / "exp93_51" / "g_samples_boots_513_nu200.npz",
+            3.0: CHAIN_DIR / "exp93_51" / "g_samples_boots_513_nu300.npz",
+        },
+    },
+    "exp91": {
+        "shear": {
+            "plus": CHAIN_DIR / "exp91_51" / "g_samples_512_plus.npz",
+            "minus": CHAIN_DIR / "exp91_51" / "g_samples_512_minus.npz",
+        },
+    },
 }
 
 
@@ -66,6 +126,19 @@ OUT_PATHS = {
     "subset_bias": FIG_DIR / "table_bias_subset.txt",
     "boot_bias": FIG_DIR / "table_bias_boot.txt",
     "eta_pc": FIG_DIR / "eta_pc.png",
+    "model_bias": FIG_DIR / "model_bias.png",
+}
+
+_nu_hash = {
+    -0.6: "-60",
+    -0.4: "-40",
+    -0.2: "-20",
+    0.1: "10",
+    0.3: "30",
+    0.5: "50",
+    1.0: "100",
+    2.0: "200",
+    3.0: "300",
 }
 
 
@@ -651,14 +724,107 @@ def make_eta_posterior_calibration_figure(fpath: str | Path):
     fig.savefig(fpath, format="png")
 
 
+def make_model_bias_figure(fpath: str | Path):
+    set_rc_params(fontsize=24)
+
+    # fig, ax = plt.subplots(1, 1, figsize=(7, 7))
+    # ax.plot([0, 1], [0, 1])
+    # ax.set_xlabel(r"\rm Hello")
+
+    nus = list(_nu_hash.keys())
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 9))
+
+    # plot with profiles
+
+    def _draw_spergel_galsim(
+        nu: float, nx: int = 71, fwhm=0.8, hlr=0.4, g1=0.0, g2=0.0
+    ):
+        gal = galsim.Spergel(nu, half_light_radius=hlr, flux=1.0)
+        gal = gal.shear(g1=g1, g2=g2)
+        psf = galsim.Gaussian(fwhm=fwhm, flux=1.0)
+        gal_conv = galsim.Convolve([gal, psf])
+        img = gal_conv.drawImage(nx=nx, ny=nx, scale=0.2)
+        return img.array
+
+    def _draw_gaussian_galsim(nx: int = 71, fwhm=0.8, hlr=0.4, g1=0.0, g2=0.0):
+        gal = galsim.Gaussian(half_light_radius=hlr, flux=1.0)
+        gal = gal.shear(g1=g1, g2=g2)
+        psf = galsim.Gaussian(fwhm=fwhm, flux=1.0)
+        gal_conv = galsim.Convolve([gal, psf])
+        img = gal_conv.drawImage(nx=nx, ny=nx, scale=0.2)
+        return img.array
+
+    color = plt.cm.coolwarm(np.linspace(0, 1, len(nus)))
+    cycles = cycler.cycler("color", color)
+    ax1.set_prop_cycle(cycles)
+
+    for nu in nus:
+        img = _draw_spergel_galsim(nu, nx=63)
+        x = img[31]
+        mask = x > 0
+        x[~mask] = 1e-10
+        ax1.plot(np.log10(x), label=nu)
+
+    gauss_img = _draw_gaussian_galsim(nx=63)
+    ax1.plot(np.log10(gauss_img[31]), label=r"\rm Gaussian", c="k", ls="--")
+    # ax1.set_yscale("log")
+    # ax1.yaxis.set_major_formatter(FuncFormatter(lambda v, p: f"{v:g}"))
+    ax1.legend()
+    ax1.set_ylim()
+
+    # # multiplicative bias + error as a function of nu
+    # all_m = []
+    # all_err = []
+    # for nu in nus:
+    #     dsp = load_dataset(INPUT_PATHS["exp93"]["shear"][nu]["plus"])
+    #     dsm = load_dataset(INPUT_PATHS["exp93"]["shear"][nu]["minus"])
+    #     dsb = load_dataset(INPUT_PATHS["exp93"]["boot"][nu])
+
+    #     g1p = dsp["samples"]["g1"]
+    #     g1m = dsm["samples"]["g1"]
+    #     g1ps = dsb["plus"]["g1"]
+    #     g1ms = dsb["minus"]["g1"]
+
+    #     assert g1p.shape == (3000,) and g1m.shape == (3000,)
+    #     assert g1ps.shape == (100, 1000) and g1ms.shape == (100, 1000)
+
+    #     m = (g1p.mean() - g1m.mean()) / 2 / 0.02 - 1
+    #     ms = (g1ps.mean(1) - g1ms.mean(1)) / 2 / 0.02 - 1
+    #     m_err = ms.std()
+
+    #     all_m.append(m)
+    #     all_err.append(m_err)
+
+    # all_m = np.array(all_m)
+    # all_err = np.array(all_err)
+
+    # ax2.plot(nus, all_m, "-o", color="#377eb8")
+    # ax2.fill_between(
+    #     nus, all_m - all_err * 3, all_m + all_err * 3, color="#377eb8", alpha=0.3
+    # )
+
+    # # gaussian
+    # dsp = load_dataset(INPUT_PATHS["exp91"]["shear"]["plus"])
+    # dsm = load_dataset(INPUT_PATHS["exp91"]["shear"]["minus"])
+    # g1p = dsp["samples"]["g1"]
+    # g1m = dsm["samples"]["g1"]
+    # m_gauss = (g1p.mean() - g1m.mean()) / 2 / 0.02 - 1
+    # ax2.axhline(m_gauss, c="r", ls="--", label=r"\rm Gaussian Profile")
+    # ax2.legend()
+
+    fig.tight_layout()
+    fig.savefig(fpath, format="png")
+
+
 def main(overwrite: bool = False):
-    make_timing_figure(OUT_PATHS["timing"], OUT_PATHS["timing2"])
-    make_distribution_figure(OUT_PATHS["galaxy_distributions"], overwrite=overwrite)
-    make_contour_shear_figure(OUT_PATHS["contour_shear"])
-    make_contour_hyper_figure(OUT_PATHS["contour_hyper"])
-    get_bias_table_subset(OUT_PATHS["subset_bias"])
-    get_bias_table_boot(OUT_PATHS["boot_bias"])
-    make_eta_posterior_calibration_figure(OUT_PATHS["eta_pc"])
+    # make_timing_figure(OUT_PATHS["timing"], OUT_PATHS["timing2"])
+    # make_distribution_figure(OUT_PATHS["galaxy_distributions"], overwrite=overwrite)
+    # make_contour_shear_figure(OUT_PATHS["contour_shear"])
+    # make_contour_hyper_figure(OUT_PATHS["contour_hyper"])
+    # get_bias_table_subset(OUT_PATHS["subset_bias"])
+    # get_bias_table_boot(OUT_PATHS["boot_bias"])
+    # make_eta_posterior_calibration_figure(OUT_PATHS["eta_pc"])
+    make_model_bias_figure(OUT_PATHS["model_bias"])
 
 
 if __name__ == "__main__":
