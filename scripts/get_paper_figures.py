@@ -16,7 +16,6 @@ import pandas
 import typer
 from chainconsumer import Chain, ChainConfig, ChainConsumer, Truth
 from chainconsumer.plotting.config import PlotConfig
-from matplotlib.ticker import FuncFormatter
 from tqdm import tqdm
 
 from bpd import DATA_DIR, HOME_DIR
@@ -725,11 +724,7 @@ def make_eta_posterior_calibration_figure(fpath: str | Path):
 
 
 def make_model_bias_figure(fpath: str | Path):
-    set_rc_params(fontsize=24)
-
-    # fig, ax = plt.subplots(1, 1, figsize=(7, 7))
-    # ax.plot([0, 1], [0, 1])
-    # ax.set_xlabel(r"\rm Hello")
+    set_rc_params(fontsize=28, legend_fontsize=20)
 
     nus = list(_nu_hash.keys())
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 9))
@@ -760,57 +755,58 @@ def make_model_bias_figure(fpath: str | Path):
 
     for nu in nus:
         img = _draw_spergel_galsim(nu, nx=63)
-        x = img[31]
-        mask = x > 0
-        x[~mask] = 1e-10
-        ax1.plot(np.log10(x), label=nu)
+        ax1.plot(img.mean(1), label=f"${nu}$")
 
     gauss_img = _draw_gaussian_galsim(nx=63)
-    ax1.plot(np.log10(gauss_img[31]), label=r"\rm Gaussian", c="k", ls="--")
-    # ax1.set_yscale("log")
-    # ax1.yaxis.set_major_formatter(FuncFormatter(lambda v, p: f"{v:g}"))
+    ax1.plot(gauss_img.mean(1), label=r"\rm Gaussian", c="k", ls="--")
+    ax1.set_yscale("log")
+    ax1.set_ylabel(r"\rm Average counts")
+    ax1.set_xlabel(r"\rm Pixel $x$ coordinate")
     ax1.legend()
-    ax1.set_ylim()
 
-    # # multiplicative bias + error as a function of nu
-    # all_m = []
-    # all_err = []
-    # for nu in nus:
-    #     dsp = load_dataset(INPUT_PATHS["exp93"]["shear"][nu]["plus"])
-    #     dsm = load_dataset(INPUT_PATHS["exp93"]["shear"][nu]["minus"])
-    #     dsb = load_dataset(INPUT_PATHS["exp93"]["boot"][nu])
+    # multiplicative bias + error as a function of nu
+    all_m = []
+    all_err = []
+    for nu in nus:
+        dsp = load_dataset(INPUT_PATHS["exp93"]["shear"][nu]["plus"])
+        dsm = load_dataset(INPUT_PATHS["exp93"]["shear"][nu]["minus"])
+        dsb = load_dataset(INPUT_PATHS["exp93"]["boot"][nu])
 
-    #     g1p = dsp["samples"]["g1"]
-    #     g1m = dsm["samples"]["g1"]
-    #     g1ps = dsb["plus"]["g1"]
-    #     g1ms = dsb["minus"]["g1"]
+        g1p = dsp["samples"]["g1"]
+        g1m = dsm["samples"]["g1"]
+        g1ps = dsb["plus"]["g1"]
+        g1ms = dsb["minus"]["g1"]
 
-    #     assert g1p.shape == (3000,) and g1m.shape == (3000,)
-    #     assert g1ps.shape == (100, 1000) and g1ms.shape == (100, 1000)
+        assert g1p.shape == (3000,) and g1m.shape == (3000,)
+        assert g1ps.shape == (100, 1000) and g1ms.shape == (100, 1000)
 
-    #     m = (g1p.mean() - g1m.mean()) / 2 / 0.02 - 1
-    #     ms = (g1ps.mean(1) - g1ms.mean(1)) / 2 / 0.02 - 1
-    #     m_err = ms.std()
+        m = (g1p.mean() - g1m.mean()) / 2 / 0.02 - 1
+        ms = (g1ps.mean(1) - g1ms.mean(1)) / 2 / 0.02 - 1
+        m_err = ms.std()
 
-    #     all_m.append(m)
-    #     all_err.append(m_err)
+        all_m.append(m)
+        all_err.append(m_err)
 
-    # all_m = np.array(all_m)
-    # all_err = np.array(all_err)
+    all_m = np.array(all_m)
+    all_err = np.array(all_err)
 
-    # ax2.plot(nus, all_m, "-o", color="#377eb8")
-    # ax2.fill_between(
-    #     nus, all_m - all_err * 3, all_m + all_err * 3, color="#377eb8", alpha=0.3
-    # )
+    ax2.plot(nus, all_m, "-o", color="#377eb8")
+    ax2.fill_between(
+        nus, all_m - all_err * 3, all_m + all_err * 3, color="#377eb8", alpha=0.3
+    )
 
-    # # gaussian
-    # dsp = load_dataset(INPUT_PATHS["exp91"]["shear"]["plus"])
-    # dsm = load_dataset(INPUT_PATHS["exp91"]["shear"]["minus"])
-    # g1p = dsp["samples"]["g1"]
-    # g1m = dsm["samples"]["g1"]
-    # m_gauss = (g1p.mean() - g1m.mean()) / 2 / 0.02 - 1
-    # ax2.axhline(m_gauss, c="r", ls="--", label=r"\rm Gaussian Profile")
-    # ax2.legend()
+    # gaussian
+    dsp = load_dataset(INPUT_PATHS["exp91"]["shear"]["plus"])
+    dsm = load_dataset(INPUT_PATHS["exp91"]["shear"]["minus"])
+    g1p = dsp["samples"]["g1"]
+    g1m = dsm["samples"]["g1"]
+    m_gauss = (g1p.mean() - g1m.mean()) / 2 / 0.02 - 1
+    ax2.axhline(m_gauss, c="r", ls="--", label=r"\rm Gaussian Fit")
+    ax2.axhline(0.0, c="k", ls="--")
+    # ax2.axvline(0.5, c="k", ls="--", label=r"\rm Exponential Profile")
+    ax2.legend()
+    ax2.set_ylabel(r"\rm Multiplicative bias $m$")
+    ax2.set_xlabel(r"\rm Spergel index $\nu$")
 
     fig.tight_layout()
     fig.savefig(fpath, format="png")
