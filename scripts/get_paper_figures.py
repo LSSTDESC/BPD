@@ -795,6 +795,9 @@ def make_model_bias_figure(fpath: str | Path):
         nus, all_m - all_err * 3, all_m + all_err * 3, color="#377eb8", alpha=0.3
     )
 
+    print("Model bias points:", all_m)
+    print("Error on model bias points:", all_err)
+
     # gaussian
     dsp = load_dataset(INPUT_PATHS["exp91"]["shear"]["plus"])
     dsm = load_dataset(INPUT_PATHS["exp91"]["shear"]["minus"])
