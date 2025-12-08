@@ -106,7 +106,7 @@ INPUT_PATHS = {
             3.0: CHAIN_DIR / "exp93_51" / "g_samples_boots_513_nu300.npz",
         },
     },
-    "exp91": {
+    "exp91": {  # gaussian
         "shear": {
             "plus": CHAIN_DIR / "exp91_51" / "g_samples_512_plus.npz",
             "minus": CHAIN_DIR / "exp91_51" / "g_samples_512_minus.npz",
