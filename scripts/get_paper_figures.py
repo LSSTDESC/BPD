@@ -769,13 +769,13 @@ def make_model_bias_figure(fpath: str | Path):
 
 
 def main(overwrite: bool = False):
-    # make_timing_figure(OUT_PATHS["timing"], OUT_PATHS["timing2"])
-    # make_distribution_figure(OUT_PATHS["galaxy_distributions"], overwrite=overwrite)
-    # make_contour_shear_figure(OUT_PATHS["contour_shear"])
-    # make_contour_hyper_figure(OUT_PATHS["contour_hyper"])
-    # get_bias_table_subset(OUT_PATHS["subset_bias"])
-    # get_bias_table_boot(OUT_PATHS["boot_bias"])
-    # make_eta_posterior_calibration_figure(OUT_PATHS["eta_pc"])
+    make_timing_figure(OUT_PATHS["timing"], OUT_PATHS["timing2"])
+    make_distribution_figure(OUT_PATHS["galaxy_distributions"], overwrite=overwrite)
+    make_contour_shear_figure(OUT_PATHS["contour_shear"])
+    make_contour_hyper_figure(OUT_PATHS["contour_hyper"])
+    get_bias_table_subset(OUT_PATHS["subset_bias"])
+    get_bias_table_boot(OUT_PATHS["boot_bias"])
+    make_eta_posterior_calibration_figure(OUT_PATHS["eta_pc"])
     make_model_bias_figure(OUT_PATHS["model_bias"])
 
 
