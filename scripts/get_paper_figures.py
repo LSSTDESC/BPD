@@ -298,53 +298,6 @@ def make_timing_figure(fpath1: Path, fpath2: Path):
     plt.close(fig2)
 
 
-def make_errorbar_figure(fpath: str | Path):
-    set_rc_params()  # reset to default fontsize
-    data1 = load_dataset(INPUT_PATHS["exp70_sp"])["samples"]
-    data3 = load_dataset(INPUT_PATHS["exp72_sp"])["samples"]
-    c = ChainConsumer()
-    assert "g1" in data1 and "g2" in data1 and "g1" in data3 and "g2" in data3
-    df1 = pandas.DataFrame.from_dict(data1)
-    df3 = pandas.DataFrame.from_dict(data3)
-
-    # Customise the chain when you add it
-    c = ChainConsumer()
-    chain1 = Chain(
-        samples=df1,
-        name="Only Shear",
-        marker_style="*",
-    )
-    chain3 = Chain(
-        samples=df3,
-        name="All Free",
-        marker_style="*",
-    )
-
-    c.add_chain(chain1)
-    c.add_chain(chain3)
-
-    c.add_truth(Truth(location={"g1": 0.02, "g2": 0.0}, color="k", line_width=2.0))
-
-    c.set_plot_config(
-        PlotConfig(
-            usetex=True,
-            labels={"g1": "$g_{1}$", "g2": "$g_{2}$"},
-            label_font_size=30,
-            tick_font_size=24,
-        )
-    )
-
-    fig = c.plotter.plot_summary(
-        errorbar=True,
-        figsize=4.0,
-        # extra_parameter_spacing=0.8,
-        # vertical_spacing_ratio=1.5,
-    )
-    # fig.tight_layout()
-    plt.close(fig)
-    fig.savefig(fpath, format="png")
-
-
 def make_contour_shear_figure(fpath: str | Path):
     set_rc_params()  # reset to default fontsize
     data3 = load_dataset(INPUT_PATHS["exp72_sp"])
