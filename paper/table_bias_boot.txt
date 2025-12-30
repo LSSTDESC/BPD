@@ -14,3 +14,4 @@
     \caption{\textbf{Multiplicative and additive bias for different settings.}}
     \label{tab:bias}
 \end{table*}
+    

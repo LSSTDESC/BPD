@@ -142,6 +142,7 @@ _nu_hash = {
 
 
 def make_distribution_figure(fpath: str | Path, overwrite: bool = False):
+    print("INFO: Making distribution figure")
     set_rc_params(fontsize=36, legend_fontsize=30)
     cache_fpath = HOME_DIR / "paper" / "gprop_cache.npz"
 
@@ -278,6 +279,7 @@ def make_distribution_figure(fpath: str | Path, overwrite: bool = False):
 
 
 def make_timing_figure(fpath1: Path, fpath2: Path):
+    print("INFO: Making timing figure")
     set_rc_params(fontsize=24)
 
     # get avg ESS across all galaxy properties
@@ -299,6 +301,7 @@ def make_timing_figure(fpath1: Path, fpath2: Path):
 
 
 def make_contour_shear_figure(fpath: str | Path):
+    print("INFO: Making contour shear figure")
     set_rc_params()  # reset to default fontsize
     data3 = load_dataset(INPUT_PATHS["exp72_sp"])
     data4 = load_dataset(INPUT_PATHS["exp73_sp"])
@@ -362,6 +365,8 @@ def make_contour_shear_figure(fpath: str | Path):
 
 
 def make_contour_hyper_figure(fpath: str | Path):
+    print("INFO: Making contour hyperparameters figure")
+
     set_rc_params()
     ds = load_dataset(INPUT_PATHS["exp73_sp"])
     samples = ds["samples"]
@@ -419,6 +424,8 @@ def make_contour_hyper_figure(fpath: str | Path):
 
 
 def get_bias_table_subset(fpath: str | Path):
+    print("INFO: Creating table with subset approach")
+
     """Create a latex table of mean multiplicative and additive bias, as well as their errors from each experiment."""
 
     # load datasets
@@ -540,6 +547,7 @@ def get_bias_table_subset(fpath: str | Path):
 
 def get_bias_table_boot(fpath: str | Path):
     """Create a latex table of mean multiplicative and additive bias, as well as their errors from each experiment."""
+    print("INFO: Creating table with bootstrap approach")
 
     # load datasets
     dsp1 = load_dataset(INPUT_PATHS["exp70_sp"])
@@ -651,6 +659,8 @@ def get_bias_table_boot(fpath: str | Path):
 
 
 def make_eta_posterior_calibration_figure(fpath: str | Path):
+    print("INFO: Making posterior calibration figure")
+
     set_rc_params(fontsize=24)
 
     ds = load_dataset(INPUT_PATHS["eta_pc"])
@@ -677,6 +687,7 @@ def make_eta_posterior_calibration_figure(fpath: str | Path):
 
 
 def make_model_bias_figure(fpath: str | Path):
+    print("INFO: Making model bias figure")
     set_rc_params(fontsize=28, legend_fontsize=20)
 
     nus = list(_nu_hash.keys())
