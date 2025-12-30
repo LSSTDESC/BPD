@@ -3,6 +3,7 @@ import math
 
 import typer
 
+from bpd import HOME_DIR
 from bpd.slurm import run_multi_gpu_job
 
 
@@ -17,33 +18,38 @@ def main(
     time: str = "00:30",  # HH:MM
     mem_per_gpu: str = "10G",
     qos: str = "debug",
+    extra: str = "",
 ):
     n_splits = n_nodes * 4
     split_size = math.ceil(n_boots / n_splits)
 
     cmds = []
+    script = HOME_DIR / "experiments" / "exp72" / "simple_bootstrap.py"
     for ii in range(n_splits):
         n_gals_txt = f" --n-gals {n_gals}" if n_gals else ""
-        base_cmd = """./simple_bootstrap.py {new_seed}
+        extra_txt = f"--extra {extra}" if extra else ""
+        base_cmd = """{script} {new_seed}
         --samples-plus-fpath {samples_plus_fpath}
         --samples-minus-fpath {samples_minus_fpath}
-        --tag {tag} --n-boots {split_size}{n_gals_txt}
+        --tag {tag} --n-boots {split_size}{n_gals_txt} {extra_txt}
         """
         base_cmd = " ".join(base_cmd.split())
         new_seed = f"{seed}{ii}"
         cmd = base_cmd.format(
+            script=script,
             new_seed=new_seed,
             tag=tag,
             split_size=split_size,
             samples_plus_fpath=samples_plus_fpath,
             samples_minus_fpath=samples_minus_fpath,
             n_gals_txt=n_gals_txt,
+            extra_txt=extra_txt,
         )
         cmds.append(cmd)
 
     run_multi_gpu_job(
         cmds,
-        jobname=f"{tag}_boot",
+        jobname=f"{tag}_boot_{seed}_{extra}",
         time=time,
         mem_per_gpu=mem_per_gpu,
         qos=qos,

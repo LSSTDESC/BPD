@@ -28,6 +28,8 @@ def main(
     n_boots: int = 25,
     no_bar: bool = False,
     n_gals: int | None = None,
+    extra: str = "",
+    overwrite: bool = False,
 ):
     rng_key = random.key(seed)
     k1, k2 = random.split(rng_key)
@@ -36,7 +38,10 @@ def main(
     pfpath = Path(samples_plus_fpath)
     mfpath = Path(samples_minus_fpath)
     assert dirpath.exists() and pfpath.exists() and mfpath.exists()
-    fpath = dirpath / f"g_samples_boots_{seed}.npz"
+    extra_txt = "" if not extra else f"_{extra}"
+    fpath = dirpath / f"g_samples_boots_{seed}{extra_txt}.npz"
+    if not overwrite:
+        assert not fpath.exists()
 
     # start in cpu to avoid memory issues.
     dsp = load_dataset(samples_plus_fpath)
@@ -144,7 +149,7 @@ def main(
             "minus": {"g1": samples_minus["g1"], "g2": samples_minus["g2"]},
         },
         fpath,
-        overwrite=True,
+        overwrite=overwrite,
     )
 
 
