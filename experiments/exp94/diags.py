@@ -91,11 +91,27 @@ def main():
     # time per sample
     times_per_sample = times / (n_gals_arr * 600 * 12)
 
+    # timing (log)
     ax2.plot(n_gals_arr, times_per_sample, "-o")
     ax2.set_xlabel("# of Galaxies")
     ax2.set_ylabel("Avg. Time per sample (sec)")
     ax2.set_yscale("log")
     ax2.set_xscale("log")
+
+    plt.tight_layout()
+
+    fig.savefig(expath / "timing_log.png", format="png")
+
+    # timing (not log)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 7))
+
+    ax1.plot(n_gals_arr, times, "-o")
+    ax1.set_xlabel("# of Galaxies")
+    ax1.set_ylabel("Total time (sec)")
+
+    ax2.plot(n_gals_arr, times_per_sample, "-o")
+    ax2.set_xlabel("# of Galaxies")
+    ax2.set_ylabel("Avg. Time per sample (sec)")
 
     plt.tight_layout()
 
