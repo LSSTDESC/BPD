@@ -28,7 +28,7 @@ requires-python = ">=3.10,<3.13"
 dev = [
     "pytest",
     "typer",
-    "ruff",
+    "ruff<0.14.0",
     "ChainConsumer>=1.2.0", #v1.2.2 still requires python < 3.13
     "ipython",
     "ipykernel",
