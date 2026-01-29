@@ -112,6 +112,7 @@ ignore = [
     "PLC0206", # too picky, not always useful
     "RUF027",  # does not account for shell scripts correctly
     "RUF052",  # I find underscore variables useful
+    "RUF067",  # I like adding things to the __init__
 ]
 preview = true
 exclude = ["*.ipynb", "scripts/one_galaxy_shear.py", "scripts/benchmarks/*.py"]
