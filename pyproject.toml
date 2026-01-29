@@ -4,6 +4,9 @@ build-backend = "setuptools.build_meta"
 
 
 [project]
+requires-python = ">=3.10,<3.13"
+
+
 name = "BPD"
 authors = [{ name = "Ismael Mendoza" }]
 description = "Bayesian Pixel Domain method for shear inference."
@@ -19,16 +22,21 @@ dependencies = [
     "quadax>=0.2.5",
     "tensorflow-probability >=0.21.0",
     "arviz>=0.21.0",
-    "jax-tqdm",
+    "jax[cuda12]<0.7.0",
+    "jax-galsim",
 ]
-requires-python = ">=3.10,<3.13"
 
+[tool.uv.sources]
+jax-galsim = { git = "https://github.com/GalSim-developers/JAX-GalSim.git", branch = "main" }
+
+[tool.uv.pip]
+no-build-isolation-package = ["jax-galsim"]
 
 [project.optional-dependencies]
 dev = [
     "pytest",
     "typer",
-    "ruff<0.14.0",
+    "ruff",
     "ChainConsumer>=1.2.0", #v1.2.2 still requires python < 3.13
     "ipython",
     "ipykernel",
