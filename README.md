@@ -22,9 +22,6 @@ pip install -e ".[dev]"
 # Install JAX-Galsim
 pip install git+https://github.com/GalSim-developers/JAX-GalSim.git --no-deps --no-build-isolation
 
-# Install ornax
-pip install git+https://github.com/beckermr/ornax.git --no-deps --no-build-isolation
-
 # Might be necessary
 conda install -c nvidia cuda-nvcc
 ```
