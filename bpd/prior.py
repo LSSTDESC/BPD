@@ -10,6 +10,10 @@ from bpd.shear import (
     inv_shear_transformation,
 )
 
+_grad_fnc1 = vmap(vmap(grad(inv_shear_func1), in_axes=(0, None)), in_axes=(0, None))
+_grad_fnc2 = vmap(vmap(grad(inv_shear_func2), in_axes=(0, None)), in_axes=(0, None))
+_inv_shear_trans = vmap(inv_shear_transformation, in_axes=(0, None))
+
 
 def ellip_mag_prior(e_mag: ArrayLike, sigma: float) -> ArrayLike:
     """Prior for the magnitude of the ellipticity with domain (0, 1).
@@ -41,11 +45,6 @@ def ellip_prior_e1e2(e1e2: Array, sigma: float) -> ArrayLike:
 
     # jacobian factor also cancels `e_mag` term below
     return (1 - e_mag**2) ** 2 * jnp.exp(-(e_mag**2) / (2 * sigma**2)) / _norm
-
-
-_grad_fnc1 = vmap(vmap(grad(inv_shear_func1), in_axes=(0, None)), in_axes=(0, None))
-_grad_fnc2 = vmap(vmap(grad(inv_shear_func2), in_axes=(0, None)), in_axes=(0, None))
-_inv_shear_trans = vmap(inv_shear_transformation, in_axes=(0, None))
 
 
 def interim_gprops_logprior(
