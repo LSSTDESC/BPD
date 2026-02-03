@@ -197,7 +197,7 @@ def make_distribution_figure(fpath: str | Path, overwrite: bool = False):
         density=True,
         range=(0, 4000),
     )
-    ax1.set_xlabel(r"\rm Flux")
+    ax1.set_xlabel(r"\rm Flux (counts)")
     ax1.axvline(
         np.median(params["f"]),
         linestyle="--",
@@ -234,7 +234,7 @@ def make_distribution_figure(fpath: str | Path, overwrite: bool = False):
         histtype="step",
         density=True,
     )
-    ax3.set_xlabel(r"\rm $s$ (HLR)")
+    ax3.set_xlabel(r"\rm $s$ (HLR, arcsecs)")
     ax3.axvline(
         np.median(params["hlr"]),
         linestyle="--",
@@ -780,14 +780,14 @@ def make_model_bias_figure(fpath: str | Path):
 
 
 def main(overwrite: bool = False):
-    make_timing_figure(OUT_PATHS["timing"], OUT_PATHS["timing2"])
     make_distribution_figure(OUT_PATHS["galaxy_distributions"], overwrite=overwrite)
-    make_contour_shear_figure(OUT_PATHS["contour_shear"])
-    make_contour_hyper_figure(OUT_PATHS["contour_hyper"])
-    get_bias_table_subset(OUT_PATHS["subset_bias"])
-    get_bias_table_boot(OUT_PATHS["boot_bias"])
-    make_eta_posterior_calibration_figure(OUT_PATHS["eta_pc"])
-    make_model_bias_figure(OUT_PATHS["model_bias"])
+    # make_timing_figure(OUT_PATHS["timing"], OUT_PATHS["timing2"])
+    # make_contour_shear_figure(OUT_PATHS["contour_shear"])
+    # make_contour_hyper_figure(OUT_PATHS["contour_hyper"])
+    # get_bias_table_subset(OUT_PATHS["subset_bias"])
+    # get_bias_table_boot(OUT_PATHS["boot_bias"])
+    # make_eta_posterior_calibration_figure(OUT_PATHS["eta_pc"])
+    # make_model_bias_figure(OUT_PATHS["model_bias"])
 
 
 if __name__ == "__main__":
