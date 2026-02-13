@@ -144,6 +144,56 @@ def get_timing_figure(
     return fig1, fig2
 
 
+def get_timing_table(
+    results: dict, *, max_n_gal_str: str, avg_ess: float, fpath: str
+) -> Figure:
+    all_n_gals = [n_gals for n_gals in results]
+    warmup_times_per_obj = {}
+    eff_samples_per_sec = {}  # after warmup
+
+    _, n_samples = results[max_n_gal_str]["samples"]["lf"].shape
+
+    for n_gals_str in all_n_gals:
+        t_warmup = results[n_gals_str]["t_warmup"]
+        t_sampling = results[n_gals_str]["t_sampling"]
+
+        n_chains = int(n_gals_str)  # new fmt
+
+        # (avg.) time to warmup 1 object
+        t_per_obj_warmup = t_warmup / n_chains
+
+        # (avg.) time to produce 1 effective sample for 1 object (ignoring warmup)
+        t_per_obj_per_sample_sampling = t_sampling / (n_chains * n_samples) / avg_ess
+
+        # save
+        warmup_times_per_obj[n_chains] = t_per_obj_warmup
+        eff_samples_per_sec[n_chains] = 1 / t_per_obj_per_sample_sampling
+
+        if n_gals_str == max_n_gal_str:
+            print(
+                f"Global best efficiency: {t_per_obj_per_sample_sampling / avg_ess:.3g} sec"
+            )
+            print(f"Global best warmup: {t_per_obj_warmup:.3g} sec")
+
+    # create latex table with rows for n_chains and columns for t_per_obj_warmup, t_per_obj_per_sample_sampling,
+    # and eff_samples_per_sec
+    table_str = "\\begin{tabular}{|c|c|c|}\n"
+    table_str += "\\hline\n"
+    table_str += "Number of Galaxies & Warmup time / galaxy (sec) & Effective Samples / sec / galaxy (after warmup) \\\\\n"
+    table_str += "\\hline\n"
+    for n_chains in sorted(eff_samples_per_sec.keys()):
+        t_per_obj_warmup = warmup_times_per_obj[n_chains]
+        _eff_samples_sec = eff_samples_per_sec[n_chains]
+        table_str += (
+            f"{n_chains} & {t_per_obj_warmup:.3g} & {_eff_samples_sec:.3g} \\\\\n"
+        )
+    table_str += "\\hline\n"
+    table_str += "\\end{tabular}"
+
+    with open(fpath, "w", encoding="utf-8") as f:
+        f.write(table_str)
+
+
 def get_jack_bias(
     g_plus_jack: np.ndarray, g_minus_jack: np.ndarray, g1_true: float
 ) -> tuple:
