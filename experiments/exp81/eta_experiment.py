@@ -89,7 +89,7 @@ def shear_eta_target(g, *, data, sigma_e: float, sigma_e_int: float):
     etas = data
 
     # P(eta' | alpha, g) = P(eps | alpha) * (del eps' / del eta') * (del eps / del eps')
-    # jacobian on eta cancels between num and denom so we ignore it.
+    # first jacobian on eta cancels between num and denom so we ignore it.
     eps_sheared = vmap(vmap(eta2g))(etas)
     eps = _inv_shear_trans(eps_sheared, g)
     num1 = jnp.log(ellip_prior_e1e2(eps, sigma_e))
