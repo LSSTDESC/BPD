@@ -144,12 +144,55 @@ def get_timing_figure(
     return fig1, fig2
 
 
+def get_total_timing_figure(
+    results: dict, *, max_n_gal_str: str, avg_ess: float, figsize=(10, 10)
+) -> Figure:
+    all_n_gals = [n_gals for n_gals in results]
+
+    _, n_samples = results[max_n_gal_str]["samples"]["lf"].shape
+
+    total_time_warmup = []
+    total_time_sampling = []
+    n_chains_arr = np.array([int(n_gals) for n_gals in results])
+
+    for n_gals_str in all_n_gals:
+        t_warmup = results[n_gals_str]["t_warmup"]
+        t_sampling = results[n_gals_str]["t_sampling"] / n_samples * 300 / avg_ess
+
+        total_time_warmup.append(t_warmup)
+        total_time_sampling.append(t_sampling)
+
+    total_time_warmup = np.array(total_time_warmup)
+    total_time_sampling = np.array(total_time_sampling)
+    total_time = total_time_sampling + total_time_warmup
+
+    # first option
+    fig, ax = plt.subplots(1, 1, figsize=figsize)
+
+    ax.set_ylabel(r"\rm Total time (sec)")
+    ax.set_xlabel(r"\rm \# of Galaxies")
+
+    ax.plot(n_chains_arr, total_time_warmup, "-o", label=r"\rm Warmup")
+    ax.plot(n_chains_arr, total_time_sampling, "-o", label=r"\rm Inference")
+    ax.plot(n_chains_arr, total_time, "-o", label=r"\rm Total")
+
+    ax.plot(n_chains_arr, total_time[0] * n_chains_arr, "k--", label=r"\rm Worst")
+
+    ax.legend(loc="best", fancybox=True, shadow=False)
+
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+
+    return fig
+
+
 def get_timing_table(
     results: dict, *, max_n_gal_str: str, avg_ess: float, fpath: str
 ) -> Figure:
     all_n_gals = [n_gals for n_gals in results]
     warmup_times_per_obj = {}
-    eff_samples_per_sec = {}  # after warmup
+    inference_times = {}
+    t_300_dict = {}  # after warmup
 
     _, n_samples = results[max_n_gal_str]["samples"]["lf"].shape
 
@@ -164,29 +207,26 @@ def get_timing_table(
 
         # (avg.) time to produce 1 effective sample for 1 object (ignoring warmup)
         t_per_obj_per_sample_sampling = t_sampling / (n_chains * n_samples) / avg_ess
+        t_300 = t_per_obj_per_sample_sampling * 300 + t_per_obj_warmup
 
         # save
         warmup_times_per_obj[n_chains] = t_per_obj_warmup
-        eff_samples_per_sec[n_chains] = 1 / t_per_obj_per_sample_sampling
+        inference_times[n_chains] = t_per_obj_per_sample_sampling
+        t_300_dict[n_chains] = t_300
 
         if n_gals_str == max_n_gal_str:
-            print(
-                f"Global best efficiency: {t_per_obj_per_sample_sampling / avg_ess:.3g} sec"
-            )
+            print(f"Global best efficiency: {t_per_obj_per_sample_sampling:.3g} sec")
             print(f"Global best warmup: {t_per_obj_warmup:.3g} sec")
 
     # create latex table with rows for n_chains and columns for t_per_obj_warmup, t_per_obj_per_sample_sampling,
     # and eff_samples_per_sec
-    table_str = "\\begin{tabular}{|c|c|c|}\n"
+    table_str = "\\begin{tabular}{|c|c|c|c|}\n"
     table_str += "\\hline\n"
-    table_str += "Number of Galaxies & Warmup time / galaxy (sec) & Effective Samples / sec / galaxy (after warmup) \\\\\n"
+    table_str += "\\# of Galaxies \\newline in Parallel & Warmup time (sec) & Inference time / eff. sample (sec) & Time to produce \\newline 300 eff. samples (sec)\\\\\n"
     table_str += "\\hline\n"
-    for n_chains in sorted(eff_samples_per_sec.keys()):
+    for n_chains in sorted(t_300_dict.keys()):
         t_per_obj_warmup = warmup_times_per_obj[n_chains]
-        _eff_samples_sec = eff_samples_per_sec[n_chains]
-        table_str += (
-            f"{n_chains} & {t_per_obj_warmup:.3g} & {_eff_samples_sec:.3g} \\\\\n"
-        )
+        table_str += f"{n_chains} & {t_per_obj_warmup:.2g} & {inference_times[n_chains]:.2g} & {t_300_dict[n_chains]:.2g} \\\\\n"
     table_str += "\\hline\n"
     table_str += "\\end{tabular}"
 
