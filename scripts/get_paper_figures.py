@@ -24,6 +24,8 @@ from bpd.draw import draw_exponential_galsim
 from bpd.io import load_dataset, save_dataset
 from bpd.plotting import (
     get_timing_figure,
+    get_timing_table,
+    get_total_timing_figure,
     set_rc_params,
 )
 from bpd.sample import sample_galaxy_params_skew
@@ -119,6 +121,7 @@ OUT_PATHS = {
     "galaxy_distributions": FIG_DIR / "gprop_dists.png",
     "timing": FIG_DIR / "timing.png",
     "timing2": FIG_DIR / "timing2.png",
+    "total_timing": FIG_DIR / "total_timing.png",
     "error_bar": FIG_DIR / "error_bar.png",
     "contour_shear": FIG_DIR / "contour_shear.png",
     "contour_hyper": FIG_DIR / "contour_hyper.png",
@@ -126,6 +129,7 @@ OUT_PATHS = {
     "boot_bias": FIG_DIR / "table_bias_boot.txt",
     "eta_pc": FIG_DIR / "eta_pc.png",
     "model_bias": FIG_DIR / "model_bias.png",
+    "timing_table": FIG_DIR / "timing_table.txt",
 }
 
 _nu_hash = {
@@ -234,7 +238,7 @@ def make_distribution_figure(fpath: str | Path, overwrite: bool = False):
         histtype="step",
         density=True,
     )
-    ax3.set_xlabel(r"\rm $s$ (HLR)")
+    ax3.set_xlabel(r"\rm $s$ (HLR, arcsecs)")
     ax3.axvline(
         np.median(params["hlr"]),
         linestyle="--",
@@ -298,6 +302,42 @@ def make_timing_figure(fpath1: Path, fpath2: Path):
     fig2.savefig(fpath2, format="png")
     plt.close(fig1)
     plt.close(fig2)
+
+
+def make_total_timing_figure(fpath: Path):
+    print("INFO: Making total timing figure")
+    set_rc_params(fontsize=24)
+
+    # get avg ESS across all galaxy properties
+    conv_results = load_dataset(INPUT_PATHS["timing_conv"])
+    ess_dict = conv_results["ess"]
+    avg_ess = np.mean([np.mean(ess_dict[k]) for k in ess_dict])
+    print(f"Avg. ESS: {avg_ess}")
+
+    timing_results = load_dataset(INPUT_PATHS["timing_results"])
+
+    max_n_gal = str(max(int(k) for k in timing_results))
+    fig = get_total_timing_figure(
+        results=timing_results, max_n_gal_str=max_n_gal, avg_ess=avg_ess
+    )
+    fig.savefig(fpath, format="png")
+    plt.close(fig)
+
+
+def make_timing_table(fpath: Path):
+    print("INFO: Making timing table")
+    timing_results = load_dataset(INPUT_PATHS["timing_results"])
+    conv_results = load_dataset(INPUT_PATHS["timing_conv"])
+    ess_dict = conv_results["ess"]
+
+    max_n_gal = str(max(int(k) for k in timing_results))
+    avg_ess = np.mean([np.mean(ess_dict[k]) for k in ess_dict])
+
+    print(f"Avg. ESS: {avg_ess:.3g}")
+
+    get_timing_table(
+        results=timing_results, max_n_gal_str=max_n_gal, avg_ess=avg_ess, fpath=fpath
+    )
 
 
 def make_contour_shear_figure(fpath: str | Path):
@@ -780,8 +820,8 @@ def make_model_bias_figure(fpath: str | Path):
 
 
 def main(overwrite: bool = False):
-    make_timing_figure(OUT_PATHS["timing"], OUT_PATHS["timing2"])
     make_distribution_figure(OUT_PATHS["galaxy_distributions"], overwrite=overwrite)
+    make_timing_figure(OUT_PATHS["timing"], OUT_PATHS["timing2"])
     make_contour_shear_figure(OUT_PATHS["contour_shear"])
     make_contour_hyper_figure(OUT_PATHS["contour_hyper"])
     get_bias_table_subset(OUT_PATHS["subset_bias"])
