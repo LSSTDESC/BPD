@@ -26,6 +26,9 @@ dependencies = [
     "jax-galsim",
 ]
 
+[tool.uv]
+exclude-newer = "1 week"
+
 [tool.uv.sources]
 jax-galsim = { git = "https://github.com/GalSim-developers/JAX-GalSim.git", branch = "main" }
 
