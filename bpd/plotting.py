@@ -94,11 +94,11 @@ def get_timing_figure(
         n_chains = int(n_gals_str)  # new fmt
 
         t_per_obj_warmup = t_warmup / n_chains
-        t_per_obj_per_sample_sampling = t_sampling / (n_chains * n_samples)
+        t_per_obj_per_sample_sampling = t_sampling / (n_chains * n_samples) / avg_ess
         t_per_obj_arr = (
             t_per_obj_warmup + t_per_obj_per_sample_sampling * n_samples_array
         )
-        t_per_obj_dict[n_chains] = t_per_obj_arr / avg_ess
+        t_per_obj_dict[n_chains] = t_per_obj_arr
 
         if n_gals_str == max_n_gal_str:
             print(
@@ -106,6 +106,16 @@ def get_timing_figure(
             )
             print(f"Global best warmup: {t_per_obj_warmup:.2g} sec")
 
+        the_idx = np.where(n_samples_array == 300)[0][0]
+        t1 = t_per_obj_arr[the_idx].item() * n_chains
+        t2 = t_per_obj_arr[the_idx].item()
+
+        print(
+            f"Total time (300 effective samples) with {n_gals_str} chains: {t1:.4g} sec"
+        )
+        print(
+            f"Time per galaxy (300 effective samples) with {n_gals_str} chains: {t2:.4g} sec"
+        )
     # first option
     fig1, ax = plt.subplots(1, 1, figsize=figsize)
     ax.set_prop_cycle(cycles)
@@ -131,6 +141,8 @@ def get_timing_figure(
     ax.set_xlabel(r"\rm \# of effective samples")
 
     for n_chains, t_per_obj_array in t_per_obj_dict.items():
+        if n_chains == 5:
+            continue
         ax.plot(n_samples_array, t_per_obj_array, label=f"${n_chains}$")
 
     ax.legend(
